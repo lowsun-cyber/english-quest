@@ -15,6 +15,7 @@ import './tts.js';
 import './tutor.js';
 import './ui.js';
 import './util.js';
+import './worksheet.js';
 import { renderGoal } from './activity.js';
 import { CHARACTERS, HARLOW_LINES } from './eq.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';

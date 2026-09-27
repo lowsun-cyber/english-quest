@@ -9,6 +9,7 @@ import { mistakeEntries } from './mistakes.js';
 import { offlineSectionHtml, wireOfflineSection } from './offline.js';
 import { realState, saveState, state } from './state.js';
 import { openModal, toast } from './ui.js';
+import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, parseDay, plural, shiftDay } from './util.js';
 
 // ---------- РЕЖИМ РЕПЕТИТОРА ----------
@@ -206,6 +207,9 @@ export function openTutorPanel(){
       </ul>` : '<p class="t-muted">Пока нет — ошибок не было или все уже выучены.</p>'}
     ${state.mastered ? `<p class="t-muted">Выучено после ошибок: <b>${state.mastered}</b></p>` : ''}
 
+    <h3 class="t-h">Лист для печати</h3>
+    ${worksheetSectionHtml()}
+
     ${realState ? '' : `
     <h3 class="t-h">Перенос и резервная копия</h3>
     ${backupSectionHtml()}
@@ -246,6 +250,7 @@ export function openTutorPanel(){
   };
   const viewClose = document.getElementById('t-view-close');
   if (viewClose) viewClose.onclick = () => { endView(); openTutorPanel(); };
+  wireWorksheet();
   if (!realState){ wireOfflineSection(); wireBackupSection(); }
   const goalSel = document.getElementById('t-goal');
   if (goalSel) goalSel.onchange = () => {

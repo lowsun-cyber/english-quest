@@ -192,6 +192,21 @@ try {
     for (const s of ['Ответов:', 'Цель дня', 'Трудные слова', 'Сданы проверки']) if (!rep.includes(s)) throw new Error('в отчёте нет «' + s + '»');
     __close(); return tiles + ' плиток, отчёт полный';`));
 
+  await test('лист для печати', () => js(`
+    let printed = 0; window.print = () => { printed++; };
+    await __gate();
+    document.querySelector('#t-ws input[value=lesson]').checked = true; document.getElementById('t-ws-lesson').value = 'g2-toys';
+    document.querySelector('#t-ws button[type=submit]').click(); await __sleep(200);
+    const el = document.getElementById('print-sheet');
+    const rows = el.querySelectorAll('.ws-write tr').length, pages = el.querySelectorAll('.ws-page').length;
+    const pics = [...el.querySelectorAll('.ws-match ol:first-child .ws-em')].map(x => x.textContent);
+    window.dispatchEvent(new Event('afterprint'));
+    if (!printed) throw new Error('печать не вызвана');
+    if (rows < 5 || pages !== 2) throw new Error('строк ' + rows + ', страниц ' + pages);
+    if (new Set(pics).size !== pics.length) throw new Error('повторяются картинки в «Соедини»: ' + pics.join(''));
+    if (el.innerHTML) throw new Error('лист не очищен после печати');
+    __close(); return rows + ' слов, «Соедини» без повторов, ответы на 2-й странице';`));
+
   await test('перенос: код → просмотр → замена → отмена', () => js(`
     await __gate(); document.getElementById('t-bk-code').click(); await __sleep(500);
     const code = document.getElementById('t-bk-code-out').value; if (!code.startsWith('EQ1.')) throw new Error('код: ' + code.slice(0, 10));
