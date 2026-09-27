@@ -1,5 +1,5 @@
 // English Quest — Работа без интернета: service worker, скачивание озвучки, установка.
-import { TTS_CACHE_DIR, loadManifest, loadRuManifest } from './tts.js';
+import { TTS_CACHE_DIR, loadManifest, loadVoiceManifest } from './tts.js';
 import { toast } from './ui.js';
 
 // ---------- БЕЗ ИНТЕРНЕТА (PWA) ----------
@@ -21,7 +21,7 @@ export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (nav
 
 export async function audioFiles(){
   const m = await loadManifest();
-  const ru = await loadRuManifest();
+  const ru = await loadVoiceManifest();
   return [
     ...new Set(Object.values(m).map(k => k + '.mp3')),
     ...new Set(Object.values(ru)),

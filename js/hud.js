@@ -1,6 +1,6 @@
 // English Quest — Шапка (XP, монеты, сердечки, серия), команда героев, инвентарь, награды и штрафы.
 import { logAnswer, streakInfo } from './activity.js';
-import { CHARACTERS, HARLOW_LINES, LESSONS, MAX_LEVEL, levelFromXp, rankFor, totalXpForLevel } from './eq.js';
+import { CHARACTERS, HARLOW_LINES, LESSONS, MAX_LEVEL, heroIntro, levelFromXp, rankFor, totalXpForLevel } from './eq.js';
 import { CHECKPOINTS } from './map.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
@@ -63,11 +63,9 @@ export function renderTeam(){
       <div class="char-role">${c.role}</div>
     `;
     card.addEventListener('click', () => {
-      const line = c.id === 'harlow'
-        ? HARLOW_LINES.teamCard
-        : `Я помогаю с темой «${c.subtitle}». Открой соответствующий урок!`;
-      showGuide(c.name, line, c);
-      speak(c.id === 'harlow' ? 'Hi, I am Doctor Harlow. Let us learn English.' : `I am ${c.name}. Nice to meet you.`);
+      const { en, ru } = heroIntro(c);
+      showGuide(c.name, ru, c);
+      speak(en);
     });
     container.appendChild(card);
   });

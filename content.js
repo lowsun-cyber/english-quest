@@ -11,6 +11,8 @@ const CHARACTERS = {
     accent: '#7a4a1e',
     emoji: '🦌',
     role: 'Доктор-олень из Animal Hospital. Ведёт по всем урокам, приветствует, объясняет задание.',
+    introEn: 'Hi, I am Doctor Harlow. Let us learn English.',
+    introRu: null, // у Dr. Harlow — HARLOW_LINES.teamCard
   },
   luna: {
     id: 'luna',
@@ -20,6 +22,8 @@ const CHARACTERS = {
     accent: '#a83a72',
     emoji: '🐰',
     role: 'Помогает с животными и здоровьем.',
+    introEn: 'I am Nurse Luna. Nice to meet you.',
+    introRu: 'Привет! Я Nurse Luna. Я помогаю с животными и здоровьем — загляни в уроки про животных!',
   },
   max: {
     id: 'max',
@@ -29,6 +33,8 @@ const CHARACTERS = {
     accent: '#245b85',
     emoji: '⛏️',
     role: 'Добывает блоки, знает предметы и цвета.',
+    introEn: 'I am Miner Max. Nice to meet you.',
+    introRu: 'Привет! Я Miner Max. Со мной ты узнаешь предметы, цвета и вещи в доме.',
   },
   owl: {
     id: 'owl',
@@ -38,6 +44,8 @@ const CHARACTERS = {
     accent: '#5a3a99',
     emoji: '🦉',
     role: 'Учит правилам и помогает читать.',
+    introEn: 'I am Prof. Owl. Nice to meet you.',
+    introRu: 'Здравствуй! Я Prof. Owl. Я научу тебя правилам и помогу читать.',
   },
   robo: {
     id: 'robo',
@@ -47,6 +55,8 @@ const CHARACTERS = {
     accent: '#8a6612',
     emoji: '🤖',
     role: 'Отвечает за микрофон и звук.',
+    introEn: 'I am DJ Robo. Nice to meet you.',
+    introRu: 'Бип-буп! Я DJ Robo. Со мной ты будешь говорить по-английски вслух!',
   },
 };
 
@@ -929,9 +939,21 @@ const HARLOW_LINES = {
   ],
   teamCard: 'Я поведу тебя через все уроки. Нажми на любой урок ниже.',
 };
-// Реплика Dr. Harlow при открытии урока. Тот же текст озвучен в tts_manifest_ru.json,
-// поэтому менять его нужно вместе с перегенерацией: node tools/gen-ru-voice.mjs
+// Реплика Dr. Harlow при открытии урока. Тот же текст озвучен в tts_voices.json,
+// поэтому менять его нужно вместе с перезаписью: node tools/gen-voices.mjs или tools/import-voices.mjs
 function lessonStartLine(lesson){ return `Урок «${lesson.title}». ${lesson.intro}`; }
+// Что говорит герой при нажатии на его карточку в «Команде»
+function heroIntro(ch){ return { en: ch.introEn, ru: ch.introRu || HARLOW_LINES.teamCard }; }
+// Все фразы, записанные голосами героев (tts_voices.json). Порядок = номера файлов при импорте:
+// 1–30 — русские реплики Dr. Harlow, дальше — остальные герои (по-английски и по-русски).
+function voiceLines(){
+  const out = harlowRussianLines().map(text => ({ speaker: 'harlow', lang: 'ru', text }));
+  for (const id of ['luna', 'max', 'owl', 'robo']){
+    const ch = CHARACTERS[id];
+    out.push({ speaker: id, lang: 'en', text: ch.introEn }, { speaker: id, lang: 'ru', text: ch.introRu });
+  }
+  return out;
+}
 // Все русские реплики Dr. Harlow, которые можно озвучить заранее
 function harlowRussianLines(){
   const ru = s => /[а-яё]/i.test(s);
@@ -947,5 +969,5 @@ window.EQ = {
   LESSONS,
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   RANKS, rankFor,
-  HARLOW_LINES, lessonStartLine, harlowRussianLines,
+  HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
 };

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// Озвучивает русские реплики Dr. Harlow тем же голосом, что и английские (Gemini TTS, Enceladus).
+// Озвучивает реплики героев через Gemini TTS: русские реплики Dr. Harlow (его голос Enceladus —
+// тот же, что у английской озвучки) и приветствия остальных героев, у каждого свой голос.
 //
-//   GEMINI_API_KEY=… node tools/gen-ru-voice.mjs            — озвучить новые/изменённые реплики
-//   node tools/gen-ru-voice.mjs --list                       — только показать список реплик
+//   GEMINI_API_KEY=… node tools/gen-voices.mjs            — озвучить фразы, которых ещё нет
+//   GEMINI_API_KEY=… node tools/gen-voices.mjs --force    — перезаписать все
+//   node tools/gen-voices.mjs --list                       — показать список с номерами
 //
-// Реплики берутся из content.js (harlowRussianLines), файлы кладутся в tts_cache/<sha1>.m4a,
-// словарь «фраза → файл» — в tts_manifest_ru.json. Уже озвученные фразы пропускаются,
+// Фразы берутся из content.js (voiceLines), файлы — tts_cache/<sha1>.m4a, словарь «фраза → файл» —
+// tts_voices.json. Уже записанные фразы (в том числе импортированные) пропускаются,
 // удалённые из контента — убираются из словаря. Нужен macOS (afconvert для сжатия в AAC).
 import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdtempSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -16,27 +18,35 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-pro-preview-tts'; // та же линейка, что у английской озвучки
-const VOICE = 'Enceladus';
-const STYLE = 'тёплый, добрый и спокойный голос доктора, который объясняет детям 7–10 лет; говорит не спеша и чётко';
-const MANIFEST = join(ROOT, 'tts_manifest_ru.json');
+// Голос и манера для каждого героя (названия голосов — из списка Gemini TTS)
+const VOICES = {
+  harlow: { voice: 'Enceladus', style: 'тёплый, добрый и спокойный голос доктора, который объясняет детям 7–10 лет; говорит не спеша и чётко' },
+  luna:   { voice: 'Leda',      style: 'ласковая молодая медсестра-зайчиха, мягко и заботливо, с улыбкой' },
+  max:    { voice: 'Puck',      style: 'бодрый весёлый шахтёр-мальчишка, энергично и с азартом' },
+  owl:    { voice: 'Charon',    style: 'мудрый добрый профессор-сова, неторопливо, чуть торжественно' },
+  robo:   { voice: 'Fenrir',    style: 'весёлый робот-диджей, ритмично и задорно, слегка «механически»' },
+};
+const MANIFEST = join(ROOT, 'tts_voices.json');
 
 // content.js написан для браузера — выполняем его с «пустым» window
 const sandbox = { window: {} };
 vm.runInNewContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), sandbox);
-const lines = sandbox.window.EQ.harlowRussianLines();
+const items = sandbox.window.EQ.voiceLines();
+const lines = items.map(x => x.text);
+const FORCE = process.argv.includes('--force');
 
 if (process.argv.includes('--list')){
-  lines.forEach((l, i) => console.log(`${String(i + 1).padStart(2)}. ${l}`));
+  items.forEach((x, i) => console.log(`${String(i + 1).padStart(2)}. [${x.speaker}, ${x.lang}] ${x.text}`));
   process.exit(0);
 }
 const KEY = process.env.GEMINI_API_KEY;
 if (!KEY){
-  console.error('Нужен ключ: GEMINI_API_KEY=… node tools/gen-ru-voice.mjs  (ключ — в Google AI Studio → Get API key)');
+  console.error('Нужен ключ: GEMINI_API_KEY=… node tools/gen-voices.mjs  (ключ — в Google AI Studio → Get API key)');
   process.exit(1);
 }
 
 const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
-const fileFor = text => createHash('sha1').update(`ru|${VOICE}|${MODEL}|${text}`).digest('hex') + '.m4a';
+const fileFor = (text, speaker) => createHash('sha1').update(`${speaker}|${VOICES[speaker].voice}|${MODEL}|${text}`).digest('hex') + '.m4a';
 const tmp = mkdtempSync(join(tmpdir(), 'eq-ru-'));
 
 function findAudio(node){
@@ -55,15 +65,16 @@ function toWav(buf){
   return Buffer.concat([h, buf]);
 }
 
-async function synth(text){
+async function synth(text, speaker){
+  const { voice, style } = VOICES[speaker];
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
     body: JSON.stringify({
       model: MODEL,
-      input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: STYLE }] }] }],
+      input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style }] }] }],
       response_format: { type: 'audio' },
-      generation_config: { speech_config: [{ voice: VOICE }] },
+      generation_config: { speech_config: [{ voice }] },
     }),
   });
   const body = await res.json().catch(() => ({}));
@@ -74,14 +85,14 @@ async function synth(text){
 }
 
 let made = 0, kept = 0, failed = 0;
-for (const [i, text] of lines.entries()){
-  const file = fileFor(text);
+for (const [i, { text, speaker }] of items.entries()){
+  const file = fileFor(text, speaker);
   const out = join(ROOT, 'tts_cache', file);
-  if (manifest[text] === file && existsSync(out)){ kept++; continue; }
+  if (!FORCE && manifest[text] && existsSync(join(ROOT, 'tts_cache', manifest[text]))){ kept++; continue; }
   process.stdout.write(`${i + 1}/${lines.length} ${text.slice(0, 60)}… `);
   try {
     const wav = join(tmp, 'line.wav');
-    writeFileSync(wav, await synth(text));
+    writeFileSync(wav, await synth(text, speaker));
     execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '64000', wav, out]);
     const old = manifest[text];
     manifest[text] = file;
@@ -102,5 +113,5 @@ for (const text of Object.keys(manifest)) if (!lines.includes(text)){
   if (!Object.values(manifest).includes(f) && existsSync(join(ROOT, 'tts_cache', f))) unlinkSync(join(ROOT, 'tts_cache', f));
 }
 writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
-console.log(`\nГотово: озвучено ${made}, уже было ${kept}, ошибок ${failed}. Словарь: tts_manifest_ru.json`);
+console.log(`\nГотово: озвучено ${made}, уже было ${kept}, ошибок ${failed}. Словарь: tts_voices.json`);
 process.exit(failed ? 1 : 0);

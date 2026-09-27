@@ -8,10 +8,16 @@ export const TTS_VOICE = 'enceladus';
 export const TTS_CACHE_DIR = 'tts_cache/';
 export let _ttsManifest = null;
 export let _ttsManifestLoading = null;
-// Русские реплики Dr. Harlow тем же голосом: { фраза -> 'файл.m4a' } (tools/gen-ru-voice.mjs)
-export let _ruManifest = null;
-export function loadRuManifest(){
-  return _ruManifest || (_ruManifest = fetch('tts_manifest_ru.json').then(r => r.ok ? r.json() : {}).catch(() => ({})));
+// Фразы, записанные голосами героев: { фраза -> 'файл.m4a' } (tools/gen-voices.mjs, tools/import-voices.mjs):
+// русские реплики Dr. Harlow и приветствия остальных героев. Запись героя важнее общего голоса.
+let _voices = null;
+export function loadVoiceManifest(){
+  return _voices || (_voices = fetch('tts_voices.json').then(r => r.ok ? r.json() : {}).catch(() => ({})));
+}
+function playFile(file, onFail){
+  const a = new Audio(TTS_CACHE_DIR + file);
+  _currentAudio = a;
+  a.play().catch(err => { if (!isInterrupted(a, err)) onFail(); });
 }
 export let _currentAudio = null;
 
@@ -118,19 +124,15 @@ export function speak(text, opts={}){
     : (looksEnglish(raw) ? 'en' : 'ru');
   const clean = lang === 'en' ? normalizeForSpeech(raw) : raw;
 
-  // Русский: сначала запись голосом Dr. Harlow, если она есть; иначе — голос устройства.
+  // Русский: запись героя, если есть; иначе — голос устройства.
   if (lang !== 'en'){
-    loadRuManifest().then(ru => {
-      const file = ru[raw];
-      if (!file) return speakFallback(clean, lang);
-      const a = new Audio(TTS_CACHE_DIR + file);
-      _currentAudio = a;
-      a.play().catch(err => { if (!isInterrupted(a, err)) speakFallback(clean, lang); });
-    });
+    loadVoiceManifest().then(v => v[raw] ? playFile(v[raw], () => speakFallback(clean, lang)) : speakFallback(clean, lang));
     return;
   }
 
-  loadManifest().then(() => {
+  Promise.all([loadManifest(), loadVoiceManifest()]).then(([, voices]) => {
+    // английская фраза, записанная голосом конкретного героя (например, «I am Nurse Luna…»)
+    if (voices[raw]) return playFile(voices[raw], () => speakFallback(clean, lang));
     // Пробуем найти MP3 сразу по исходной фразе; иначе — по нормализованной;
     // иначе — фолбэк на браузерный голос.
     const url = ttsFileUrl(raw) || ttsFileUrl(clean);
