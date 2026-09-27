@@ -642,9 +642,19 @@ section { margin-top: 32px; }
   background: #d9e6ec; border: 2px solid var(--line); border-radius: var(--radius-pill); overflow: hidden;
 }
 [data-theme="dark"] .review-progress { background: #22303f; }
-.review-progress > span { display: block; height: 100%; background: var(--grass); transition: width 0.3s ease; }
+.review-progress > span { display: block; width: 0; height: 100%; background: var(--grass); transition: width 0.3s ease; }
 .review-hint { text-align: center; color: var(--muted); font-size: 15px; margin: -4px 0 12px; }
-.review-sentence { font-size: 24px; font-weight: 800; text-align: center; }
+/* вопросы в упражнениях (раньше — встроенные стили в коде) */
+.q-text.q-sentence { font-size: 24px; font-weight: 800; text-align: center; margin: 10px 0; }
+.q-text.q-question { font-size: 22px; font-weight: 800; }
+.q-hint { color: var(--muted); font-size: 13px; text-align: center; }
+.q-text.q-lead { margin-top: 12px; }
+.q-options-gap { margin-top: 10px; }
+.q-listen-icon { text-align: center; font-size: 56px; }
+.opt.opt-emoji { font-size: 36px; }
+.match-item.match-emoji { font-size: 24px; }
+.reading-text { font-size: 20px; line-height: 1.6; }
+.rec-result { text-align: center; min-height: 22px; font-weight: 700; }
 .review-passage {
   font-size: 17px; line-height: 1.55; color: var(--ink-2);
   background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
