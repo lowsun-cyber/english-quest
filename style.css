@@ -517,6 +517,18 @@ section { margin-top: 32px; }
 .t-cps { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
 .t-unlock { margin-top: 12px; display: inline-flex !important; }
 .t-offline { border: 2px dashed var(--line); border-radius: 12px; padding: 12px; margin-top: 8px; }
+.t-h4 { font-size: 15px; margin: 16px 0 6px; }
+.t-file-btn { display: inline-flex; align-items: center; cursor: pointer; }
+.t-bk-card { margin-top: 10px; padding: 12px; border: 3px solid var(--line); border-radius: 12px; background: var(--bg); }
+[data-theme="dark"] .t-bk-card { background: #1a2635; }
+.t-bk-card p { font-size: 15px; }
+.t-view-banner {
+  margin-top: 10px; padding: 12px;
+  background: #fff3c2; color: var(--on-color);
+  border: 3px solid var(--line); border-radius: 12px;
+  font-size: 15px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+}
+[data-theme="dark"] .t-view-banner { background: #3a3320; color: var(--ink); }
 .t-audio-stat { font-size: 15px; }
 .t-offline .t-muted { margin-top: 8px; }
 

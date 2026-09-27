@@ -72,6 +72,7 @@
   }
 
   async function saveState(){
+    if (realState) return; // репетитор смотрит копию чужого прогресса — ничего не пишем
     memoryStore = JSON.parse(JSON.stringify(state));
     try {
       const ls = getLS();
@@ -111,8 +112,8 @@
     document.getElementById('stat-quests').textContent = completed;
   }
 
-  function isLessonComplete(l){
-    const p = state.lessonProgress[l.id];
+  function isLessonComplete(l, st = state){
+    const p = st.lessonProgress[l.id];
     if (!p) return false;
     return (p.vocab||0) >= 3 && (p.listen||0) >= 3 && (p.grammar||0) >= 2 && (p.reading||0) >= 1;
   }
@@ -488,7 +489,7 @@
 
   let _ticks = 0;
   setInterval(() => {
-    if (!state) return;
+    if (!state || realState) return;
     const practising = document.getElementById('modal-back').classList.contains('open')
       && document.visibilityState === 'visible'
       && Date.now() - lastInteraction < 90000;
@@ -717,7 +718,12 @@
 
     openModal(`
       <h2>Режим репетитора</h2>
-      <div class="lead">Прогресс ученика на этом устройстве.</div>
+      ${realState ? `
+        <div class="t-view-banner" role="status">
+          <b>👀 Просмотр копии.</b> ${escapeHtml(summaryText(state._viewMeta.summary, state._viewMeta.exportedAt))}
+          Здесь ничего не сохраняется, прогресс на этом устройстве не меняется.
+          <button class="btn secondary" id="t-view-close">Вернуться к своему прогрессу</button>
+        </div>` : '<div class="lead">Прогресс ученика на этом устройстве.</div>'}
 
       <div class="t-tiles">
         <div class="t-tile"><span class="t-num">${s.min}</span><span class="t-lbl">минут за 7 дней</span></div>
@@ -732,7 +738,7 @@
         <div class="t-hw-current">
           <div><b>${escapeHtml(hwLesson.title)}</b> · ${hw.tasks.map(ex => `${homeworkTaskDone(hw, ex) ? '✓' : '○'} ${EX_NAMES[ex]}`).join(' · ')}
           <div class="t-muted">${hw.doneAt ? 'Выполнено ✓' : (dueLabel(hw.due) || 'без срока')}</div></div>
-          <button class="icon-btn" id="t-hw-cancel">${hw.doneAt ? 'Убрать' : 'Отменить'}</button>
+          ${realState ? '' : `<button class="icon-btn" id="t-hw-cancel">${hw.doneAt ? 'Убрать' : 'Отменить'}</button>`}
         </div>` : '<p class="t-muted">Сейчас задания нет.</p>'}
       <form class="t-hw-form" id="t-hw-form">
         <label>Тема
@@ -752,7 +758,7 @@
         </div>
         <div class="controls">
           <button class="btn" type="button" id="t-hw-link">🔗 Скопировать ссылку</button>
-          <button class="btn secondary" type="button" id="t-hw-here">📌 Назначить на этом устройстве</button>
+          ${realState ? '' : '<button class="btn secondary" type="button" id="t-hw-here">📌 Назначить на этом устройстве</button>'}
         </div>
         <input class="t-link" id="t-hw-out" readonly hidden aria-label="Ссылка на задание"/>
         <p class="t-muted t-hint" id="t-hw-hint"></p>
@@ -774,7 +780,7 @@
         </table>
       </div>
 
-      <label class="t-check t-unlock"><input type="checkbox" id="t-unlock" ${state.settings.unlockAll ? 'checked' : ''}/> Открыть все темы на карте (без прохождения по порядку)</label>
+      ${realState ? '' : `<label class="t-check t-unlock"><input type="checkbox" id="t-unlock" ${state.settings.unlockAll ? 'checked' : ''}/> Открыть все темы на карте (без прохождения по порядку)</label>`}
 
       <h3 class="t-h">Проверки</h3>
       <ul class="t-cps" role="list">
@@ -793,8 +799,12 @@
         </ul>` : '<p class="t-muted">Пока нет — ошибок не было или все уже выучены.</p>'}
       ${state.mastered ? `<p class="t-muted">Выучено после ошибок: <b>${state.mastered}</b></p>` : ''}
 
+      ${realState ? '' : `
+      <h3 class="t-h">Перенос и резервная копия</h3>
+      ${backupSectionHtml()}
+
       <h3 class="t-h">Без интернета</h3>
-      ${offlineSectionHtml()}
+      ${offlineSectionHtml()}`}
 
       <h3 class="t-h">Отчёт</h3>
       <p class="t-muted">Короткий текст для мессенджера — например, чтобы родитель отправил его репетитору.</p>
@@ -819,15 +829,19 @@
       hint.textContent = (ok ? 'Ссылка скопирована — отправьте её ученику. ' : 'Скопируйте ссылку из поля выше. ')
         + (location.protocol === 'file:' ? 'Сейчас приложение открыто как файл, поэтому ссылка сработает только на этом компьютере. Чтобы она открывалась у ученика, сайт нужно выложить в интернет.' : '');
     };
-    document.getElementById('t-hw-here').onclick = () => {
+    const here = document.getElementById('t-hw-here');
+    if (here) here.onclick = () => {
       const spec = readSpec();
       if (!spec.tasks.length){ hint.textContent = 'Выберите хотя бы одно упражнение.'; return; }
       const res = assignHomework(spec);
       toast(res === 'same' ? 'Это задание уже назначено' : '📌 Задание назначено');
       openTutorPanel();
     };
-    wireOfflineSection();
-    document.getElementById('t-unlock').onchange = (e) => {
+    const viewClose = document.getElementById('t-view-close');
+    if (viewClose) viewClose.onclick = () => { endView(); openTutorPanel(); };
+    if (!realState){ wireOfflineSection(); wireBackupSection(); }
+    const unlock = document.getElementById('t-unlock');
+    if (unlock) unlock.onchange = (e) => {
       state.settings.unlockAll = e.target.checked;
       saveState();
       renderMap();
@@ -844,6 +858,215 @@
   }
   document.getElementById('btn-tutor').onclick = openTutorGate;
 
+
+  // ---------- ПЕРЕНОС И РЕЗЕРВНАЯ КОПИЯ ----------
+  // Сервера нет, поэтому прогресс переносится файлом или кодом.
+  // Файл: JSON { app, format, exportedAt, summary, state }.
+  // Код: «EQ1.» + base64url(gzip(тот же JSON)); если браузер не умеет gzip — «EQ0.» без сжатия.
+  // Загруженный прогресс можно только посмотреть (репетитор) или поставить вместо текущего —
+  // тогда текущий откладывается в UNDO_KEY и замену можно отменить.
+  const BACKUP_APP = 'english-quest';
+  const UNDO_KEY = STORE_KEY + '_before_restore';
+  let realState = null;       // пока репетитор смотрит чужой прогресс, здесь лежит настоящий
+  let pendingImport = null;   // разобранный файл/код, ждёт решения
+
+  function stateSummary(st){
+    const lvl = levelFromXp(st.xp || 0);
+    const done = LESSONS.filter(l => isLessonComplete(l, { lessonProgress: st.lessonProgress || {} })).length;
+    const days = Object.keys(st.activity || {}).sort();
+    return { level: lvl, xp: st.xp || 0, lessonsDone: done, mistakes: Object.keys(st.mistakes || {}).length, lastDay: days[days.length - 1] || null };
+  }
+  function summaryText(sum, exportedAt){
+    const when = exportedAt ? new Date(exportedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : 'неизвестно';
+    return `Копия от ${when}: уровень ${sum.level}, ${sum.xp} XP, пройдено тем ${sum.lessonsDone} из ${LESSONS.length}, в «Моих ошибках» ${sum.mistakes}${sum.lastDay ? `, последнее занятие ${fmtDay(sum.lastDay)}` : ''}.`;
+  }
+
+  function backupPayload(){
+    return { app: BACKUP_APP, format: 1, exportedAt: Date.now(), summary: stateSummary(state), state };
+  }
+  function b64url(bytes){
+    let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function unb64url(str){
+    const s = atob(str.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((str.length + 3) % 4));
+    return Uint8Array.from(s, c => c.charCodeAt(0));
+  }
+  async function pipeBytes(bytes, stream){
+    return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+  }
+  async function encodeCode(obj){
+    const raw = new TextEncoder().encode(JSON.stringify(obj));
+    if ('CompressionStream' in window) return 'EQ1.' + b64url(await pipeBytes(raw, new CompressionStream('gzip')));
+    return 'EQ0.' + b64url(raw);
+  }
+  async function decodeCode(code){
+    const m = /^EQ([01])\.([A-Za-z0-9_-]+)$/.exec(code.replace(/\s+/g, ''));
+    if (!m) throw new Error('Это не код English Quest.');
+    let bytes = unb64url(m[2]);
+    if (m[1] === '1'){
+      if (!('DecompressionStream' in window)) throw new Error('Этот браузер не умеет читать сжатый код — загрузите файл.');
+      bytes = await pipeBytes(bytes, new DecompressionStream('gzip'));
+    }
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  // Берём из файла только известные поля нужных типов — остальное по умолчанию.
+  function sanitizeState(src){
+    const out = freshState();
+    if (!src || typeof src !== 'object') return out;
+    const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+    for (const k of Object.keys(out)){
+      const def = out[k], v = src[k];
+      if (typeof def === 'number' && Number.isFinite(v)) out[k] = Math.max(0, v);
+      else if (isObj(def) && isObj(v)) out[k] = v;
+      else if (k === 'homework' && (v === null || isObj(v))) out[k] = v;
+    }
+    out.hearts = Math.min(5, out.hearts);
+    out.settings = { ...freshState().settings, ...out.settings };
+    if (!['light', 'dark'].includes(out.settings.theme)) out.settings.theme = 'light';
+    return out;
+  }
+  function parseBackup(obj){
+    if (!obj || obj.app !== BACKUP_APP || !obj.state) throw new Error('В файле нет прогресса English Quest.');
+    const st = sanitizeState(obj.state);
+    return { state: st, exportedAt: obj.exportedAt, summary: stateSummary(st) };
+  }
+
+  function backupFileName(){ return `english-quest-progress-${dayKey()}.json`; }
+  function markBackedUp(){ state.settings.lastBackup = Date.now(); saveState(); }
+
+  function backupSectionHtml(){
+    const last = state.settings.lastBackup;
+    const hasUndo = (() => { try { return !!getLS()?.getItem(UNDO_KEY); } catch (e) { return false; } })();
+    const canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [new File(['{}'], 'x.json', { type: 'application/json' })] }));
+    return `
+      <p class="t-muted">Прогресс хранится только в этом браузере. Сохраните копию, чтобы не потерять его, перенести на другое устройство или отправить репетитору.</p>
+      <p class="t-muted">Последняя копия: <b>${last ? daysAgo(last) : 'ещё не делали'}</b></p>
+      <div class="controls">
+        <button class="btn" id="t-bk-file">💾 Сохранить в файл</button>
+        ${canShareFiles ? '<button class="btn secondary" id="t-bk-share">📤 Отправить</button>' : ''}
+        <button class="btn gold" id="t-bk-code">📋 Скопировать код</button>
+      </div>
+      <textarea class="t-report" id="t-bk-code-out" readonly hidden rows="3" aria-label="Код прогресса"></textarea>
+
+      <h4 class="t-h4">Загрузить прогресс</h4>
+      <div class="controls">
+        <label class="btn secondary t-file-btn">📂 Из файла<input type="file" id="t-bk-in" accept=".json,application/json,.txt" hidden /></label>
+      </div>
+      <textarea class="t-report" id="t-bk-paste" rows="3" placeholder="…или вставьте сюда код (начинается с EQ1.)" aria-label="Код прогресса для загрузки"></textarea>
+      <div class="controls"><button class="btn secondary" id="t-bk-paste-go">Загрузить код</button></div>
+      <div id="t-bk-preview"></div>
+      ${hasUndo ? '<p class="t-muted">Прогресс недавно заменили из копии. <button class="icon-btn" id="t-bk-undo">↩︎ Вернуть прежний</button></p>' : ''}`;
+  }
+  function daysAgo(t){
+    const d = Math.round((startOfDay(Date.now()) - startOfDay(t)) / DAY);
+    return d <= 0 ? 'сегодня' : d === 1 ? 'вчера' : `${d} дн. назад`;
+  }
+
+  function showImportPreview(parsed){
+    pendingImport = parsed;
+    const box = document.getElementById('t-bk-preview');
+    box.innerHTML = `
+      <div class="t-bk-card">
+        <p>${escapeHtml(summaryText(parsed.summary, parsed.exportedAt))}</p>
+        <div class="controls">
+          <button class="btn" id="t-bk-view">👀 Только посмотреть</button>
+          <button class="btn rose" id="t-bk-replace">♻️ Заменить прогресс на этом устройстве</button>
+          <button class="icon-btn" id="t-bk-cancel">Отмена</button>
+        </div>
+        <p class="t-muted">«Посмотреть» — для репетитора: откроется статистика из копии, здесь ничего не изменится.</p>
+      </div>`;
+    document.getElementById('t-bk-view').onclick = () => viewOtherState(parsed);
+    document.getElementById('t-bk-replace').onclick = () => {
+      if (!confirm('Заменить прогресс на этом устройстве прогрессом из копии? Текущий прогресс можно будет вернуть.')) return;
+      restoreState(parsed.state);
+    };
+    document.getElementById('t-bk-cancel').onclick = () => { pendingImport = null; box.innerHTML = ''; };
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function importError(e){
+    document.getElementById('t-bk-preview').innerHTML = `<p class="gate-err" role="alert">${escapeHtml(e.message || 'Не удалось прочитать копию.')}</p>`;
+  }
+
+  function restoreState(newState){
+    try { getLS()?.setItem(UNDO_KEY, JSON.stringify(state)); } catch (e) {}
+    state = newState;
+    applyLoadedState();
+    toast('♻️ Прогресс восстановлен из копии');
+    openTutorPanel();
+  }
+  function undoRestore(){
+    let prev = null;
+    try { prev = JSON.parse(getLS()?.getItem(UNDO_KEY) || 'null'); } catch (e) {}
+    if (!prev) return;
+    state = sanitizeState(prev);
+    try { getLS()?.removeItem(UNDO_KEY); } catch (e) {}
+    applyLoadedState();
+    toast('↩︎ Прежний прогресс возвращён');
+    openTutorPanel();
+  }
+  function applyLoadedState(){
+    saveState();
+    const theme = state.settings.theme || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('btn-theme').textContent = theme === 'light' ? '🌙' : '☀️';
+    renderHUD(); renderMap(); renderInventory(); renderMistakes(); renderHomework();
+  }
+
+  // Просмотр чужого прогресса: панель рисуется по копии, сохранение отключено.
+  function viewOtherState(parsed){
+    if (!realState) realState = state;
+    state = parsed.state;
+    state._viewMeta = parsed;
+    openTutorPanel();
+  }
+  function endView(){
+    if (!realState) return;
+    state = realState;
+    realState = null;
+  }
+
+  function wireBackupSection(){
+    document.getElementById('t-bk-file').onclick = () => {
+      const blob = new Blob([JSON.stringify(backupPayload(), null, 1)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = backupFileName();
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      markBackedUp();
+      toast('💾 Файл сохранён');
+    };
+    const share = document.getElementById('t-bk-share');
+    if (share) share.onclick = async () => {
+      const file = new File([JSON.stringify(backupPayload())], backupFileName(), { type: 'application/json' });
+      try { await navigator.share({ files: [file], title: 'English Quest — прогресс', text: summaryText(stateSummary(state), Date.now()) }); markBackedUp(); }
+      catch (e) { if (e.name !== 'AbortError') toast('Не получилось отправить — сохраните файл'); }
+    };
+    document.getElementById('t-bk-code').onclick = async () => {
+      const out = document.getElementById('t-bk-code-out');
+      out.value = await encodeCode(backupPayload());
+      out.hidden = false;
+      markBackedUp();
+      toast(await copyText(out.value, out) ? `📋 Код скопирован (${out.value.length} симв.)` : 'Скопируйте код из поля');
+    };
+    document.getElementById('t-bk-in').onchange = async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      try { showImportPreview(parseBackup(JSON.parse(await f.text()))); }
+      catch (err) { importError(err instanceof SyntaxError ? new Error('Файл повреждён или это не копия English Quest.') : err); }
+      e.target.value = '';
+    };
+    document.getElementById('t-bk-paste-go').onclick = async () => {
+      const code = document.getElementById('t-bk-paste').value.trim();
+      if (!code) return;
+      try { showImportPreview(parseBackup(await decodeCode(code))); }
+      catch (err) { importError(err instanceof SyntaxError ? new Error('Код повреждён — скопируйте его целиком.') : err); }
+    };
+    const undo = document.getElementById('t-bk-undo');
+    if (undo) undo.onclick = () => { if (confirm('Вернуть прогресс, который был до восстановления из копии?')) undoRestore(); };
+  }
 
   // ---------- КАРТА УРОКОВ ----------
   // Каждый класс — дорожка из 8 тем. После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -1603,6 +1826,7 @@
     setTimeout(() => { if (gen === modalGen && back.classList.contains('open')) fn(); }, ms);
   }
   function closeModal(){
+    endView();
     modalGen++;
     modal.onkeydown = null;
     back.classList.remove('open');
