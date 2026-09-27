@@ -5,7 +5,7 @@ import { reward } from './hud.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, closeModal, openModal, toast } from './ui.js';
-import { DAY, daysLabel, escapeHtml, shuffle, startOfDay } from './util.js';
+import { DAY, daysLabel, distractors, escapeHtml, shuffle, startOfDay } from './util.js';
 
 // ---------- МОИ ОШИБКИ (интервальное повторение) ----------
 // Каждая ошибка — карточка в «коробке» 0..3. Верный ответ при повторении двигает её дальше,
@@ -144,7 +144,7 @@ export function startReview(){
     const { m, data } = entry;
     let body, options, answer, sayOnAnswer;
     if (m.type === 'word'){
-      const pool = shuffle(data.lesson.words.filter(x => x.en !== data.word.en)).slice(0, 3);
+      const pool = distractors(data.word, data.lesson.words, 3);
       options = shuffle([data.word.en, ...pool.map(x => x.en)]);
       answer = data.word.en;
       sayOnAnswer = data.word.en;

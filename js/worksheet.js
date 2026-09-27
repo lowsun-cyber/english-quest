@@ -3,7 +3,7 @@ import { LESSONS } from './eq.js';
 import { mistakeEntries } from './mistakes.js';
 import { activeProfile, realState, state } from './state.js';
 import { multi } from './profiles.js';
-import { escapeHtml, shuffle } from './util.js';
+import { escapeHtml, shuffle, uniqueByEmoji } from './util.js';
 
 // Столько помещается на одну страницу А4 вместе со всеми тремя заданиями
 const MAX_WORDS = 10;
@@ -63,8 +63,7 @@ export function worksheetHtml({ source, lessonId, withHint, withMatch, withKey }
   const { title, words, grammar } = collect(source, lessonId);
   if (!words.length) return null;
   // в «Соедини» картинки не должны повторяться (🧸 — и toy, и teddy bear)
-  const seen = new Set();
-  const match = withMatch ? shuffle(words).filter(w => !seen.has(w.emoji) && seen.add(w.emoji)).slice(0, MAX_MATCH) : [];
+  const match = withMatch ? uniqueByEmoji(shuffle(words)).slice(0, MAX_MATCH) : [];
   const matchRight = shuffle(match);
   const letters = 'АБВГДЕЖЗ';
   const d = new Date();

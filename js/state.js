@@ -34,17 +34,26 @@ export let idbReady = false;
 export function getLS(){ try { return window['local' + 'Storage']; } catch(e){ return null; } }
 export function getIDB(){ try { return window['index' + 'edDB']; } catch(e){ return null; } }
 
+// Одно подключение на всё приложение. Если IndexedDB не отвечает (бывает в приватных окнах
+// и редко — просто так), через IDB_TIMEOUT считаем, что её нет: запуск не должен зависать.
+const IDB_TIMEOUT = 1500;
+let _idb = null;
 export function openIDB(){
-  return new Promise((resolve, reject) => {
+  if (_idb) return _idb;
+  _idb = new Promise((resolve, reject) => {
     const idb = getIDB();
     if (!idb) return reject('no-idb');
+    const timer = setTimeout(() => reject('idb-timeout'), IDB_TIMEOUT);
     try {
       const req = idb.open(IDB_NAME, 1);
       req.onupgradeneeded = () => { req.result.createObjectStore(IDB_STORE); };
-      req.onsuccess = () => { idbReady = true; resolve(req.result); };
-      req.onerror = () => reject(req.error);
-    } catch(e){ reject(e); }
+      req.onsuccess = () => { clearTimeout(timer); idbReady = true; resolve(req.result); };
+      req.onerror = () => { clearTimeout(timer); reject(req.error); };
+      req.onblocked = () => { clearTimeout(timer); reject('idb-blocked'); };
+    } catch(e){ clearTimeout(timer); reject(e); }
   });
+  _idb.catch(() => { _idb = null; }); // в следующий раз попробуем снова
+  return _idb;
 }
 
 // ---------- УЧЕНИКИ НА УСТРОЙСТВЕ ----------
@@ -64,9 +73,10 @@ const memory = {};   // запасное хранилище в памяти, е�
 async function idbGet(key){
   const db = await openIDB();
   return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(null), IDB_TIMEOUT);
     const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
-    req.onsuccess = () => resolve(req.result ?? null);
-    req.onerror = () => resolve(null);
+    req.onsuccess = () => { clearTimeout(timer); resolve(req.result ?? null); };
+    req.onerror = () => { clearTimeout(timer); resolve(null); };
   });
 }
 async function idbPut(key, value){

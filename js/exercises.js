@@ -8,7 +8,7 @@ import { recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, back, closeModal, modal, openModal, showGuide, toast } from './ui.js';
-import { escapeHtml, shuffle } from './util.js';
+import { distractors, escapeHtml, hasEmojiTwin, shuffle, uniqueByEmoji } from './util.js';
 
 // === Карточки: слово за словом, потом все слова сеткой ===
 export function exCards(lesson, guide){
@@ -246,12 +246,13 @@ export function exVocab(lesson, guide){
       return;
     }
     const w = list[idx];
-    const opts = shuffle([w, ...shuffle(lesson.words.filter(x => x.en !== w.en)).slice(0,3)]);
+    const opts = shuffle([w, ...distractors(w, lesson.words, 3)]);
     openModal(`
       ${lessonHeader(lesson, guide)}
       <div class="question">
         <span class="q-emoji">${w.emoji}</span>
         <div class="q-text pixel">Как по-английски?</div>
+        ${hasEmojiTwin(w, lesson.words) ? `<div class="review-hint">${escapeHtml(w.ru)}</div>` : ''}
         <div class="options">
           ${opts.map(o => `<button class="opt" data-en="${o.en}">${o.en}</button>`).join('')}
         </div>
@@ -305,7 +306,7 @@ export function exListen(lesson, guide){
       return;
     }
     const w = list[idx];
-    const opts = shuffle([w, ...shuffle(lesson.words.filter(x => x.en !== w.en)).slice(0,3)]);
+    const opts = shuffle([w, ...distractors(w, lesson.words, 3)]);
     openModal(`
       ${lessonHeader(lesson, guide)}
       <div class="question">
@@ -343,7 +344,7 @@ export function exListen(lesson, guide){
 
 // === Match: two columns (word ↔ emoji) ===
 export function exMatch(lesson, guide){
-  const pairs = shuffle(lesson.words).slice(0, 6);
+  const pairs = uniqueByEmoji(shuffle(lesson.words)).slice(0, 6);
   const left = shuffle(pairs.map(p => ({key:p.en, label:p.en, kind:'en'})));
   const right = shuffle(pairs.map(p => ({key:p.en, label:p.emoji, kind:'em'})));
   let selL = null, selR = null, doneCount = 0;

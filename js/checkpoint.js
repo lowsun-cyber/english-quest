@@ -6,7 +6,7 @@ import { recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, closeModal, confetti, openModal } from './ui.js';
-import { escapeHtml, shuffle } from './util.js';
+import { distractors, escapeHtml, hasEmojiTwin, shuffle } from './util.js';
 
 // === Проверка после части: 10 вопросов по 4 темам ===
 export function startCheckpoint(cp){
@@ -30,11 +30,11 @@ export function startCheckpoint(cp){
     if (idx >= queue.length) return finish();
     const item = queue[idx];
     let body, options, answer, say;
-    const others = n => shuffle(words.filter(x => x.w.en !== item.w?.en)).slice(0, n);
+    const others = n => distractors(item.w, words.map(x => x.w), n).map(w => ({ w }));
     if (item.type === 'word'){
       options = shuffle([item.w.en, ...others(3).map(x => x.w.en)]);
       answer = item.w.en; say = item.w.en;
-      body = `<span class="q-emoji">${item.w.emoji}</span><div class="q-text pixel">Как по-английски?</div>`;
+      body = `<span class="q-emoji">${item.w.emoji}</span><div class="q-text pixel">Как по-английски?</div>${hasEmojiTwin(item.w, words.map(x => x.w)) ? `<div class="review-hint">${escapeHtml(item.w.ru)}</div>` : ''}`;
     } else if (item.type === 'listen'){
       options = shuffle([item.w, ...others(3).map(x => x.w)]);
       answer = item.w.en;

@@ -48,3 +48,15 @@ export async function copyText(text, input){
 }
 
 export const WEEKDAYS = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+
+// В контенте бывают слова с одной картинкой (👋 hello/goodbye, 📅 Monday/Friday/Sunday).
+// Для вопросов «по картинке» такие слова не должны оказаться вариантами одновременно.
+export function distractors(target, words, n){
+  return shuffle(words.filter(w => w.en !== target.en && w.emoji !== target.emoji))
+    .filter((w, i, arr) => arr.findIndex(x => x.emoji === w.emoji) === i)
+    .slice(0, n);
+}
+// Есть ли у слова «близнец» по картинке — тогда рядом с картинкой нужен перевод
+export function hasEmojiTwin(word, words){ return words.some(w => w.en !== word.en && w.emoji === word.emoji); }
+// Слова с разными картинками (для «Соедини», «Пары»)
+export function uniqueByEmoji(words){ const seen = new Set(); return words.filter(w => !seen.has(w.emoji) && seen.add(w.emoji)); }

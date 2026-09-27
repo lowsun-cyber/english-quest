@@ -30,7 +30,16 @@ async function js(body){
   if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description?.split('\n')[0] || r.exceptionDetails.text);
   return r.result.value;
 }
-async function load(url = APP){ await send('Page.navigate', { url }); await sleep(1800); await js(STUBS); }
+async function load(url = APP){
+  await send('Page.navigate', { url });
+  // ждём, пока приложение действительно запустится (карта нарисована), а не фиксированное время
+  for (let t = 0; t < 50; t++){
+    await sleep(200);
+    try { if (await js(`return !!(window.EQ && document.querySelectorAll('.map-node').length)`)) break; } catch (e) {}
+  }
+  await sleep(300);
+  await js(STUBS);
+}
 
 // Звук в тесте выключен; запоминаем, что «сказали», чтобы отвечать на задания на слух.
 const STUBS = `
@@ -47,6 +56,8 @@ const STUBS = `
     document.getElementById('gate-form').requestSubmit(); await __sleep(300); };
   window.__ls = () => JSON.parse(localStorage.getItem('english_quest_v2') || 'null');
   window.__close = () => document.getElementById('modal-close').click();
+  // ответ «по картинке»: слово с этой картинкой, которое есть среди вариантов (у некоторых слов картинки совпадают)
+  window.__byEmoji = (words, emoji) => { const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.en || o.dataset.o); return words.filter(w => w.emoji === emoji).map(w => w.en).find(e => opts.includes(e)); };
   return true;`;
 
 const results = [];
@@ -99,7 +110,7 @@ try {
   await test('слова: 2 ошибки и 4 верных', () => js(`
     const L = window.EQ.LESSONS[0];
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
-    for (let i = 0; i < 6; i++){ const q = document.querySelector('.q-emoji'); const ans = L.words.find(w => w.emoji === q.textContent).en;
+    for (let i = 0; i < 6; i++){ const q = document.querySelector('.q-emoji'); const ans = __byEmoji(L.words, q.textContent);
       [...document.querySelectorAll('.opt')].find(o => i < 2 ? o.dataset.en !== ans : o.dataset.en === ans).click(); await __sleep(i < 2 ? 1600 : 1000); }
     const st = __ls(); __close();
     if (Object.keys(st.mistakes).length !== 2) throw new Error('ошибок: ' + Object.keys(st.mistakes).length);
@@ -121,7 +132,7 @@ try {
     if (!document.getElementById('next-spell')) throw new Error('нет перехода к «Напиши»');
     document.getElementById('next-spell').click(); await __sleep(300);
     const L = window.EQ.LESSONS[0], M = document.getElementById('modal');
-    const w = L.words.find(w => w.emoji === document.querySelector('.q-emoji').textContent).en;
+    const w = L.words.find(w => w.ru === document.querySelector('.review-hint').textContent).en;
     for (const c of w.replace(/[^a-z]/g, '')) M.dispatchEvent(new KeyboardEvent('keydown', { key: c, bubbles: true }));
     await __sleep(100);
     if (!document.querySelector('.slot-l.ok')) throw new Error('слово ' + w + ' не принято');
@@ -150,7 +161,7 @@ try {
     if (!/2\\s*ждут повторения/.test(before)) throw new Error(before.slice(0, 60));
     document.getElementById('btn-review').click(); await __sleep(300);
     const words = window.EQ.LESSONS[0].words;
-    for (let i = 0; i < 2; i++){ const ans = words.find(w => w.emoji === document.querySelector('.q-emoji').textContent).en;
+    for (let i = 0; i < 2; i++){ const ans = __byEmoji(words, document.querySelector('.q-emoji').textContent);
       [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans).click(); await __sleep(1100); }
     const txt = document.querySelector('.modal .question').innerText; __close(); await __sleep(100);
     if (!/Верно: 2 из 2/.test(txt)) throw new Error(txt);
@@ -167,9 +178,11 @@ try {
       const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.o); let ans;
       const em = document.querySelector('.q-emoji'), s = document.querySelector('.q-sentence');
       if (em) ans = words.filter(w => w.emoji === em.textContent).map(w => w.en).find(e => opts.includes(e));
-      else if (s) ans = gram.find(g => g.q === s.textContent).a;
+      else if (s) ans = gram.filter(g => g.q === s.textContent).map(g => g.a).find(a => opts.includes(a));
       else ans = opts.find(o => o.toLowerCase() === String(__said).toLowerCase());
-      [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans).click(); await __sleep(1300); }
+      const btn = [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans);
+      if (!btn) throw new Error('вопрос ' + (i + 1) + ' (' + (em ? 'слово ' + em.textContent : s ? 'грамматика «' + s.textContent + '»' : 'на слух, прозвучало «' + __said + '»') + '): не нашёл ответ среди ' + opts.join('/'));
+      btn.click(); await __sleep(1300); }
     const res = document.querySelector('.checkpoint-result')?.innerText || ''; document.getElementById('cp-close').click(); await __sleep(200);
     if (!/Проверка сдана/.test(res)) throw new Error(res.slice(0, 80));
     if (!__ls().inventory['trophy:g2-p1']) throw new Error('нет 💎 в инвентаре');
@@ -183,7 +196,7 @@ try {
       if (document.querySelector('#homework b')) throw new Error('HTML из ссылки не экранирован');
       const L = window.EQ.LESSONS.find(l => l.id === 'g2-hello');
       document.querySelector('.hw-task').click(); await __sleep(300);
-      const ans = L.words.find(w => w.emoji === document.querySelector('.q-emoji').textContent).en;
+      const ans = __byEmoji(L.words, document.querySelector('.q-emoji').textContent);
       [...document.querySelectorAll('.opt')].find(o => o.dataset.en === ans).click(); await __sleep(300); __close(); await __sleep(200);
       if (!/Задание выполнено/.test(document.getElementById('homework').innerText)) throw new Error('не выполнено');
       return 'пришло, выполнено';`);
@@ -312,7 +325,7 @@ try {
     if (f('stat-xp').textContent !== '0') throw new Error('у нового ученика XP ' + f('stat-xp').textContent);
     const L = window.EQ.LESSONS[0];
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
-    const ans = L.words.find(w => w.emoji === document.querySelector('.q-emoji').textContent).en;
+    const ans = __byEmoji(L.words, document.querySelector('.q-emoji').textContent);
     [...document.querySelectorAll('.opt')].find(o => o.dataset.en === ans).click(); await __sleep(300); __close(); await __sleep(200);
     const mashaXp = +f('stat-xp').textContent; if (!mashaXp) throw new Error('Маша не получила XP');
     f('btn-profile').click(); await __sleep(400);
