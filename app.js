@@ -9,10 +9,14 @@
     xp: 0, gold: 0, hearts: 5, streak: 0,
     inventory: {},   // { en: count }
     lessonProgress: {}, // { lessonId: { vocab: n, reading: 0/1, grammar: n, listen: n, speak: n, match: n } }
+    mistakes: {},    // { 'type:lessonId:ref': { type, lessonId, ref, box, due, wrong, last } } — см. «Мои ошибки»
+    mastered: 0,     // сколько ошибок выучено до конца
     settings: { theme: 'light', speechRate: 0.9 },
     version: 2,
   };
   let state = null;
+  // Глубокая копия: иначе вложенные объекты (inventory, mistakes) общие с DEFAULT_STATE и переживают сброс
+  function freshState(){ return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
 
   // ---------- SAVE / LOAD (browser storage + IDB fallback + in-memory) ----------
   // NOTE: preview iframe blocks web storage APIs. All calls go through window[...]
@@ -45,7 +49,7 @@
       const ls = getLS();
       if (ls) {
         const raw = ls.getItem(STORE_KEY);
-        if (raw) return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+        if (raw) return { ...freshState(), ...JSON.parse(raw) };
       }
     } catch(e){}
     // 2) try IDB
@@ -54,13 +58,13 @@
       return await new Promise((resolve) => {
         const tx = db.transaction(IDB_STORE, 'readonly');
         const req = tx.objectStore(IDB_STORE).get('state');
-        req.onsuccess = () => resolve(req.result ? { ...DEFAULT_STATE, ...req.result } : { ...DEFAULT_STATE });
-        req.onerror = () => resolve({ ...DEFAULT_STATE });
+        req.onsuccess = () => resolve(req.result ? { ...freshState(), ...req.result } : freshState());
+        req.onerror = () => resolve(freshState());
       });
     } catch(e){}
     // 3) in-memory
-    if (memoryStore) return { ...DEFAULT_STATE, ...memoryStore };
-    return { ...DEFAULT_STATE };
+    if (memoryStore) return { ...freshState(), ...memoryStore };
+    return freshState();
   }
 
   async function saveState(){
@@ -281,6 +285,228 @@
   }
 
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // ---------- МОИ ОШИБКИ (интервальное повторение) ----------
+  // Каждая ошибка — карточка в «коробке» 0..3. Верный ответ при повторении двигает её дальше,
+  // и она возвращается через 1, 3 и 7 дней. После верного ответа в последней коробке — выучено.
+  // Неверный ответ возвращает карточку в коробку 0 (можно повторять сразу).
+  const REVIEW_INTERVALS = [0, 1, 3, 7]; // дней до повторения для коробки 0..3
+  const REVIEW_SESSION_SIZE = 10;
+  const DAY = 86400000;
+
+  function startOfDay(t){ const d = new Date(t); d.setHours(0,0,0,0); return d.getTime(); }
+  function dueFor(box){ return box === 0 ? Date.now() : startOfDay(Date.now()) + REVIEW_INTERVALS[box] * DAY; }
+
+  function recordMistake(type, lesson, ref){
+    const key = `${type}:${lesson.id}:${ref}`;
+    const m = state.mistakes[key] || { type, lessonId: lesson.id, ref, wrong: 0 };
+    m.box = 0;
+    m.due = dueFor(0);
+    m.wrong += 1;
+    m.last = Date.now();
+    state.mistakes[key] = m;
+    saveState();
+    renderMistakes();
+  }
+
+  // Достаём из контента всё, что нужно для показа карточки. null — если урок/слово удалены.
+  function resolveMistake(m){
+    const lesson = LESSONS.find(l => l.id === m.lessonId);
+    if (!lesson) return null;
+    if (m.type === 'word'){
+      const w = lesson.words.find(w => w.en === m.ref);
+      return w ? { lesson, word: w } : null;
+    }
+    if (m.type === 'grammar'){
+      const q = lesson.grammar.find(q => q.q === m.ref);
+      return q ? { lesson, q } : null;
+    }
+    if (m.type === 'reading'){
+      const q = lesson.reading?.questions.find(q => q.q === m.ref);
+      return q ? { lesson, q, reading: lesson.reading } : null;
+    }
+    return null;
+  }
+
+  function mistakeEntries(){
+    return Object.entries(state.mistakes)
+      .map(([key, m]) => ({ key, m, data: resolveMistake(m) }))
+      .filter(x => x.data);
+  }
+
+  function daysLabel(due){
+    const d = Math.round((startOfDay(due) - startOfDay(Date.now())) / DAY);
+    if (d <= 0) return 'сегодня';
+    if (d === 1) return 'завтра';
+    const n = d % 10, nn = d % 100;
+    const word = (n === 1 && nn !== 11) ? 'день' : (n >= 2 && n <= 4 && (nn < 12 || nn > 14)) ? 'дня' : 'дней';
+    return `через ${d} ${word}`;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderMistakes(){
+    const wrap = document.getElementById('mistakes');
+    if (!wrap) return;
+    const all = mistakeEntries();
+    const now = Date.now();
+    const due = all.filter(x => x.m.due <= now);
+    const later = all.filter(x => x.m.due > now).sort((a,b) => a.m.due - b.m.due);
+    const mastered = state.mastered || 0;
+
+    if (!all.length){
+      wrap.innerHTML = `
+        <div class="review-empty">
+          <span class="review-empty-icon" aria-hidden="true">🛡️</span>
+          <div>
+            <strong>Ошибок пока нет</strong>
+            <p>Если где-то ошибёшься, слово появится здесь — и мы повторим его, пока не запомнится.${mastered ? ` Уже выучено после ошибок: <b>${mastered}</b>.` : ''}</p>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const item = ({ m, data }) => {
+      const pips = [1,2,3].map(i => `<span class="pip${m.box >= i ? ' on' : ''}"></span>`).join('');
+      const when = m.due <= now ? '<span class="when now">повторить</span>' : `<span class="when">${daysLabel(m.due)}</span>`;
+      let main;
+      if (m.type === 'word'){
+        main = `<span class="mi-em" aria-hidden="true">${data.word.emoji}</span><span class="mi-text"><span class="mi-en">${escapeHtml(data.word.en)}</span><span class="mi-ru">${escapeHtml(data.word.ru)}</span></span>`;
+      } else {
+        const label = m.type === 'grammar' ? 'Грамматика' : 'Чтение';
+        main = `<span class="mi-em" aria-hidden="true">${m.type === 'grammar' ? '🧩' : '📖'}</span><span class="mi-text"><span class="mi-en mi-sentence">${escapeHtml(data.q.q)}</span><span class="mi-ru">${label} · ${escapeHtml(data.lesson.title)}</span></span>`;
+      }
+      return `<li class="mistake-item">${main}<span class="mi-meta"><span class="pips" title="Верных повторений: ${m.box} из 3" aria-label="Верных повторений: ${m.box} из 3">${pips}</span>${when}</span></li>`;
+    };
+
+    const nextLabel = later.length ? daysLabel(later[0].m.due) : null;
+    wrap.innerHTML = `
+      <div class="review-panel">
+        <div class="review-summary">
+          <div class="review-count">
+            <span class="big">${due.length}</span>
+            <span>${due.length ? 'ждут повторения сейчас' : 'на сегодня всё повторено'}</span>
+          </div>
+          <div class="review-stats">
+            <span>Всего в списке: <b>${all.length}</b></span>
+            ${mastered ? `<span>Выучено после ошибок: <b>${mastered}</b></span>` : ''}
+            ${!due.length && nextLabel ? `<span>Следующее повторение: <b>${nextLabel}</b></span>` : ''}
+          </div>
+          <button class="btn" id="btn-review" ${due.length ? '' : 'disabled'}>🔁 Повторить${due.length ? ` (${Math.min(due.length, REVIEW_SESSION_SIZE)})` : ''}</button>
+        </div>
+        <ul class="mistake-list" role="list">
+          ${[...due, ...later].map(item).join('')}
+        </ul>
+      </div>`;
+    const btn = document.getElementById('btn-review');
+    if (btn && due.length) btn.onclick = startReview;
+  }
+
+  function startReview(){
+    const now = Date.now();
+    const queue = shuffle(mistakeEntries().filter(x => x.m.due <= now)).slice(0, REVIEW_SESSION_SIZE);
+    if (!queue.length) return;
+    let idx = 0, right = 0;
+    const header = `
+      <h2>Мои ошибки</h2>
+      <div class="lead">Повторяем то, что было трудно. Сердечки здесь не тратятся.</div>`;
+    const progress = () => `<div class="review-progress" aria-label="Вопрос ${idx+1} из ${queue.length}"><span style="width:${Math.round(idx*100/queue.length)}%"></span></div>`;
+
+    render();
+    function render(){
+      if (idx >= queue.length){
+        const newlyMastered = queue.filter(x => x.result === 'mastered').length;
+        openModal(`
+          ${header}
+          <div class="question">
+            <h3>Повторение завершено!</h3>
+            <p>Верно: <b>${right}</b> из ${queue.length}.${newlyMastered ? ` Выучено насовсем: <b>${newlyMastered}</b> 🎉` : ''}</p>
+            ${right < queue.length ? '<p>Слова с ошибками вернутся в список — повторим ещё раз.</p>' : ''}
+          </div>
+          <div class="controls"><button class="btn" id="review-close">Готово</button></div>
+        `);
+        document.getElementById('review-close').onclick = closeModal;
+        renderMistakes();
+        return;
+      }
+      const entry = queue[idx];
+      const { m, data } = entry;
+      let body, options, answer, sayOnAnswer;
+      if (m.type === 'word'){
+        const pool = shuffle(data.lesson.words.filter(x => x.en !== data.word.en)).slice(0, 3);
+        options = shuffle([data.word.en, ...pool.map(x => x.en)]);
+        answer = data.word.en;
+        sayOnAnswer = data.word.en;
+        body = `
+          <span class="q-emoji">${data.word.emoji}</span>
+          <div class="q-text pixel">Как по-английски?</div>
+          <div class="review-hint">${escapeHtml(data.word.ru)}</div>`;
+      } else if (m.type === 'grammar'){
+        options = shuffle(data.q.options);
+        answer = data.q.a;
+        sayOnAnswer = data.q.q.replace('___', data.q.a);
+        body = `
+          <div class="q-text pixel">Выбери правильный вариант</div>
+          <div class="q-text review-sentence">${escapeHtml(data.q.q)}</div>
+          <div class="review-hint">💡 ${escapeHtml(data.q.hint)}</div>`;
+      } else {
+        options = shuffle(data.q.options);
+        answer = data.q.a;
+        body = `
+          <p class="review-passage">${escapeHtml(data.reading.text)}</p>
+          <div class="q-text review-sentence">${escapeHtml(data.q.q)}</div>`;
+      }
+      openModal(`
+        ${header}
+        ${progress()}
+        <div class="question">
+          ${body}
+          <div class="options">
+            ${options.map(o => `<button class="opt" data-o="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join('')}
+          </div>
+        </div>
+        ${m.type === 'word' ? '<div class="controls"><button class="btn secondary" id="hear">🔊 Услышать</button></div>' : ''}
+      `);
+      const hear = document.getElementById('hear');
+      if (hear) hear.onclick = () => speak(data.word.en);
+
+      document.querySelectorAll('.opt').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.opt').forEach(b => b.disabled = true);
+          const ok = btn.dataset.o === answer;
+          const stored = state.mistakes[entry.key];
+          if (ok){
+            btn.classList.add('correct');
+            right++;
+            if (stored.box >= 3){
+              delete state.mistakes[entry.key];
+              state.mastered = (state.mastered || 0) + 1;
+              entry.result = 'mastered';
+              toast('🎉 Выучено!');
+            } else {
+              stored.box += 1;
+              stored.due = dueFor(stored.box);
+              toast(`✅ Повторим ${daysLabel(stored.due)}`);
+            }
+            reward(8, 2); // reward() сохраняет состояние и обновляет HUD
+          } else {
+            btn.classList.add('wrong');
+            document.querySelector(`.opt[data-o="${CSS.escape(answer)}"]`)?.classList.add('correct');
+            stored.box = 0;
+            stored.due = dueFor(0);
+            stored.wrong += 1;
+            stored.last = Date.now();
+            toast(`Правильно: ${answer}`);
+            saveState();
+          }
+          if (sayOnAnswer) speak(sayOnAnswer);
+          setTimeout(() => { idx++; render(); }, ok ? 900 : 1600);
+        };
+      });
+    }
+  }
 
   // ---------- GUIDE BUBBLE ----------
   let guideTimer = null;
@@ -589,7 +815,7 @@
         </div>
       `);
       document.getElementById('hear').onclick = () => speak(w.en);
-      document.getElementById('skip').onclick = () => { idx++; render(); };
+      document.getElementById('skip').onclick = () => { recordMistake('word', lesson, w.en); idx++; render(); };
       document.querySelectorAll('.opt').forEach(btn => {
         btn.onclick = () => {
           if (btn.dataset.en === w.en){
@@ -603,6 +829,7 @@
             btn.classList.add('wrong');
             document.querySelector(`.opt[data-en="${w.en}"]`)?.classList.add('correct');
             speak(w.en);
+            recordMistake('word', lesson, w.en);
             penalty();
             toast(`Правильно: ${w.en}`);
             setTimeout(() => { idx++; render(); }, 1400);
@@ -657,6 +884,7 @@
           } else {
             btn.classList.add('wrong');
             document.querySelector(`.opt[data-en="${w.en}"]`)?.classList.add('correct');
+            recordMistake('word', lesson, w.en);
             penalty();
             setTimeout(() => { idx++; render(); }, 1200);
           }
@@ -711,6 +939,9 @@
             }
           } else {
             selL.classList.add('wrong'); selR.classList.add('wrong');
+            // перепутаны оба слова: и то, что выбрали слева, и то, чья картинка справа
+            recordMistake('word', lesson, selL.dataset.k);
+            recordMistake('word', lesson, selR.dataset.k);
             penalty();
             const l = selL, r = selR;
             setTimeout(() => {
@@ -765,6 +996,7 @@
           } else {
             btn.classList.add('wrong');
             document.querySelector(`.opt[data-o="${q.a}"]`)?.classList.add('correct');
+            recordMistake('grammar', lesson, q.q);
             penalty();
             setTimeout(() => { idx++; render(); }, 1400);
           }
@@ -825,6 +1057,7 @@
           } else {
             btn.classList.add('wrong');
             document.querySelector(`.opt[data-o="${q.a}"]`)?.classList.add('correct');
+            recordMistake('reading', lesson, q.q);
             penalty();
             setTimeout(() => { idx++; renderQ(); }, 1200);
           }
@@ -944,9 +1177,9 @@
   // ---------- RESET ----------
   document.getElementById('btn-reset').onclick = () => {
     if (!confirm('Сбросить весь прогресс?')) return;
-    state = { ...DEFAULT_STATE };
+    state = freshState();
     saveState();
-    renderHUD(); renderInventory(); renderLessons();
+    renderHUD(); renderInventory(); renderLessons(); renderMistakes();
     toast('Прогресс сброшен');
   };
 
@@ -964,6 +1197,7 @@
     renderTeam();
     renderLessons();
     renderInventory();
+    renderMistakes();
     // welcome from Harlow
     setTimeout(() => {
       showGuide('Dr. Harlow', pick(HARLOW_LINES.welcome), CHARACTERS.harlow);
