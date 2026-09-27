@@ -14,6 +14,7 @@
     activity: {},    // { 'YYYY-MM-DD': { sec, ok, bad } } — для режима репетитора
     lessonWrong: {}, // { lessonId: число ошибок за всё время }
     homework: null,  // текущее домашнее задание, см. makeHomework()
+    checkpoints: {}, // { 'g2-p1': { best, passedAt } } — проверки после каждых 4 тем
     settings: { theme: 'light', speechRate: 0.9 },
     version: 2,
   };
@@ -143,69 +144,13 @@
     });
   }
 
-  // ---------- LESSONS ----------
-  let currentGrade = 'all';
-  function renderLessons(){
-    const wrap = document.getElementById('lessons');
-    wrap.innerHTML = '';
-    const list = currentGrade === 'all' ? LESSONS : LESSONS.filter(l => l.grade === +currentGrade);
-    list.forEach(l => {
-      const p = state.lessonProgress[l.id] || {};
-      const total = 5;
-      const doneN = (p.vocab? 1:0) + (p.listen? 1:0) + (p.grammar? 1:0) + (p.reading? 1:0) + (p.match? 1:0);
-      const pct = Math.round(doneN * 100 / total);
-      const guide = CHARACTERS[l.guide] || CHARACTERS.harlow;
-      const iconEm = l.words[0]?.emoji || '📘';
-      const card = document.createElement('div');
-      card.className = 'lesson-card';
-      card.innerHTML = `
-        <span class="badge-grade">${l.grade} кл</span>
-        <span class="lesson-icon">${iconEm}</span>
-        <div class="title">${l.title}</div>
-        <div class="subtitle">${l.subtitle} · ${guide.emoji} ${guide.name}</div>
-        <div class="completion"><span style="width:${pct}%"></span></div>
-        <div class="actions">
-          <button class="mini" data-ex="vocab">📚 Слова</button>
-          <button class="mini" data-ex="listen">🎧 Слушай</button>
-          <button class="mini" data-ex="match">🎯 Пара</button>
-          <button class="mini" data-ex="grammar">🧩 Грам.</button>
-          <button class="mini" data-ex="reading">📖 Читать</button>
-          <button class="mini" data-ex="speak">🎤 Говори</button>
-        </div>
-      `;
-      card.querySelectorAll('.mini').forEach(b => {
-        b.addEventListener('click', (e) => {
-          e.stopPropagation();
-          startExercise(l, b.dataset.ex);
-        });
-      });
-      card.tabIndex = 0;
-      card.setAttribute('aria-label', `${l.title} — открыть урок`);
-      card.addEventListener('click', () => startExercise(l, 'vocab'));
-      card.addEventListener('keydown', (e) => {
-        if (e.target === card && (e.key === 'Enter' || e.key === ' ')){
-          e.preventDefault();
-          startExercise(l, 'vocab');
-        }
-      });
-      wrap.appendChild(card);
-    });
-  }
-
-  document.querySelectorAll('#grade-tabs .tab').forEach(t => {
-    t.addEventListener('click', () => {
-      document.querySelectorAll('#grade-tabs .tab').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      currentGrade = t.dataset.grade;
-      renderLessons();
-    });
-  });
-
   // ---------- INVENTORY ----------
   function renderInventory(){
     const inv = document.getElementById('inv');
     inv.innerHTML = '';
-    const items = Object.entries(state.inventory).slice(0, 48);
+    const items = Object.entries(state.inventory)
+      .sort(([a], [b]) => (b.startsWith('trophy:') ? 1 : 0) - (a.startsWith('trophy:') ? 1 : 0))
+      .slice(0, 48);
     const totalSlots = Math.max(24, Math.ceil((items.length + 4) / 8) * 8);
     for (let i=0;i<totalSlots;i++){
       const slot = document.createElement('div');
@@ -218,8 +163,15 @@
           const w = l.words.find(w => w.en === word);
           if (w){ em = w.emoji; break; }
         }
+        let label = word;
+        if (word.startsWith('trophy:')){
+          const cp = CHECKPOINTS.find(c => `trophy:${c.id}` === word);
+          em = cp ? cp.emoji : '🏆';
+          label = cp ? cp.title : 'Награда';
+          slot.classList.add('trophy');
+        }
         slot.innerHTML = `${em}<span class="count">${count}</span>`;
-        slot.title = `${word}: ${count}`;
+        slot.title = `${label}: ${count}`;
       } else {
         slot.classList.add('empty');
       }
@@ -546,7 +498,7 @@
   }, ACTIVITY_TICK * 1000);
 
   // ---------- ДОМАШНЕЕ ЗАДАНИЕ ----------
-  const EX_NAMES = { vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори' };
+  const EX_NAMES = { cards: '🃏 Карточки', vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', spell: '✍️ Напиши', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори' };
   const EX_ORDER = Object.keys(EX_NAMES);
 
   function parseDay(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d).getTime(); }
@@ -695,7 +647,7 @@
     const active = days.filter(d => d.sec > 0 || d.ok + d.bad > 0).length;
     const lessons = LESSONS.map(l => {
       const p = state.lessonProgress[l.id] || {};
-      return { l, parts: EX_ORDER.filter(ex => p[ex]).length, wrong: state.lessonWrong[l.id] || 0 };
+      return { l, parts: PARTS.filter(ex => p[ex]).length, wrong: state.lessonWrong[l.id] || 0 };
     });
     const hard = mistakeEntries().sort((a, b) => b.m.wrong - a.m.wrong);
     return { days, min: sec > 0 && sec < 60 ? '<1' : Math.round(sec / 60), ok, bad, total: ok + bad, pct: ok + bad ? Math.round(ok * 100 / (ok + bad)) : null, active, lessons, hard };
@@ -735,12 +687,14 @@
     lines.push(`За 7 дней: ${s.min} мин, занятия в ${s.active} из 7 дней`);
     lines.push(s.total ? `Ответов: ${s.total}, верных ${s.pct}%` : 'Ответов за неделю нет');
     const started = s.lessons.filter(x => x.parts > 0);
-    if (started.length) lines.push(`Темы в работе: ${started.map(x => `${x.l.title} (${x.parts}/6)`).join(', ')}`);
+    if (started.length) lines.push(`Темы в работе: ${started.map(x => `${x.l.title} (${x.parts}/${PARTS.length})`).join(', ')}`);
     const worst = s.lessons.filter(x => x.wrong > 0).sort((a,b) => b.wrong - a.wrong).slice(0, 3);
     if (worst.length) lines.push(`Больше всего ошибок: ${worst.map(x => `${x.l.title} (${x.wrong})`).join(', ')}`);
     const words = s.hard.filter(x => x.m.type === 'word').slice(0, 8).map(x => x.data.word.en);
     if (words.length) lines.push(`Трудные слова: ${words.join(', ')}`);
     if (state.mastered) lines.push(`Выучено после ошибок: ${state.mastered}`);
+    const cpsDone = CHECKPOINTS.filter(cp => state.checkpoints[cp.id]?.passedAt);
+    if (cpsDone.length) lines.push(`Сданы проверки: ${cpsDone.map(cp => `${cp.grade} кл. ч.${cp.part} (${state.checkpoints[cp.id].best}/${CHECKPOINT_SIZE})`).join(', ')}`);
     const hw = state.homework, hl = hw && LESSONS.find(l => l.id === hw.lessonId);
     if (hl) lines.push(`Домашнее задание: ${hl.title} — ${hw.tasks.map(ex => `${EX_NAMES[ex].replace(/^\S+\s/, '')} ${homeworkTaskDone(hw, ex) ? '✓' : '—'}`).join(', ')}${hw.due ? ` (срок ${fmtDay(hw.due)})` : ''}`);
     return lines.join('\n');
@@ -813,12 +767,22 @@
               <tr class="${worst.includes(x.l.id) ? 'hot' : ''}${x.parts ? '' : ' idle'}">
                 <td>${x.l.words[0]?.emoji || ''} ${escapeHtml(x.l.title)}</td>
                 <td>${x.l.grade}</td>
-                <td><span class="pips" aria-label="${x.parts} из 6">${EX_ORDER.map((_, i) => `<span class="pip${i < x.parts ? ' on' : ''}"></span>`).join('')}</span> ${x.parts}/6</td>
+                <td><span class="pips" aria-label="${x.parts} из ${PARTS.length}">${PARTS.map((_, i) => `<span class="pip${i < x.parts ? ' on' : ''}"></span>`).join('')}</span> ${x.parts}/${PARTS.length}</td>
                 <td>${x.wrong ? (worst.includes(x.l.id) ? `<b>${x.wrong}</b> ⚠️` : x.wrong) : '—'}</td>
               </tr>`).join('')}
           </tbody>
         </table>
       </div>
+
+      <label class="t-check t-unlock"><input type="checkbox" id="t-unlock" ${state.settings.unlockAll ? 'checked' : ''}/> Открыть все темы на карте (без прохождения по порядку)</label>
+
+      <h3 class="t-h">Проверки</h3>
+      <ul class="t-cps" role="list">
+        ${CHECKPOINTS.map(cp => {
+          const r = state.checkpoints[cp.id];
+          return `<li>${cp.emoji} ${escapeHtml(cp.title)} — ${r?.passedAt ? `<b>сдана</b> (лучший ${r.best}/${CHECKPOINT_SIZE})` : r ? `не сдана (лучший ${r.best}/${CHECKPOINT_SIZE})` : '<span class="t-muted">не начата</span>'}</li>`;
+        }).join('')}
+      </ul>
 
       <h3 class="t-h">Трудные слова и вопросы</h3>
       ${s.hard.length ? `
@@ -837,7 +801,7 @@
 
     const readSpec = () => ({
       lessonId: document.getElementById('t-hw-lesson').value,
-      tasks: [...document.querySelectorAll('.t-check input:checked')].map(i => i.value),
+      tasks: [...document.querySelectorAll('.t-checks input:checked')].map(i => i.value),
       due: document.getElementById('t-hw-due').value,
       note: document.getElementById('t-hw-note').value.trim(),
     });
@@ -859,6 +823,12 @@
       toast(res === 'same' ? 'Это задание уже назначено' : '📌 Задание назначено');
       openTutorPanel();
     };
+    document.getElementById('t-unlock').onchange = (e) => {
+      state.settings.unlockAll = e.target.checked;
+      saveState();
+      renderMap();
+      toast(e.target.checked ? '🔓 Все темы открыты' : '🔒 Темы снова открываются по порядку');
+    };
     const cancel = document.getElementById('t-hw-cancel');
     if (cancel) cancel.onclick = () => { state.homework = null; saveState(); renderHomework(); openTutorPanel(); };
     document.getElementById('t-report').onclick = async () => {
@@ -869,6 +839,417 @@
     };
   }
   document.getElementById('btn-tutor').onclick = openTutorGate;
+
+
+  // ---------- КАРТА УРОКОВ ----------
+  // Каждый класс — дорожка из 8 тем. После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
+  // Тема открывается, когда пройдена предыдущая (isLessonComplete), а первая тема части —
+  // когда сдана проверка предыдущей части. Первая тема класса открыта всегда.
+  // Репетитор может открыть всё сразу (state.settings.unlockAll).
+  const PARTS = ['vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak'];
+  const BLOCK = 4;
+  const CHECKPOINT_SIZE = 10, CHECKPOINT_PASS = 7;
+  const MAP_OFFSETS = [0, 1, 1.6, 1, 0, -1, -1.6, -1]; // зигзаг дорожки, в шагах --step
+
+  function lessonsOf(grade){ return LESSONS.filter(l => l.grade === grade).sort((a, b) => a.order - b.order); }
+  function checkpointsOf(grade){
+    const ls = lessonsOf(grade), out = [];
+    for (let i = 0; i < ls.length; i += BLOCK){
+      const part = i / BLOCK + 1;
+      out.push({ id: `g${grade}-p${part}`, grade, part, lessons: ls.slice(i, i + BLOCK),
+        emoji: part === 1 ? '💎' : '🏆', title: `Проверка: ${grade} класс, часть ${part}` });
+    }
+    return out;
+  }
+  const CHECKPOINTS = [...new Set(LESSONS.map(l => l.grade))].flatMap(checkpointsOf);
+  const GRADES = [...new Set(LESSONS.map(l => l.grade))].sort();
+
+  function checkpointPassed(cp){ return !!state.checkpoints[cp.id]?.passedAt; }
+  function partsDone(l){ const p = state.lessonProgress[l.id] || {}; return PARTS.filter(ex => p[ex]).length; }
+
+  function mapNodes(grade){
+    const cps = checkpointsOf(grade), nodes = [];
+    lessonsOf(grade).forEach((l, i) => {
+      nodes.push({ kind: 'lesson', lesson: l });
+      if ((i + 1) % BLOCK === 0) nodes.push({ kind: 'checkpoint', cp: cps[(i + 1) / BLOCK - 1] });
+    });
+    return nodes;
+  }
+
+  // Почему узел закрыт; null — открыт.
+  function lockReason(node){
+    if (state.settings.unlockAll) return null;
+    if (node.kind === 'checkpoint'){
+      const left = node.cp.lessons.filter(l => !isLessonComplete(l));
+      return left.length ? `Сначала пройди: ${left.map(l => `«${l.title}»`).join(', ')}` : null;
+    }
+    const ls = lessonsOf(node.lesson.grade), i = ls.indexOf(node.lesson);
+    if (i === 0) return null;
+    if (i % BLOCK === 0){
+      const cp = checkpointsOf(node.lesson.grade)[i / BLOCK - 1];
+      return checkpointPassed(cp) ? null : `Сначала сдай «${cp.title}»`;
+    }
+    return isLessonComplete(ls[i - 1]) ? null : `Сначала пройди тему «${ls[i - 1].title}»`;
+  }
+  function nodeDone(n){ return n.kind === 'lesson' ? isLessonComplete(n.lesson) : checkpointPassed(n.cp); }
+  function currentNode(grade){ return mapNodes(grade).find(n => !lockReason(n) && !nodeDone(n)) || null; }
+
+  function mapGrade(){
+    if (state.settings.mapGrade) return state.settings.mapGrade;
+    const hl = state.homework && LESSONS.find(l => l.id === state.homework.lessonId);
+    return hl ? hl.grade : GRADES[0];
+  }
+
+  function renderMap(){
+    const wrap = document.getElementById('lessons');
+    if (!wrap) return;
+    const grade = mapGrade();
+    document.querySelectorAll('#grade-tabs .tab').forEach(t => {
+      const on = +t.dataset.grade === grade;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    const nodes = mapNodes(grade);
+    const cur = nodes.find(n => !lockReason(n) && !nodeDone(n));
+    wrap.innerHTML = `<ol class="map" role="list">${nodes.map((n, i) => {
+      const locked = lockReason(n), done = nodeDone(n), isCur = n === cur;
+      const st = locked ? 'locked' : done ? 'done' : isCur ? 'current' : 'open';
+      const x = MAP_OFFSETS[i % MAP_OFFSETS.length], px = MAP_OFFSETS[(i - 1 + MAP_OFFSETS.length) % MAP_OFFSETS.length];
+      let emoji, title, sub, label;
+      if (n.kind === 'lesson'){
+        const pd = partsDone(n.lesson);
+        emoji = n.lesson.words[0]?.emoji || '📘';
+        title = escapeHtml(n.lesson.title);
+        sub = `${pd}/${PARTS.length}`;
+        label = `${n.lesson.title}, ${n.lesson.subtitle}. ${locked ? 'Закрыто. ' + locked : done ? 'Тема пройдена.' : `Сделано ${pd} из ${PARTS.length}.`}`;
+      } else {
+        const best = state.checkpoints[n.cp.id]?.best;
+        emoji = n.cp.emoji;
+        title = 'Проверка';
+        sub = best != null ? `лучший: ${best}/${CHECKPOINT_SIZE}` : `${CHECKPOINT_SIZE} вопросов`;
+        label = `${n.cp.title}. ${locked ? 'Закрыто. ' + locked : done ? `Сдана, лучший результат ${best} из ${CHECKPOINT_SIZE}.` : `Нужно ${CHECKPOINT_PASS} из ${CHECKPOINT_SIZE}.`}`;
+      }
+      return `
+        <li class="map-step" style="--x:${x}; --px:${px}">
+          ${i > 0 ? '<span class="map-stones" aria-hidden="true"><i></i><i></i></span>' : ''}
+          <button class="map-node ${n.kind} ${st}" data-i="${i}" aria-label="${escapeHtml(label)}">
+            <span class="mn-block" aria-hidden="true">${emoji}${done ? '<span class="mn-badge">✓</span>' : ''}${locked ? '<span class="mn-lock">🔒</span>' : ''}</span>
+            ${isCur ? '<span class="mn-now" aria-hidden="true">Сейчас</span>' : ''}
+            <span class="mn-title" aria-hidden="true">${title}</span>
+            <span class="mn-sub" aria-hidden="true">${sub}</span>
+          </button>
+        </li>`;
+    }).join('')}</ol>`;
+    wrap.querySelectorAll('.map-node').forEach(b => b.onclick = () => openNode(nodes[+b.dataset.i]));
+  }
+
+  function openNode(n){
+    const locked = lockReason(n);
+    if (locked){ toast(`🔒 ${locked}`); return; }
+    if (n.kind === 'checkpoint') startCheckpoint(n.cp);
+    else openLessonHub(n.lesson);
+  }
+
+  document.querySelectorAll('#grade-tabs .tab').forEach(t => {
+    t.addEventListener('click', () => {
+      state.settings.mapGrade = +t.dataset.grade;
+      saveState();
+      renderMap();
+    });
+  });
+
+  // ---------- ЭКРАН ТЕМЫ ----------
+  const HUB_EXS = ['cards', ...PARTS];
+  function openLessonHub(lesson){
+    const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
+    const p = state.lessonProgress[lesson.id] || {};
+    const next = HUB_EXS.find(ex => !p[ex]);
+    openModal(`
+      ${lessonHeader(lesson, guide)}
+      <div class="hub-progress">Сделано ${partsDone(lesson)} из ${PARTS.length}${isLessonComplete(lesson) ? ' · тема пройдена ✓' : ''}</div>
+      <div class="hub-grid">
+        ${HUB_EXS.map(ex => {
+          const [em, ...rest] = EX_NAMES[ex].split(' ');
+          return `<button class="hub-ex${p[ex] ? ' done' : ''}${ex === next ? ' next' : ''}" data-ex="${ex}">
+            <span class="hub-em" aria-hidden="true">${em}</span>
+            <span class="hub-name">${rest.join(' ')}</span>
+            <span class="hub-state">${p[ex] ? '✓ сделано' : ex === next ? 'начни здесь' : ''}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    `);
+    document.querySelectorAll('.hub-ex').forEach(b => b.onclick = () => startExercise(lesson, b.dataset.ex));
+  }
+
+  // === Карточки: слово за словом, потом все слова сеткой ===
+  function exCards(lesson, guide){
+    const words = lesson.words;
+    let i = 0;
+    render();
+    function render(){
+      if (i >= words.length) return overview();
+      const w = words[i];
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="flash">
+          <div class="flash-count">${i + 1} / ${words.length}</div>
+          <span class="flash-em" aria-hidden="true">${w.emoji}</span>
+          <div class="flash-en" lang="en">${escapeHtml(w.en)}</div>
+          <div class="flash-ru">${escapeHtml(w.ru)}</div>
+        </div>
+        <div class="controls flash-controls">
+          <button class="btn secondary" id="fc-prev" ${i === 0 ? 'disabled' : ''}>← Назад</button>
+          <button class="btn gold" id="fc-hear">🔊 Ещё раз</button>
+          <button class="btn" id="fc-next">${i === words.length - 1 ? 'Все слова ✓' : 'Дальше →'}</button>
+        </div>
+      `);
+      document.getElementById('fc-prev').onclick = () => { i--; render(); };
+      document.getElementById('fc-next').onclick = () => { i++; render(); };
+      document.getElementById('fc-hear').onclick = () => speak(w.en);
+      modal.onkeydown = (e) => {
+        if (e.key === 'ArrowRight'){ i++; render(); }
+        else if (e.key === 'ArrowLeft' && i > 0){ i--; render(); }
+      };
+      afterFeedback(() => speak(w.en), 300);
+    }
+    function overview(){
+      markProgress(lesson.id, 'cards');
+      saveState();
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="question">
+          <h3>Все слова темы</h3>
+          <p class="t-muted">Нажми на карточку, чтобы услышать слово.</p>
+          <div class="word-grid">
+            ${words.map(w => `<button class="word-tile" data-en="${escapeHtml(w.en)}"><span class="em" aria-hidden="true">${w.emoji}</span><span class="en" lang="en">${escapeHtml(w.en)}</span><span class="ru">${escapeHtml(w.ru)}</span></button>`).join('')}
+          </div>
+        </div>
+        <div class="controls">
+          <button class="btn" id="next-vocab">📚 Проверим себя</button>
+          <button class="btn secondary" id="fc-again">🔁 Смотреть снова</button>
+        </div>
+      `);
+      document.querySelectorAll('.word-tile').forEach(t => t.onclick = () => speak(t.dataset.en));
+      document.getElementById('next-vocab').onclick = () => exVocab(lesson, guide);
+      document.getElementById('fc-again').onclick = () => { i = 0; render(); };
+    }
+  }
+
+  // === Напиши: собрать слово из букв ===
+  function exSpell(lesson, guide){
+    const pool = lesson.words.filter(w => /^[a-z' ]+$/i.test(w.en) && w.en.replace(/[ ']/g, '').length <= 10);
+    const list = shuffle(pool).slice(0, 5);
+    let idx = 0, right = 0;
+    render();
+    function render(){
+      if (idx >= list.length){
+        openModal(`
+          ${lessonHeader(lesson, guide)}
+          <div class="question"><h3>Написано верно: ${right} из ${list.length}</h3><p>${right === list.length ? 'Ни одной ошибки — супер!' : 'Слова с ошибками попали в «Мои ошибки».'}</p></div>
+          <div class="controls"><button class="btn" id="next-grammar">🧩 Дальше: грамматика</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+        `);
+        document.getElementById('next-grammar').onclick = () => exGrammar(lesson, guide);
+        document.getElementById('next-close').onclick = closeModal;
+        return;
+      }
+      const w = list[idx];
+      const target = w.en.toLowerCase();
+      const letters = [...target].filter(c => /[a-z]/.test(c));
+      // со 2-го полугодия (3–4 класс) добавляем две лишние буквы
+      const extra = lesson.grade >= 3
+        ? shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(c => !letters.includes(c))).slice(0, 2) : [];
+      const tiles = shuffle([...letters, ...extra]);
+      const typed = []; // индексы плиток
+      let finished = false;
+
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="question">
+          <span class="q-emoji">${w.emoji}</span>
+          <div class="q-text pixel">Собери слово</div>
+          <div class="review-hint">${escapeHtml(w.ru)}</div>
+          <div class="spell-slots" id="sp-slots" lang="en" aria-live="polite"></div>
+          <div class="spell-answer" id="sp-answer" hidden></div>
+          <div class="spell-tiles">
+            ${tiles.map((c, k) => `<button class="spell-tile" data-k="${k}" lang="en">${c}</button>`).join('')}
+          </div>
+          <p class="t-muted spell-kbd">Можно печатать на клавиатуре.</p>
+        </div>
+        <div class="controls">
+          <button class="btn secondary" id="sp-hear">🔊 Услышать</button>
+          <button class="btn gold" id="sp-back">⌫ Стереть</button>
+          <button class="btn violet" id="sp-hint">💡 Подсказка</button>
+        </div>
+      `);
+      const slotsEl = document.getElementById('sp-slots');
+      const tileEls = [...document.querySelectorAll('.spell-tile')];
+
+      function draw(state_){
+        let li = 0;
+        slotsEl.innerHTML = [...target].map(ch => {
+          if (!/[a-z]/.test(ch)) return ch === ' ' ? '<span class="slot-gap"></span>' : `<span class="slot-fixed">${ch}</span>`;
+          const t = typed[li++];
+          return `<span class="slot-l${t !== undefined ? ' filled' : ''}${state_ ? ' ' + state_ : ''}">${t !== undefined ? tiles[t] : ''}</span>`;
+        }).join('');
+        slotsEl.setAttribute('aria-label', `Собрано: ${typed.map(t => tiles[t]).join('') || 'пока ничего'}`);
+        tileEls.forEach((el, k) => el.disabled = finished || typed.includes(k));
+      }
+      function add(k){
+        if (finished || typed.includes(k) || typed.length >= letters.length) return;
+        typed.push(k);
+        draw();
+        if (typed.length === letters.length) check();
+      }
+      function back(){ if (!finished && typed.length){ typed.pop(); draw(); } }
+      function hint(){
+        if (finished) return;
+        // убираем всё, начиная с первой ошибки, и ставим следующую верную букву
+        let ok = 0;
+        while (ok < typed.length && tiles[typed[ok]] === letters[ok]) ok++;
+        typed.length = ok;
+        const k = tiles.findIndex((c, j) => c === letters[ok] && !typed.includes(j));
+        if (k >= 0) add(k); else draw();
+      }
+      function check(){
+        finished = true;
+        const ok = typed.map(t => tiles[t]).join('') === letters.join('');
+        draw(ok ? 'ok' : 'bad');
+        speak(w.en);
+        if (ok){
+          right++;
+          reward(12, 3, { item: w.en });
+          markProgress(lesson.id, 'spell');
+          toast(`✅ +12 XP · ${w.en}`);
+        } else {
+          const ans = document.getElementById('sp-answer');
+          ans.hidden = false;
+          ans.textContent = `Правильно: ${w.en}`;
+          recordMistake('word', lesson, w.en);
+          penalty();
+        }
+        afterFeedback(() => { idx++; render(); }, ok ? 1100 : 2000);
+      }
+
+      tileEls.forEach((el, k) => el.onclick = () => add(k));
+      document.getElementById('sp-back').onclick = back;
+      document.getElementById('sp-hint').onclick = hint;
+      document.getElementById('sp-hear').onclick = () => speak(w.en);
+      modal.onkeydown = (e) => {
+        if (e.key === 'Backspace'){ e.preventDefault(); back(); return; }
+        if (/^[a-z]$/i.test(e.key)){
+          const k = tiles.findIndex((c, j) => c === e.key.toLowerCase() && !typed.includes(j));
+          if (k >= 0) add(k);
+        }
+      };
+      draw();
+      afterFeedback(() => speak(w.en), 350);
+    }
+  }
+
+  // === Проверка после части: 10 вопросов по 4 темам ===
+  function startCheckpoint(cp){
+    const words = cp.lessons.flatMap(l => l.words.map(w => ({ w, l })));
+    const grammar = cp.lessons.flatMap(l => l.grammar.map(q => ({ q, l })));
+    const picked = shuffle(words);
+    let qs = [
+      ...picked.slice(0, 4).map(x => ({ type: 'word', ...x })),
+      ...picked.slice(4, 7).map(x => ({ type: 'listen', ...x })),
+      ...shuffle(grammar).slice(0, 3).map(x => ({ type: 'grammar', ...x })),
+    ];
+    qs = qs.concat(picked.slice(7, 7 + CHECKPOINT_SIZE - qs.length).map(x => ({ type: 'word', ...x })));
+    const queue = shuffle(qs).slice(0, CHECKPOINT_SIZE);
+    let idx = 0, right = 0;
+    const header = `
+      <h2>${cp.emoji} ${escapeHtml(cp.title)}</h2>
+      <div class="lead">Темы: ${cp.lessons.map(l => escapeHtml(l.title)).join(', ')}. Нужно ${CHECKPOINT_PASS} из ${queue.length}. Сердечки не тратятся.</div>`;
+    render();
+
+    function render(){
+      if (idx >= queue.length) return finish();
+      const item = queue[idx];
+      let body, options, answer, say;
+      const others = n => shuffle(words.filter(x => x.w.en !== item.w?.en)).slice(0, n);
+      if (item.type === 'word'){
+        options = shuffle([item.w.en, ...others(3).map(x => x.w.en)]);
+        answer = item.w.en; say = item.w.en;
+        body = `<span class="q-emoji">${item.w.emoji}</span><div class="q-text pixel">Как по-английски?</div>`;
+      } else if (item.type === 'listen'){
+        options = shuffle([item.w, ...others(3).map(x => x.w)]);
+        answer = item.w.en;
+        body = `<div style="text-align:center; font-size:56px;" aria-hidden="true">🔊</div><div class="q-text pixel">Слушай и выбирай картинку</div>`;
+      } else {
+        options = shuffle(item.q.options);
+        answer = item.q.a; say = item.q.q.replace('___', item.q.a);
+        body = `<div class="q-text pixel">Выбери правильный вариант</div><div class="q-text review-sentence">${escapeHtml(item.q.q)}</div>`;
+      }
+      openModal(`
+        ${header}
+        <div class="review-progress" aria-label="Вопрос ${idx + 1} из ${queue.length}"><span style="width:${Math.round(idx * 100 / queue.length)}%"></span></div>
+        <div class="question">
+          ${body}
+          <div class="options">
+            ${options.map(o => item.type === 'listen'
+              ? `<button class="opt" data-o="${escapeHtml(o.en)}" aria-label="${escapeHtml(o.ru)}" style="font-size:36px;">${o.emoji}</button>`
+              : `<button class="opt" data-o="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join('')}
+          </div>
+        </div>
+        ${item.type === 'listen' ? '<div class="controls"><button class="btn secondary" id="hear">🔊 Повторить</button></div>' : ''}
+      `);
+      if (item.type === 'listen'){
+        document.getElementById('hear').onclick = () => speak(item.w.en);
+        afterFeedback(() => speak(item.w.en), 350);
+      }
+      document.querySelectorAll('.opt').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.opt').forEach(b => b.disabled = true);
+          const ok = btn.dataset.o === answer;
+          logAnswer(ok);
+          if (ok){ btn.classList.add('correct'); right++; }
+          else {
+            btn.classList.add('wrong');
+            document.querySelector(`.opt[data-o="${CSS.escape(answer)}"]`)?.classList.add('correct');
+            if (item.type === 'grammar') recordMistake('grammar', item.l, item.q.q);
+            else recordMistake('word', item.l, item.w.en);
+          }
+          if (say) speak(say);
+          afterFeedback(() => { idx++; render(); }, ok ? 800 : 1500);
+        };
+      });
+    }
+
+    function finish(){
+      const prev = state.checkpoints[cp.id] || {};
+      const passed = right >= CHECKPOINT_PASS;
+      const firstPass = passed && !prev.passedAt;
+      state.checkpoints[cp.id] = { best: Math.max(prev.best || 0, right), passedAt: prev.passedAt || (passed ? Date.now() : null) };
+      if (firstPass){
+        addItem(`trophy:${cp.id}`, 1);
+        confetti();
+        reward(50, 20, { bonus: true });
+      } else saveState();
+      const nextLesson = lessonsOf(cp.grade)[cp.part * BLOCK];
+      openModal(`
+        ${header}
+        <div class="question checkpoint-result ${passed ? 'pass' : 'fail'}">
+          <span class="cp-big" aria-hidden="true">${passed ? cp.emoji : '💪'}</span>
+          <h3>${passed ? 'Проверка сдана!' : 'Почти получилось'}</h3>
+          <p>Верно: <b>${right}</b> из ${queue.length}.${passed ? '' : ` Нужно ${CHECKPOINT_PASS}.`}</p>
+          ${firstPass ? `<p>Награда: ${cp.emoji} в инвентаре и +50 XP.${nextLesson ? ` Открыта тема «${escapeHtml(nextLesson.title)}».` : ''}</p>` : ''}
+          ${!passed ? '<p>Ошибки попали в «Мои ошибки» — повтори их и попробуй снова.</p>' : ''}
+        </div>
+        <div class="controls">
+          ${passed ? '' : '<button class="btn" id="cp-retry">🔁 Попробовать снова</button>'}
+          <button class="btn ${passed ? '' : 'secondary'}" id="cp-close">К карте</button>
+        </div>
+      `);
+      const retry = document.getElementById('cp-retry');
+      if (retry) retry.onclick = () => startCheckpoint(cp);
+      document.getElementById('cp-close').onclick = () => { closeModal(); document.getElementById('lessons-sec').scrollIntoView({ behavior: 'smooth' }); };
+      renderMap();
+      renderHUD();
+      renderInventory();
+    }
+  }
 
   // ---------- GUIDE BUBBLE ----------
   let guideTimer = null;
@@ -1077,6 +1458,7 @@
   function openModal(html, opts={}){
     if (!back.classList.contains('open')) modalOpener = document.activeElement;
     modal.classList.toggle('wide', !!opts.wide);
+    modal.onkeydown = null; // упражнения со своей клавиатурой (карточки, «Напиши») ставят его заново
     body.innerHTML = html;
     back.classList.add('open');
     // каждый вопрос перерисовывает окно — держим фокус внутри, чтобы клавиатура не терялась
@@ -1091,6 +1473,7 @@
   }
   function closeModal(){
     modalGen++;
+    modal.onkeydown = null;
     back.classList.remove('open');
     stopSpeech();
     if (modalOpener && document.contains(modalOpener)) modalOpener.focus();
@@ -1112,10 +1495,18 @@
 
   // ---------- EXERCISES ----------
   function markProgress(lessonId, ex){
+    const lesson = LESSONS.find(l => l.id === lessonId);
+    const wasComplete = lesson && isLessonComplete(lesson);
     const p = state.lessonProgress[lessonId] || {};
     p[ex] = (p[ex]||0) + 1;
     state.lessonProgress[lessonId] = p;
+    if (lesson && !wasComplete && isLessonComplete(lesson)) toast(`🔓 Тема «${lesson.title}» пройдена!`);
     checkHomework();
+    // reward() сохраняет состояние раньше, чем сюда доходит упражнение, — без этого
+    // последний верный ответ терялся при закрытии вкладки
+    saveState();
+    renderMap();
+    renderHUD(); // счётчик пройденных тем 🏆
   }
 
   function startExercise(lesson, kind){
@@ -1126,7 +1517,9 @@
     setTimeout(() => speak('Let us start!'), 400);
 
     switch(kind){
+      case 'cards': return exCards(lesson, guide);
       case 'vocab': return exVocab(lesson, guide);
+      case 'spell': return exSpell(lesson, guide);
       case 'listen': return exListen(lesson, guide);
       case 'match': return exMatch(lesson, guide);
       case 'grammar': return exGrammar(lesson, guide);
@@ -1307,7 +1700,15 @@
             doneCount++;
             if (doneCount === pairs.length){
               toast('🎉 Все пары собраны!');
-              afterFeedback(closeModal, 1500);
+              afterFeedback(() => {
+                openModal(`
+                  ${lessonHeader(lesson, guide)}
+                  <div class="question"><h3>Все пары собраны! 🎯</h3></div>
+                  <div class="controls"><button class="btn" id="next-spell">✍️ Дальше: напиши</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+                `);
+                document.getElementById('next-spell').onclick = () => exSpell(lesson, guide);
+                document.getElementById('next-close').onclick = closeModal;
+              }, 1200);
             }
           } else {
             selL.classList.add('wrong'); selR.classList.add('wrong');
@@ -1552,12 +1953,16 @@
     if (!confirm('Сбросить весь прогресс?')) return;
     state = freshState();
     saveState();
-    renderHUD(); renderInventory(); renderLessons(); renderMistakes(); renderHomework();
+    renderHUD(); renderInventory(); renderMap(); renderMistakes(); renderHomework();
     toast('Прогресс сброшен');
   };
 
   // ---------- CTA ----------
-  document.getElementById('btn-hero-start').onclick = () => startExercise(LESSONS[0], 'vocab');
+  document.getElementById('btn-hero-start').onclick = () => {
+    const n = currentNode(mapGrade());
+    if (n) openNode(n);
+    else document.getElementById('lessons-sec').scrollIntoView({ behavior: 'smooth' });
+  };
   document.getElementById('btn-hero-team').onclick = () => document.getElementById('team-sec').scrollIntoView({behavior:'smooth'});
 
   // ---------- INIT ----------
@@ -1568,7 +1973,7 @@
     document.getElementById('btn-theme').textContent = theme === 'light' ? '🌙' : '☀️';
     renderHUD();
     renderTeam();
-    renderLessons();
+    renderMap();
     renderInventory();
     renderMistakes();
     applyHomeworkFromHash();

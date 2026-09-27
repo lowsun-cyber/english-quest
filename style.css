@@ -372,82 +372,150 @@ section { margin-top: 32px; }
 .grade-tabs .tab.active { background: var(--gold); color: var(--line); }
 .grade-tabs .tab:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
 
-/* Lesson cards */
-.lessons {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+/* ==== КАРТА УРОКОВ ==== */
+.map {
+  --step: 64px;
+  list-style: none;
+  max-width: 560px; margin: 8px auto 0;
+  padding: 10px 0 20px;
 }
-.lesson-card {
-  background: var(--surface);
-  border: 3px solid var(--line);
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: var(--shadow-hard);
+.map-step { position: relative; display: flex; justify-content: center; padding-top: 44px; }
+.map-step:first-child { padding-top: 0; }
+.map-node {
   position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.15s ease;
+  transform: translateX(calc(var(--x) * var(--step)));
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 120px; padding: 4px;
+  border-radius: 16px;
+  color: var(--ink);
 }
-.lesson-card:hover { transform: translateY(-4px); }
-.lesson-card .badge-grade {
-  position: absolute; top: 10px; right: 10px;
-  font-family: var(--font-pixel);
-  font-size: 10px;
-  background: var(--diamond);
-  color: var(--on-color);
-  border: 2px solid var(--line);
-  padding: 4px 8px;
-  border-radius: 6px;
+.mn-block {
+  position: relative;
+  width: 84px; height: 84px;
+  display: grid; place-items: center;
+  font-size: 40px;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 6px 0 var(--line);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
-.lesson-card .lesson-icon {
-  font-size: 46px;
-  display: block;
-  margin: 4px 0 6px;
-  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.15));
+.map-node:active .mn-block { transform: translateY(4px); box-shadow: 0 2px 0 var(--line); }
+.map-node.open .mn-block { background: #d5e6f7; }
+.map-node.current .mn-block { background: var(--diamond-3); box-shadow: 0 6px 0 var(--diamond-2), 0 0 0 6px rgba(58,159,224,0.35); }
+.map-node.done .mn-block { background: var(--grass-3); box-shadow: 0 6px 0 var(--grass-2); }
+.map-node.locked .mn-block { background: #c9d3d9; filter: grayscale(1); }
+.map-node.locked .mn-block > :not(.mn-lock) { opacity: 0.5; }
+.map-node.checkpoint .mn-block { width: 100px; height: 100px; font-size: 48px; border-radius: 50%; }
+.map-node.checkpoint.current .mn-block, .map-node.checkpoint.open .mn-block { background: var(--gold); box-shadow: 0 6px 0 var(--gold-2), 0 0 0 6px rgba(245,192,43,0.35); }
+.map-node.checkpoint.done .mn-block { background: var(--gold); box-shadow: 0 6px 0 var(--gold-2); }
+[data-theme="dark"] .map-node.open .mn-block { background: #24425e; }
+[data-theme="dark"] .map-node.locked .mn-block { background: #2b3a48; }
+.mn-badge, .mn-lock {
+  position: absolute; right: -10px; top: -10px;
+  width: 30px; height: 30px; display: grid; place-items: center;
+  border: 2px solid var(--line); border-radius: 50%;
+  font-size: 15px; font-weight: 800;
+  background: var(--surface); color: var(--ink);
 }
-.lesson-card .title { font-family: var(--font-pixel); font-size: 13px; margin-bottom: 4px; }
-.lesson-card .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
-.lesson-card .completion {
-  height: 8px; background: #e2eaef; border-radius: 4px; border: 2px solid var(--line); overflow: hidden;
-  margin-bottom: 8px;
+.mn-badge { background: var(--grass); color: var(--on-color); }
+.mn-now {
+  position: absolute; top: -26px;
+  font-family: var(--font-pixel); font-size: 10px;
+  background: var(--on-color); color: #fff;
+  padding: 4px 8px; border-radius: 6px;
 }
-[data-theme="dark"] .lesson-card .completion { background: #22303f; }
-.lesson-card .completion > span { display:block; height:100%; background: var(--grass); }
-.lesson-card .actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.lesson-card .mini {
-  font-size: 14px;
-  min-height: 44px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 2px solid var(--line);
-  background: #fff;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-weight: 700;
-  box-shadow: 0 3px 0 var(--line);
+[data-theme="dark"] .mn-now { background: #f2f8ff; color: #0f1721; }
+.mn-title { font-family: var(--font-pixel); font-size: 11px; text-align: center; max-width: 150px; line-height: 1.3; }
+.mn-sub { font-size: 13px; color: var(--muted); font-weight: 700; }
+.map-node.locked .mn-title { color: var(--muted); }
+/* «камушки» между узлами — на трети и двух третях пути от предыдущего узла */
+.map-stones { position: absolute; top: 4px; left: 50%; width: 0; height: 40px; }
+.map-stones i {
+  position: absolute; width: 12px; height: 12px; margin-left: -6px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 3px;
 }
-.lesson-card .mini:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
-[data-theme="dark"] .lesson-card .mini { background: #263849; color: var(--ink); }
+.map-stones i:nth-child(1) { top: 4px;  left: calc((var(--px) * 2 + var(--x)) / 3 * var(--step)); }
+.map-stones i:nth-child(2) { top: 22px; left: calc((var(--px) + var(--x) * 2) / 3 * var(--step)); }
 
-/* Exercise chips */
-.chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 8px;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 13px;
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
+/* ==== ЭКРАН ТЕМЫ ==== */
+.hub-progress { margin-top: 14px; font-weight: 700; color: var(--ink-2); }
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.hub-ex {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-height: 104px; padding: 10px 8px;
+  background: #fff; color: var(--ink);
+  border: 3px solid var(--line); border-radius: 14px;
+  box-shadow: 0 4px 0 var(--line);
 }
-[data-theme="dark"] .chip { background: #263849; color: var(--ink); }
-.chip.words { background: #d5efd5; }
-.chip.listen { background: #d5e6f7; }
-.chip.match { background: #fce7d5; }
-.chip.grammar { background: #e6d9f5; }
-.chip.speak { background: #ffe1c8; }
-.chip.reading { background: #e0f4f0; }
+[data-theme="dark"] .hub-ex { background: #263849; }
+.hub-ex:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+.hub-ex.done { background: #d9f5de; }
+[data-theme="dark"] .hub-ex.done { background: #24452d; }
+.hub-ex.next { outline: 4px solid var(--diamond); outline-offset: 2px; }
+.hub-em { font-size: 32px; }
+.hub-name { font-weight: 800; font-size: 16px; }
+.hub-state { font-size: 12px; color: var(--muted); min-height: 1.3em; }
+.hub-ex.next .hub-state { color: var(--diamond-2); font-weight: 700; }
+[data-theme="dark"] .hub-ex.next .hub-state { color: var(--diamond-3); }
+
+/* ==== КАРТОЧКИ ==== */
+.flash {
+  margin-top: 14px; padding: 20px 16px;
+  text-align: center;
+  background: #fff; border: 3px solid var(--line); border-radius: 18px;
+  box-shadow: var(--shadow-hard);
+}
+[data-theme="dark"] .flash { background: #263849; }
+.flash-count { font-size: 14px; color: var(--muted); font-weight: 700; }
+.flash-em { display: block; font-size: 88px; line-height: 1.1; margin: 6px 0; }
+.flash-en { font-size: 40px; font-weight: 800; line-height: 1.1; }
+.flash-ru { font-size: 20px; color: var(--ink-2); margin-top: 4px; }
+.flash-controls { justify-content: center; }
+.word-tile { color: var(--ink); min-height: 44px; }
+.word-tile .en, .word-tile .ru { display: block; }
+
+/* ==== НАПИШИ ==== */
+.spell-slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 6px 0 14px; min-height: 56px; }
+.slot-l {
+  width: 44px; height: 54px;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 28px;
+  border-bottom: 4px solid var(--line);
+  background: rgba(0,0,0,0.04); border-radius: 8px 8px 0 0;
+}
+.slot-l.filled { background: #fff3c2; }
+.slot-l.ok { background: #b8f0c1; }
+.slot-l.bad { background: #f7b8b8; }
+[data-theme="dark"] .slot-l { background: rgba(255,255,255,0.06); }
+[data-theme="dark"] .slot-l.filled { background: #3a3320; }
+[data-theme="dark"] .slot-l.ok { background: #2f6c3c; }
+[data-theme="dark"] .slot-l.bad { background: #6c2f34; }
+.slot-gap { width: 18px; }
+.slot-fixed { font-weight: 800; font-size: 28px; align-self: end; }
+.spell-answer { text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+.spell-answer::before { content: '✗ '; }
+.spell-tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.spell-tile {
+  width: 52px; height: 56px;
+  font-weight: 800; font-size: 26px;
+  background: var(--gold); color: var(--on-color);
+  border: 3px solid var(--line); border-radius: 10px;
+  box-shadow: inset 0 -5px 0 var(--gold-2), 0 3px 0 var(--line);
+}
+.spell-tile:active { transform: translateY(2px); }
+.spell-tile:disabled { opacity: 0.25; cursor: default; }
+.spell-kbd { text-align: center; margin-top: 10px; }
+
+/* ==== ПРОВЕРКА ==== */
+.checkpoint-result { text-align: center; }
+.checkpoint-result .cp-big { font-size: 72px; display: block; }
+.checkpoint-result h3 { font-size: 18px; margin: 6px 0; }
+.checkpoint-result p { font-size: 17px; }
+.slot.trophy { background: linear-gradient(180deg, #ffe388, #f5c02b); box-shadow: inset 0 -6px 0 var(--gold-2); }
+[data-theme="dark"] .slot.trophy { background: linear-gradient(180deg, #6b5a1c, #4a3d10); }
+.t-cps { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.t-unlock { margin-top: 12px; display: inline-flex !important; }
 
 /* ==== INVENTORY ==== */
 .inv {
@@ -852,7 +920,6 @@ section { margin-top: 32px; }
 .match-item { width: 100%; color: var(--ink); }
 .match-item.sel { color: var(--on-color); }
 .modal:focus { outline: none; }
-.lesson-card:focus-visible { outline-offset: 4px; }
 [data-theme="dark"] .match-item.done { background: #2f6c3c; }
 .match-item.wrong { background: #f7b8b8; }
 [data-theme="dark"] .match-item.wrong { background: #6c2f34; }
@@ -925,6 +992,10 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
   .options { grid-template-columns: 1fr; }
   .review-summary .btn { margin-left: 0; width: 100%; }
   .t-tiles { grid-template-columns: repeat(2, 1fr); }
+  .map { --step: 44px; }
+  .flash-en { font-size: 32px; }
+  .slot-l { width: 36px; height: 48px; font-size: 24px; }
+  .spell-tile { width: 46px; height: 52px; }
   .t-hw-current { flex-direction: column; align-items: flex-start; }
   .mistake-list { grid-template-columns: 1fr; max-height: 300px; }
   .guide-bubble { left: 12px; right: 12px; bottom: 12px; max-width: none; }
