@@ -93,7 +93,7 @@
     document.getElementById('level-badge').textContent = 'L' + lvl;
     const rk = rankFor(lvl);
     document.getElementById('rank-title').textContent = `${rk.emoji} ${rk.title}`;
-    document.getElementById('rank-title').style.color = rk.color;
+    document.getElementById('rank-title').style.setProperty('--rank-color', rk.color);
     document.getElementById('level-progress').style.width = pct + '%';
     document.getElementById('xp-text').textContent = lvl >= MAX_LEVEL
       ? `Максимум! ${state.xp} XP`
@@ -172,7 +172,15 @@
           startExercise(l, b.dataset.ex);
         });
       });
+      card.tabIndex = 0;
+      card.setAttribute('aria-label', `${l.title} — открыть урок`);
       card.addEventListener('click', () => startExercise(l, 'vocab'));
+      card.addEventListener('keydown', (e) => {
+        if (e.target === card && (e.key === 'Enter' || e.key === ' ')){
+          e.preventDefault();
+          startExercise(l, 'vocab');
+        }
+      });
       wrap.appendChild(card);
     });
   }
@@ -285,15 +293,22 @@
     av.style.background = c.color;
     av.style.boxShadow = `0 6px 0 ${c.accent}`;
     document.getElementById('guide-name').textContent = name;
-    document.getElementById('guide-name').style.color = c.accent;
+    document.getElementById('guide-name').style.setProperty('--guide-accent', c.accent);
     document.getElementById('guide-text').textContent = text;
     clearTimeout(guideTimer);
     guideTimer = setTimeout(() => { g.hidden = true; }, 8000);
+    guideScrollY = window.scrollY;
   }
+  // Прячем гида, как только ребёнок начинает листать — он не должен закрывать уроки
+  let guideScrollY = 0;
+  window.addEventListener('scroll', () => {
+    const g = document.getElementById('guide');
+    if (!g.hidden && Math.abs(window.scrollY - guideScrollY) > 80) g.hidden = true;
+  }, { passive: true });
   document.getElementById('guide-close').addEventListener('click', () => document.getElementById('guide').hidden = true);
   document.getElementById('guide-avatar').addEventListener('click', () => {
-    const t = document.getElementById('guide-text').textContent;
-    speak(t.length > 40 ? 'Hello there!' : t, { lang: 'en-US' });
+    // Читаем ровно то, что написано в пузыре, на его языке (реплики гида — по-русски)
+    speak(document.getElementById('guide-text').textContent);
   });
 
   // ---------- TTS ----------
@@ -403,7 +418,10 @@
     if (!raw) return;
     stopSpeech();
 
-    const lang = opts.lang || (looksEnglish(raw) ? 'en' : 'ru');
+    // 'en-US', 'en_GB' и т.п. → 'en', иначе такие вызовы никогда не доходили до MP3
+    const lang = opts.lang
+      ? (opts.lang.toLowerCase().startsWith('en') ? 'en' : opts.lang)
+      : (looksEnglish(raw) ? 'en' : 'ru');
     const clean = lang === 'en' ? normalizeForSpeech(raw) : raw;
 
     // Русский всё равно через браузерный TTS (мы не генерировали Enceladus для рус.).
@@ -466,14 +484,32 @@
   // ---------- MODAL ----------
   const back = document.getElementById('modal-back');
   const body = document.getElementById('modal-body');
+  const modal = document.getElementById('modal');
+  let modalOpener = null;
   function openModal(html){
+    if (!back.classList.contains('open')) modalOpener = document.activeElement;
     body.innerHTML = html;
     back.classList.add('open');
+    // каждый вопрос перерисовывает окно — держим фокус внутри, чтобы клавиатура не терялась
+    if (!modal.contains(document.activeElement) || document.activeElement === document.body) modal.focus();
   }
   function closeModal(){
     back.classList.remove('open');
     stopSpeech();
+    if (modalOpener && document.contains(modalOpener)) modalOpener.focus();
+    modalOpener = null;
   }
+  document.addEventListener('keydown', (e) => {
+    if (!back.classList.contains('open')) return;
+    if (e.key === 'Escape'){ closeModal(); return; }
+    if (e.key === 'Tab'){
+      const f = [...modal.querySelectorAll('button:not([disabled]), [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => x.offsetParent);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === modal)){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  });
   document.getElementById('modal-close').addEventListener('click', closeModal);
   back.addEventListener('click', (e) => { if (e.target === back) closeModal(); });
 
@@ -640,8 +676,8 @@
       ${lessonHeader(lesson, guide)}
       <div class="q-text pixel" style="margin-top:12px;">Собери пары: слово ↔ картинка</div>
       <div class="match-grid">
-        <div class="match-col" id="col-l">${left.map(x=>`<div class="match-item" data-k="${x.key}" data-side="l">${x.label}</div>`).join('')}</div>
-        <div class="match-col" id="col-r">${right.map(x=>`<div class="match-item" data-k="${x.key}" data-side="r" style="font-size:24px;">${x.label}</div>`).join('')}</div>
+        <div class="match-col" id="col-l">${left.map(x=>`<button type="button" class="match-item" data-k="${x.key}" data-side="l" aria-pressed="false">${x.label}</button>`).join('')}</div>
+        <div class="match-col" id="col-r">${right.map(x=>`<button type="button" class="match-item" data-k="${x.key}" data-side="r" aria-pressed="false" aria-label="${x.key}" style="font-size:24px;">${x.label}</button>`).join('')}</div>
       </div>
       <div class="controls"><button class="btn secondary" id="close-match">Закрыть</button></div>
     `);
@@ -650,22 +686,26 @@
       el.onclick = () => {
         if (el.classList.contains('done')) return;
         if (el.dataset.side === 'l'){
-          document.querySelectorAll('.match-item[data-side="l"]').forEach(x=>x.classList.remove('sel'));
+          document.querySelectorAll('.match-item[data-side="l"]').forEach(x=>{ x.classList.remove('sel'); x.setAttribute('aria-pressed','false'); });
           el.classList.add('sel'); selL = el;
         } else {
-          document.querySelectorAll('.match-item[data-side="r"]').forEach(x=>x.classList.remove('sel'));
+          document.querySelectorAll('.match-item[data-side="r"]').forEach(x=>{ x.classList.remove('sel'); x.setAttribute('aria-pressed','false'); });
           el.classList.add('sel'); selR = el;
         }
+        el.setAttribute('aria-pressed','true');
         if (selL && selR){
           if (selL.dataset.k === selR.dataset.k){
             selL.classList.add('done'); selR.classList.add('done');
             selL.classList.remove('sel'); selR.classList.remove('sel');
+            // фокус уходит с исчезающей кнопки — переводим его на следующую свободную
+            const nextFree = [...document.querySelectorAll('.match-item:not(.done)')][0];
+            if (nextFree) nextFree.focus();
+            selL.disabled = true; selR.disabled = true;
             reward(14, 3, { item: selL.dataset.k });
             markProgress(lesson.id, 'match');
             speak(selL.dataset.k);
             doneCount++;
             if (doneCount === pairs.length){
-              confetti();
               toast('🎉 Все пары собраны!');
               setTimeout(closeModal, 1500);
             }
@@ -675,6 +715,7 @@
             const l = selL, r = selR;
             setTimeout(() => {
               l.classList.remove('wrong','sel'); r.classList.remove('wrong','sel');
+              l.setAttribute('aria-pressed','false'); r.setAttribute('aria-pressed','false');
             }, 700);
           }
           selL = null; selR = null;
@@ -705,7 +746,7 @@
         ${lessonHeader(lesson, guide)}
         <div class="question">
           <div class="q-text pixel">Выбери правильный вариант</div>
-          <div class="q-text" style="font-size:20px; text-align:center; margin: 10px 0;">${q.q}</div>
+          <div class="q-text" style="font-size:24px; font-weight:800; text-align:center; margin: 10px 0;">${q.q}</div>
           <div style="color: var(--muted); font-size:13px; text-align:center;">💡 ${q.hint}</div>
           <div class="options" style="margin-top:10px;">
             ${opts.map(o => `<button class="opt" data-o="${o}">${o}</button>`).join('')}
@@ -740,7 +781,7 @@
       ${lessonHeader(lesson, guide)}
       <div class="question">
         <h3>${r.title}</h3>
-        <p style="font-size:16px; line-height:1.6;">${r.text}</p>
+        <p style="font-size:20px; line-height:1.6;">${r.text}</p>
         <div class="controls">
           <button class="btn secondary" id="read-tts">🔊 Прочитать вслух</button>
           <button class="btn" id="read-start">➡️ К вопросам</button>
@@ -755,7 +796,6 @@
         reward(20, 5);
         markProgress(lesson.id, 'reading');
         toast('📖 +20 XP');
-        confetti();
         openModal(`
           ${lessonHeader(lesson, guide)}
           <div class="question"><h3>Прочитано!</h3><p>+20 XP за понимание текста.</p></div>
@@ -770,7 +810,7 @@
       openModal(`
         ${lessonHeader(lesson, guide)}
         <div class="question">
-          <div class="q-text pixel">${q.q}</div>
+          <div class="q-text" style="font-size:22px; font-weight:800;">${q.q}</div>
           <div class="options">
             ${opts.map(o => `<button class="opt" data-o="${o}">${o}</button>`).join('')}
           </div>
@@ -826,10 +866,10 @@
         ${lessonHeader(lesson, guide)}
         <div class="question">
           <div class="q-text pixel">Повтори за DJ Robo</div>
-          <div class="q-text" style="font-size:20px; text-align:center; margin: 12px 0 6px; padding: 12px; background: #fffbe6; border: 2px dashed var(--line); border-radius: 12px;">
+          <div class="q-text speak-phrase">
             "${phrase}"
           </div>
-          <div class="speak-translation" style="text-align:center; margin: 0 0 10px; padding: 8px 12px; background: #eef7ff; border: 2px dashed #7bb7e0; border-radius: 10px; color: #244; font-size:15px;">
+          <div class="speak-translation">
             🇷🇺 ${ruTr}
           </div>
           <div style="text-align:center; color: var(--muted); font-size:13px;">Нажми на микрофон и произнеси фразу</div>

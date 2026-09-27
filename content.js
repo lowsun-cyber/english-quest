@@ -895,7 +895,7 @@ const RANKS = [
   {min:30, title:'Story Teller',    emoji:'📖', color:'#e07b3a'},
   {min:35, title:'Diamond Reader',  emoji:'💎', color:'#3ac5e0'},
   {min:40, title:'Zoo Keeper',      emoji:'🦁', color:'#e0a13a'},
-  {min:45, title:'Time Traveller',  emoji:'⏳', color:'#7b6bff'},
+  {min:45, title:'Time Traveller',  emoji:'⏳', color:'#a597ff'},
   {min:50, title:'Quest Master',    emoji:'🏆', color:'#f5c02b'},
   {min:55, title:'English Legend',  emoji:'⭐', color:'#ff6b3a'},
 ];

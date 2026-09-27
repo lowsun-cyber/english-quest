@@ -40,11 +40,11 @@
 
     <!-- Level bar -->
     <div class="level-bar">
-      <div class="level-badge" id="level-badge">L1</div>
+      <div class="level-badge" id="level-badge">L0</div>
       <div class="level-info">
         <div class="rank" id="rank-title">🌱 Rookie Explorer</div>
         <div class="progress"><span id="level-progress" style="width:0%"></span></div>
-        <div class="xp-text" id="xp-text">0 / 52 XP до следующего уровня</div>
+        <div class="xp-text" id="xp-text">0 / 52 XP до уровня 1</div>
       </div>
       <div>
         <div class="stat gold">🏆 <span id="stat-quests">0</span>/24</div>
@@ -290,7 +290,7 @@
 
   <!-- Guide bubble -->
   <div class="guide-bubble" id="guide" hidden>
-    <div class="avatar" id="guide-avatar" title="Нажми — Dr. Harlow заговорит">🐱</div>
+    <button type="button" class="avatar" id="guide-avatar" title="Нажми — Dr. Harlow заговорит" aria-label="Послушать, что говорит гид">🐱</button>
     <div class="bubble" id="guide-bubble">
       <strong id="guide-name">Dr. Harlow</strong>
       <div id="guide-text">Привет! Я твой гид.</div>
@@ -300,8 +300,8 @@
 
   <!-- Modal -->
   <div class="modal-back" id="modal-back">
-    <div class="modal" id="modal">
-      <button class="close" id="modal-close">✕</button>
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Урок" tabindex="-1">
+      <button class="close" id="modal-close" aria-label="Закрыть">✕</button>
       <div id="modal-body"></div>
     </div>
   </div>
