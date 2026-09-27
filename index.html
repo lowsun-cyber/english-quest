@@ -39,7 +39,7 @@
       <div class="stat xp" title="Опыт"><span>⭐</span><span id="stat-xp">0</span> XP</div>
       <div class="stat gold" title="Монеты"><span>🪙</span><span id="stat-gold">0</span></div>
       <div class="stat hearts" title="Жизни"><span id="stat-hearts">❤️❤️❤️❤️❤️</span></div>
-      <div class="stat streak" title="Серия побед"><span>🔥</span><span id="stat-streak">0</span></div>
+      <div class="stat streak" title="Дней подряд с выполненной целью"><span aria-hidden="true">🔥</span><span id="stat-streak">0</span></div>
       <button class="icon-btn" id="btn-theme" title="Сменить тему">🌙</button>
       <button class="icon-btn" id="btn-reset" title="Сбросить прогресс">↺</button>
     </header>
@@ -52,7 +52,11 @@
         <div class="progress"><span id="level-progress" style="width:0%"></span></div>
         <div class="xp-text" id="xp-text">0 / 52 XP до уровня 1</div>
       </div>
-      <div>
+      <div class="goal" id="goal" role="img" aria-label="Цель дня">
+        <div class="goal-ring"><span id="goal-min">0</span></div>
+        <div class="goal-txt"><b>Цель дня</b><span id="goal-sub">0 / 10 мин</span></div>
+      </div>
+      <div class="level-trophy">
         <div class="stat gold">🏆 <span id="stat-quests">0</span>/24</div>
       </div>
     </div>

@@ -151,11 +151,32 @@ img, svg { shape-rendering: crispEdges; image-rendering: pixelated; }
   border-radius: var(--radius-stud);
   padding: 12px 16px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   gap: 14px;
   align-items: center;
   box-shadow: var(--shadow-hard);
 }
+/* кольцо цели дня: одна величина — доля выполненных минут */
+.goal { display: flex; align-items: center; gap: 10px; --p: 0; }
+.goal-ring {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: conic-gradient(var(--grass) calc(var(--p) * 1%), #d9e6ec 0);
+  border: 3px solid var(--line);
+  position: relative;
+}
+[data-theme="dark"] .goal-ring { background: conic-gradient(var(--grass) calc(var(--p) * 1%), #22303f 0); }
+.goal-ring span {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface); border: 2px solid var(--line);
+  font-weight: 800; font-size: 16px;
+}
+.goal.met .goal-ring span { background: var(--grass); color: var(--on-color); }
+.goal-txt { display: flex; flex-direction: column; line-height: 1.2; }
+.goal-txt b { font-family: var(--font-pixel); font-size: 10px; }
+.goal-txt span { font-size: 14px; color: var(--ink-2); font-weight: 700; }
+.stat.streak.pending > span:first-child { filter: grayscale(1); opacity: 0.6; }
 .level-badge {
   width: 56px; height: 56px;
   display: grid; place-items: center;
@@ -708,6 +729,16 @@ section { margin-top: 32px; }
 .bar { display: block; width: 70%; max-width: 44px; background: var(--diamond); border-radius: 4px 4px 0 0; }
 .bar-val { font-size: 12px; font-weight: 700; color: var(--ink-2); }
 .bar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.bars { position: relative; }
+.goal-line { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--grass-2); pointer-events: none; }
+.goal-line i { position: absolute; right: 0; top: -18px; font-style: normal; font-size: 11px; font-weight: 700; color: var(--ink-2); background: var(--surface); padding: 0 4px; }
+[data-theme="dark"] .goal-line { border-color: var(--grass-3); }
+.bar-days span { display: flex; flex-direction: column; align-items: center; }
+.day-met { color: var(--grass-2); font-size: 13px; }
+[data-theme="dark"] .day-met { color: var(--grass-3); }
+.t-goal { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 700; font-size: 15px; }
+.t-goal select { min-height: 44px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font-size: 15px; }
+[data-theme="dark"] .t-goal select { background: #263849; }
 
 .t-hw-current {
   display: flex; justify-content: space-between; align-items: center; gap: 10px;
@@ -1009,6 +1040,8 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
   .options { grid-template-columns: 1fr; }
   .review-summary .btn { margin-left: 0; width: 100%; }
   .t-tiles { grid-template-columns: repeat(2, 1fr); }
+  .level-bar { grid-template-columns: auto 1fr auto; }
+  .level-bar .goal { grid-column: 1 / 3; grid-row: 2; }
   .map { --step: 44px; }
   .flash-en { font-size: 32px; }
   .slot-l { width: 36px; height: 48px; font-size: 24px; }

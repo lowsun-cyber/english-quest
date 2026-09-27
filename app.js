@@ -15,7 +15,8 @@
     lessonWrong: {}, // { lessonId: число ошибок за всё время }
     homework: null,  // текущее домашнее задание, см. makeHomework()
     checkpoints: {}, // { 'g2-p1': { best, passedAt } } — проверки после каждых 4 тем
-    settings: { theme: 'light', speechRate: 0.9 },
+    settings: { theme: 'light', speechRate: 0.9, dailyGoal: 10 },
+    bestStreak: 0,   // рекорд серии дней с выполненной целью
     version: 2,
   };
   let state = null;
@@ -91,7 +92,14 @@
     document.getElementById('stat-xp').textContent = state.xp;
     document.getElementById('stat-gold').textContent = state.gold;
     document.getElementById('stat-hearts').textContent = '❤️'.repeat(Math.max(0, state.hearts)) + '🖤'.repeat(Math.max(0, 5 - state.hearts));
-    document.getElementById('stat-streak').textContent = state.streak;
+    const si = streakInfo();
+    const fire = document.getElementById('stat-streak');
+    fire.textContent = si.streak;
+    fire.parentElement.classList.toggle('pending', !si.todayMet);
+    fire.parentElement.title = si.todayMet
+      ? `Дней подряд с выполненной целью: ${si.streak}. Сегодня цель выполнена!`
+      : si.streak ? `Дней подряд: ${si.streak}. Выполни цель сегодня, чтобы серия продолжилась.` : 'Выполняй цель дня каждый день — начнётся серия 🔥';
+    fire.parentElement.setAttribute('aria-label', fire.parentElement.title);
     // level
     const lvl = levelFromXp(state.xp);
     const nextTotal = totalXpForLevel(lvl+1);
@@ -495,8 +503,56 @@
       && Date.now() - lastInteraction < 90000;
     if (!practising) return;
     todayActivity().sec += ACTIVITY_TICK;
+    checkGoal();
+    renderGoal();
     if (++_ticks % 6 === 0) saveState(); // раз в ~30 с
   }, ACTIVITY_TICK * 1000);
+
+  // ---------- ЦЕЛЬ ДНЯ И СЕРИЯ ДНЕЙ ----------
+  // Цель — минуты занятий в день (считаются так же, как статистика: при открытом уроке).
+  // День засчитан, когда цель выполнена (activity[день].goalMet). Серия — дни подряд,
+  // включая сегодня или, если сегодня ещё не выполнено, заканчивая вчера.
+  const GOAL_OPTIONS = [5, 10, 15, 20];
+  function goalMinutes(){ return GOAL_OPTIONS.includes(state.settings.dailyGoal) ? state.settings.dailyGoal : 10; }
+  // сдвиг даты по календарю, а не на 24 часа — иначе переход на летнее время «теряет» день
+  function shiftDay(key, n){ const [y, m, d] = key.split('-').map(Number); return dayKey(new Date(y, m - 1, d + n).getTime()); }
+  function plural(n, one, few, many){
+    const a = n % 10, b = n % 100;
+    return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many;
+  }
+  function dayMet(k){ return !!state.activity[k]?.goalMet; }
+  function streakInfo(){
+    const today = dayKey(), todayMet = dayMet(today);
+    let k = todayMet ? today : shiftDay(today, -1), n = 0;
+    while (dayMet(k)){ n++; k = shiftDay(k, -1); }
+    return { streak: n, todayMet, best: Math.max(state.bestStreak || 0, n) };
+  }
+  function checkGoal(){
+    const a = todayActivity();
+    if (a.goalMet || a.sec < goalMinutes() * 60) return;
+    a.goalMet = true;
+    const { streak } = streakInfo();
+    state.bestStreak = Math.max(state.bestStreak || 0, streak);
+    confetti();
+    toast(`🎯 Цель дня выполнена! 🔥 ${streak} ${plural(streak, 'день', 'дня', 'дней')} подряд`);
+    reward(20, 5, { bonus: true }); // сохраняет состояние и обновляет шапку
+    renderGoal();
+  }
+  let _goalShown = '';
+  function renderGoal(force){
+    const el = document.getElementById('goal');
+    if (!el || !state) return;
+    const goal = goalMinutes(), a = state.activity[dayKey()] || { sec: 0 };
+    const min = Math.floor(a.sec / 60), met = !!a.goalMet;
+    const key = `${dayKey()}|${goal}|${min}|${met}`;
+    if (key === _goalShown && !force) return;
+    _goalShown = key;
+    el.classList.toggle('met', met);
+    el.style.setProperty('--p', met ? 100 : Math.min(100, Math.round(a.sec * 100 / (goal * 60))));
+    document.getElementById('goal-min').textContent = met ? '✓' : min;
+    document.getElementById('goal-sub').textContent = met ? `${min} мин — выполнено!` : `${min} / ${goal} мин`;
+    el.setAttribute('aria-label', met ? `Цель дня выполнена: ${min} ${plural(min, 'минута', 'минуты', 'минут')}` : `Цель дня: ${min} из ${goal} минут`);
+  }
 
   // ---------- ДОМАШНЕЕ ЗАДАНИЕ ----------
   const EX_NAMES = { cards: '🃏 Карточки', vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', spell: '✍️ Напиши', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори' };
@@ -633,9 +689,8 @@
   function lastDays(n){
     const out = [];
     for (let i = n - 1; i >= 0; i--){
-      const t = startOfDay(Date.now()) - i * DAY;
-      const k = dayKey(t);
-      out.push({ key: k, t, ...(state.activity[k] || { sec: 0, ok: 0, bad: 0 }) });
+      const k = shiftDay(dayKey(), -i);
+      out.push({ key: k, t: parseDay(k), ...(state.activity[k] || { sec: 0, ok: 0, bad: 0 }) });
     }
     return out;
   }
@@ -651,15 +706,17 @@
       return { l, parts: PARTS.filter(ex => p[ex]).length, wrong: state.lessonWrong[l.id] || 0 };
     });
     const hard = mistakeEntries().sort((a, b) => b.m.wrong - a.m.wrong);
-    return { days, min: sec > 0 && sec < 60 ? '<1' : Math.round(sec / 60), ok, bad, total: ok + bad, pct: ok + bad ? Math.round(ok * 100 / (ok + bad)) : null, active, lessons, hard };
+    const si = streakInfo();
+    return { days, goal: goalMinutes(), metDays: days.filter(d => d.goalMet).length, streak: si.streak, best: si.best,
+      min: sec > 0 && sec < 60 ? '<1' : Math.round(sec / 60), ok, bad, total: ok + bad, pct: ok + bad ? Math.round(ok * 100 / (ok + bad)) : null, active, lessons, hard };
   }
 
   const WEEKDAYS = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 
-  function minutesChart(days){
+  function minutesChart(days, goal){
     const mins = days.map(d => d.sec / 60);
     const label = m => m > 0 && m < 1 ? '<1' : String(Math.round(m));
-    const max = Math.max(...mins, 1);
+    const max = Math.max(...mins, goal || 0, 1);
     const peak = mins.indexOf(Math.max(...mins));
     const empty = mins.every(m => m === 0);
     return `
@@ -667,17 +724,18 @@
         <figcaption>Минуты занятий по дням</figcaption>
         ${empty ? '<p class="t-muted bars-empty">За неделю занятий пока не было.</p>' : ''}
         <div class="bars" aria-hidden="true">
+          ${goal ? `<span class="goal-line" style="bottom:${Math.round(goal * 100 / max)}%"><i>цель ${goal} мин</i></span>` : ''}
           ${days.map((d, i) => `
             <div class="bar-col" title="${WEEKDAYS[new Date(d.t).getDay()]} ${fmtDay(d.key)}: ${label(mins[i])} мин">
               <span class="bar-val">${i === peak && mins[i] ? label(mins[i]) : ''}</span>
               <span class="bar" style="height:${mins[i] ? Math.max(4, Math.round(mins[i] * 100 / max)) : 0}%"></span>
             </div>`).join('')}
         </div>
-        <div class="bar-days" aria-hidden="true">${days.map(d => `<span>${WEEKDAYS[new Date(d.t).getDay()]}</span>`).join('')}</div>
+        <div class="bar-days" aria-hidden="true">${days.map(d => `<span>${WEEKDAYS[new Date(d.t).getDay()]}${d.goalMet ? '<b class="day-met">✓</b>' : ''}</span>`).join('')}</div>
         <table class="sr-only">
           <caption>Минуты занятий по дням</caption>
-          <tr><th>День</th><th>Минуты</th><th>Верных ответов</th><th>Ошибок</th></tr>
-          ${days.map((d, i) => `<tr><td>${fmtDay(d.key)}</td><td>${label(mins[i])}</td><td>${d.ok}</td><td>${d.bad}</td></tr>`).join('')}
+          <tr><th>День</th><th>Минуты</th><th>Цель выполнена</th><th>Верных ответов</th><th>Ошибок</th></tr>
+          ${days.map((d, i) => `<tr><td>${fmtDay(d.key)}</td><td>${label(mins[i])}</td><td>${d.goalMet ? 'да' : 'нет'}</td><td>${d.ok}</td><td>${d.bad}</td></tr>`).join('')}
         </table>
       </figure>`;
   }
@@ -687,6 +745,7 @@
     const lines = [`English Quest — отчёт на ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`];
     lines.push(`За 7 дней: ${s.min} мин, занятия в ${s.active} из 7 дней`);
     lines.push(s.total ? `Ответов: ${s.total}, верных ${s.pct}%` : 'Ответов за неделю нет');
+    lines.push(`Цель дня ${s.goal} мин: выполнена в ${s.metDays} из 7 дней, серия ${s.streak} (рекорд ${s.best})`);
     const started = s.lessons.filter(x => x.parts > 0);
     if (started.length) lines.push(`Темы в работе: ${started.map(x => `${x.l.title} (${x.parts}/${PARTS.length})`).join(', ')}`);
     const worst = s.lessons.filter(x => x.wrong > 0).sort((a,b) => b.wrong - a.wrong).slice(0, 3);
@@ -730,8 +789,14 @@
         <div class="t-tile"><span class="t-num">${s.active}<small>/7</small></span><span class="t-lbl">дней с занятиями</span></div>
         <div class="t-tile"><span class="t-num">${s.total}</span><span class="t-lbl">ответов за 7 дней</span></div>
         <div class="t-tile"><span class="t-num">${s.pct === null ? '—' : s.pct + '%'}</span><span class="t-lbl">верных ответов</span></div>
+        <div class="t-tile"><span class="t-num">🔥 ${s.streak}</span><span class="t-lbl">${plural(s.streak, 'день', 'дня', 'дней')} подряд · рекорд ${s.best}</span></div>
+        <div class="t-tile"><span class="t-num">${s.metDays}<small>/7</small></span><span class="t-lbl">дней с выполненной целью</span></div>
       </div>
-      ${minutesChart(s.days)}
+      ${realState ? `<p class="t-muted t-goal">Цель дня: ${s.goal} мин</p>` : `
+        <label class="t-goal">🎯 Цель дня:
+          <select id="t-goal">${GOAL_OPTIONS.map(m => `<option value="${m}" ${m === s.goal ? 'selected' : ''}>${m} минут</option>`).join('')}</select>
+        </label>`}
+      ${minutesChart(s.days, s.goal)}
 
       <h3 class="t-h">Домашнее задание</h3>
       ${hwLesson ? `
@@ -840,6 +905,16 @@
     const viewClose = document.getElementById('t-view-close');
     if (viewClose) viewClose.onclick = () => { endView(); openTutorPanel(); };
     if (!realState){ wireOfflineSection(); wireBackupSection(); }
+    const goalSel = document.getElementById('t-goal');
+    if (goalSel) goalSel.onchange = () => {
+      state.settings.dailyGoal = +goalSel.value;
+      saveState();
+      checkGoal();
+      renderGoal(true);
+      renderHUD();
+      openTutorPanel();
+      toast(`🎯 Цель дня: ${goalSel.value} минут`);
+    };
     const unlock = document.getElementById('t-unlock');
     if (unlock) unlock.onchange = (e) => {
       state.settings.unlockAll = e.target.checked;
@@ -1011,7 +1086,7 @@
     const theme = state.settings.theme || 'light';
     document.documentElement.setAttribute('data-theme', theme);
     document.getElementById('btn-theme').textContent = theme === 'light' ? '🌙' : '☀️';
-    renderHUD(); renderMap(); renderInventory(); renderMistakes(); renderHomework();
+    renderHUD(); renderMap(); renderInventory(); renderMistakes(); renderHomework(); renderGoal(true);
   }
 
   // Просмотр чужого прогресса: панель рисуется по копии, сохранение отключено.
@@ -2308,7 +2383,7 @@
     if (!confirm('Сбросить весь прогресс?')) return;
     state = freshState();
     saveState();
-    renderHUD(); renderInventory(); renderMap(); renderMistakes(); renderHomework();
+    renderHUD(); renderInventory(); renderMap(); renderMistakes(); renderHomework(); renderGoal(true);
     toast('Прогресс сброшен');
   };
 
@@ -2333,6 +2408,7 @@
     renderMistakes();
     applyHomeworkFromHash();
     renderHomework();
+    renderGoal(true);
     // welcome from Harlow
     setTimeout(() => {
       showGuide('Dr. Harlow', pick(HARLOW_LINES.welcome), CHARACTERS.harlow);
