@@ -2,7 +2,7 @@
 // State + persistence + exercises + guide + TTS + speech recognition
 
 (function(){
-  const { CHARACTERS, LESSONS, MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp, RANKS, rankFor, HARLOW_LINES } = window.EQ;
+  const { CHARACTERS, LESSONS, MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp, RANKS, rankFor, HARLOW_LINES, lessonStartLine } = window.EQ;
 
   // ---------- STATE ----------
   const DEFAULT_STATE = {
@@ -135,7 +135,7 @@
       `;
       card.addEventListener('click', () => {
         const line = c.id === 'harlow'
-          ? 'Я поведу тебя через все уроки. Нажми на любой урок ниже.'
+          ? HARLOW_LINES.teamCard
           : `Я помогаю с темой «${c.subtitle}». Открой соответствующий урок!`;
         showGuide(c.name, line, c);
         speak(c.id === 'harlow' ? 'Hi, I am Doctor Harlow. Let us learn English.' : `I am ${c.name}. Nice to meet you.`);
@@ -1279,6 +1279,7 @@
     if (!g.hidden && Math.abs(window.scrollY - guideScrollY) > 80) g.hidden = true;
   }, { passive: true });
   document.getElementById('guide-close').addEventListener('click', () => document.getElementById('guide').hidden = true);
+  document.getElementById('guide-listen').addEventListener('click', () => speak(document.getElementById('guide-text').textContent));
   document.getElementById('guide-avatar').addEventListener('click', () => {
     // Читаем ровно то, что написано в пузыре, на его языке (реплики гида — по-русски)
     speak(document.getElementById('guide-text').textContent);
@@ -1292,6 +1293,11 @@
   const TTS_CACHE_DIR = 'tts_cache/';
   let _ttsManifest = null;
   let _ttsManifestLoading = null;
+  // Русские реплики Dr. Harlow тем же голосом: { фраза -> 'файл.m4a' } (tools/gen-ru-voice.mjs)
+  let _ruManifest = null;
+  function loadRuManifest(){
+    return _ruManifest || (_ruManifest = fetch('tts_manifest_ru.json').then(r => r.ok ? r.json() : {}).catch(() => ({})));
+  }
   let _currentAudio = null;
 
   async function loadManifest(){
@@ -1397,9 +1403,15 @@
       : (looksEnglish(raw) ? 'en' : 'ru');
     const clean = lang === 'en' ? normalizeForSpeech(raw) : raw;
 
-    // Русский всё равно через браузерный TTS (мы не генерировали Enceladus для рус.).
+    // Русский: сначала запись голосом Dr. Harlow, если она есть; иначе — голос устройства.
     if (lang !== 'en'){
-      speakFallback(clean, lang);
+      loadRuManifest().then(ru => {
+        const file = ru[raw];
+        if (!file) return speakFallback(clean, lang);
+        const a = new Audio(TTS_CACHE_DIR + file);
+        _currentAudio = a;
+        a.play().catch(err => { if (!isInterrupted(a, err)) speakFallback(clean, lang); });
+      });
       return;
     }
 
@@ -1417,11 +1429,15 @@
       a.volume = 1.0;
       _currentAudio = a;
       a.play().catch(err => {
+        if (isInterrupted(a, err)) return;
         console.warn('[TTS] play failed, fallback:', err);
         speakFallback(clean, lang);
       });
     });
   }
+
+  // Фразу прервала следующая (stopSpeech → pause) — это не сбой, голос устройства не нужен.
+  function isInterrupted(audio, err){ return audio !== _currentAudio || (err && err.name === 'AbortError'); }
 
   // Фолбэк на браузерный speechSynthesis — если бэкенд недоступен.
   function speakFallback(text, lang){
@@ -1473,7 +1489,11 @@
 
   async function audioFiles(){
     const m = await loadManifest();
-    return [...new Set(Object.values(m))].map(k => new URL(TTS_CACHE_DIR + k + '.mp3', location.href).href);
+    const ru = await loadRuManifest();
+    return [
+      ...new Set(Object.values(m).map(k => k + '.mp3')),
+      ...new Set(Object.values(ru)),
+    ].map(f => new URL(TTS_CACHE_DIR + f, location.href).href);
   }
   async function audioCachedCount(){
     if (!canOffline) return { have: 0, total: 0 };
@@ -1623,7 +1643,7 @@
   function startExercise(lesson, kind){
     // intro от Dr. Harlow + гида темы
     const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
-    const harlowLine = `Урок «${lesson.title}». ${lesson.intro}`;
+    const harlowLine = lessonStartLine(lesson);
     showGuide('Dr. Harlow', harlowLine, CHARACTERS.harlow);
     setTimeout(() => speak('Let us start!'), 400);
 

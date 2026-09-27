@@ -927,7 +927,19 @@ const HARLOW_LINES = {
     'Уровень выше! Так держать.',
     'Level up! Awesome!',
   ],
+  teamCard: 'Я поведу тебя через все уроки. Нажми на любой урок ниже.',
 };
+// Реплика Dr. Harlow при открытии урока. Тот же текст озвучен в tts_manifest_ru.json,
+// поэтому менять его нужно вместе с перегенерацией: node tools/gen-ru-voice.mjs
+function lessonStartLine(lesson){ return `Урок «${lesson.title}». ${lesson.intro}`; }
+// Все русские реплики Dr. Harlow, которые можно озвучить заранее
+function harlowRussianLines(){
+  const ru = s => /[а-яё]/i.test(s);
+  return [...new Set([
+    ...HARLOW_LINES.welcome, ...HARLOW_LINES.levelUp, HARLOW_LINES.teamCard,
+    ...LESSONS.map(lessonStartLine),
+  ].filter(ru))];
+}
 
 // экспорт в глобальную область
 window.EQ = {
@@ -935,5 +947,5 @@ window.EQ = {
   LESSONS,
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   RANKS, rankFor,
-  HARLOW_LINES,
+  HARLOW_LINES, lessonStartLine, harlowRussianLines,
 };

@@ -778,6 +778,8 @@ section { margin-top: 32px; }
   cursor: pointer;
   min-height: 44px; padding: 0 12px 0 0; margin-bottom: -10px;
 }
+.guide-actions { display: flex; gap: 8px; margin-bottom: -10px; }
+.guide-bubble .guide-actions button { margin-bottom: 0; }
 
 /* ==== MODAL ==== */
 .modal-back {

@@ -5,14 +5,14 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v1';
+const SHELL_CACHE = 'eq-shell-v2';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
 
 const SHELL = [
   './', 'index.html', 'base.css', 'style.css', 'content.js', 'translations.js', 'app.js',
-  'tts_manifest.json', 'manifest.webmanifest',
+  'tts_manifest.json', 'tts_manifest_ru.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
 const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;800&display=swap';
