@@ -516,6 +516,9 @@ section { margin-top: 32px; }
 [data-theme="dark"] .slot.trophy { background: linear-gradient(180deg, #6b5a1c, #4a3d10); }
 .t-cps { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
 .t-unlock { margin-top: 12px; display: inline-flex !important; }
+.t-offline { border: 2px dashed var(--line); border-radius: 12px; padding: 12px; margin-top: 8px; }
+.t-audio-stat { font-size: 15px; }
+.t-offline .t-muted { margin-top: 8px; }
 
 /* ==== INVENTORY ==== */
 .inv {
