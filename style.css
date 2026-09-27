@@ -547,6 +547,120 @@ section { margin-top: 32px; }
 }
 [data-theme="dark"] .review-passage { background: #1a2635; }
 
+/* ==== ДОМАШНЕЕ ЗАДАНИЕ ==== */
+.hw-card {
+  background: var(--surface);
+  border: 3px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: var(--shadow-hard);
+  border-left: 10px solid var(--violet);
+}
+.hw-card.done { border-left-color: var(--grass); }
+.hw-head { display: flex; gap: 12px; align-items: center; }
+.hw-icon { font-size: 40px; }
+.hw-title { font-family: var(--font-pixel); font-size: 15px; }
+.hw-sub { font-size: 14px; color: var(--muted); }
+.hw-note {
+  margin-top: 12px; padding: 10px 12px;
+  background: var(--bg); border-radius: 12px;
+  font-size: 16px;
+}
+[data-theme="dark"] .hw-note { background: #1a2635; }
+.hw-tasks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.hw-task {
+  min-height: 48px; padding: 8px 14px;
+  border: 3px solid var(--line); border-radius: 12px;
+  background: #fff; color: var(--ink);
+  font-weight: 800; font-size: 16px;
+  box-shadow: 0 4px 0 var(--line);
+}
+[data-theme="dark"] .hw-task { background: #263849; }
+.hw-task.done { background: #b8f0c1; color: var(--on-color); }
+[data-theme="dark"] .hw-task.done { background: #2f6c3c; color: var(--ink); }
+.hw-task:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+.hw-finish { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; font-size: 17px; }
+
+/* ==== РЕЖИМ РЕПЕТИТОРА ==== */
+.tutor-btn { margin-top: 12px; font-size: 14px; }
+.modal.wide { max-width: 900px; }
+
+.gate { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.gate-q { font-family: var(--font-pixel); font-size: 18px; }
+.gate input, .t-hw-form input, .t-hw-form select, .t-report, .t-link {
+  min-height: 44px; padding: 8px 10px;
+  border: 2px solid var(--line); border-radius: 10px;
+  background: #fff; color: var(--ink);
+  font-size: 16px;
+}
+[data-theme="dark"] :is(.gate input, .t-hw-form input, .t-hw-form select, .t-report, .t-link) { background: #263849; }
+.gate input { width: 90px; font-size: 20px; text-align: center; }
+.gate-err { color: var(--lava-2); font-weight: 700; min-height: 1.5em; margin-top: 8px; }
+[data-theme="dark"] .gate-err { color: #ffb39a; }
+
+.t-h { margin: 22px 0 10px; font-size: 14px; }
+.t-muted { color: var(--muted); font-size: 14px; }
+.t-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+.t-tile {
+  display: flex; flex-direction: column; gap: 2px;
+  border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  background: var(--bg);
+}
+[data-theme="dark"] .t-tile { background: #1a2635; }
+.t-num { font-weight: 800; font-size: 28px; line-height: 1.1; }
+.t-num small { font-size: 16px; color: var(--muted); }
+.t-lbl { font-size: 13px; color: var(--ink-2); }
+
+/* столбики: одна серия, один цвет, скруглённый верх, зазор 2px */
+.t-chart { margin-top: 14px; position: relative; }
+.bars-empty { position: absolute; left: 0; right: 0; top: 60px; text-align: center; }
+.t-chart figcaption { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.bars {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+  height: 120px; align-items: end;
+  border-bottom: 2px solid var(--muted);
+}
+.bar-col { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; cursor: default; }
+.bar-col:hover .bar { filter: brightness(1.1); }
+.bar { display: block; width: 70%; max-width: 44px; background: var(--diamond); border-radius: 4px 4px 0 0; }
+.bar-val { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.bar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.t-hw-current {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  border: 2px dashed var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px;
+}
+.t-hw-form { display: flex; flex-direction: column; gap: 10px; }
+.t-hw-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 700; }
+.t-hw-form fieldset { border: none; }
+.t-hw-form legend { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.t-checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.t-check {
+  flex-direction: row !important; align-items: center;
+  min-height: 44px; padding: 6px 12px;
+  border: 2px solid var(--line); border-radius: var(--radius-pill);
+  font-weight: 700; cursor: pointer;
+}
+.t-check input { width: 18px; height: 18px; min-height: 0; accent-color: var(--grass-2); }
+.t-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.t-grow { flex: 1; min-width: 220px; }
+.t-link, .t-report { width: 100%; font-size: 14px; }
+.t-report { font-family: var(--font-body); line-height: 1.5; margin-top: 10px; resize: vertical; }
+.t-hint { min-height: 1em; }
+
+.t-table-wrap { overflow-x: auto; }
+.t-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.t-table th { text-align: left; font-size: 13px; color: var(--muted); padding: 6px 8px; border-bottom: 2px solid var(--line); }
+.t-table td { padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+.t-table td:first-child { white-space: normal; }
+.t-table tr.idle td { color: var(--muted); }
+.t-table tr.hot td { background: rgba(255,107,58,0.12); }
+.t-table .pips { display: inline-flex; vertical-align: middle; margin-right: 4px; }
+.t-table .pip { width: 10px; height: 10px; }
+
+.t-hard { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.t-hard li { display: flex; justify-content: space-between; gap: 10px; align-items: center; border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 15px; }
+
 /* ==== GUIDE BUBBLE ==== */
 .guide-bubble {
   position: fixed; right: 16px; bottom: 16px;
@@ -810,6 +924,8 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
   .hero h1 { font-size: 30px; }
   .options { grid-template-columns: 1fr; }
   .review-summary .btn { margin-left: 0; width: 100%; }
+  .t-tiles { grid-template-columns: repeat(2, 1fr); }
+  .t-hw-current { flex-direction: column; align-items: flex-start; }
   .mistake-list { grid-template-columns: 1fr; max-height: 300px; }
   .guide-bubble { left: 12px; right: 12px; bottom: 12px; max-width: none; }
   .guide-bubble .bubble { flex: 1; }
