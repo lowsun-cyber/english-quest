@@ -80,6 +80,9 @@ export function afterFeedback(fn, ms){
   const gen = modalGen;
   setTimeout(() => { if (gen === modalGen && back.classList.contains('open')) fn(); }, ms);
 }
+let _onClose = null;
+// Вызвать fn один раз, когда окно закроют (крестиком, Escape или кодом)
+export function onNextClose(fn){ _onClose = fn; }
 export function closeModal(){
   endView();
   modalGen++;
@@ -88,6 +91,7 @@ export function closeModal(){
   stopSpeech();
   if (modalOpener && document.contains(modalOpener)) modalOpener.focus();
   modalOpener = null;
+  const cb = _onClose; _onClose = null; cb?.();
 }
 document.addEventListener('keydown', (e) => {
   if (!back.classList.contains('open')) return;

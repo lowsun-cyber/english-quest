@@ -792,6 +792,53 @@ section { margin-top: 32px; }
 .t-hard { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
 .t-hard li { display: flex; justify-content: space-between; gap: 10px; align-items: center; border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 15px; }
 
+/* ==== УЧЕНИКИ ==== */
+.profile-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 4px 12px;
+  border: 2px solid var(--line); border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--ink);
+  font-weight: 800; font-size: 15px;
+  box-shadow: 0 3px 0 var(--line);
+}
+.profile-chip #pf-avatar { font-size: 22px; }
+.profile-chip #pf-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-note { background: #fff3c2; color: var(--on-color); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; font-weight: 700; }
+[data-theme="dark"] .pf-note { background: #3a3320; color: var(--ink); }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+.pf-card {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 14px 10px; min-height: 150px;
+  background: #fff; color: var(--ink);
+  border: 3px solid var(--line); border-radius: 16px; box-shadow: 0 5px 0 var(--line);
+}
+[data-theme="dark"] .pf-card { background: #263849; }
+.pf-card.current { outline: 4px solid var(--diamond); outline-offset: 2px; }
+.pf-card:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.pf-av { font-size: 52px; line-height: 1.1; }
+.pf-name { font-weight: 800; font-size: 19px; }
+.pf-sub { font-size: 13px; color: var(--muted); }
+.pf-hint { margin-top: 12px; }
+.pf-list { display: flex; flex-direction: column; gap: 6px; }
+.pf-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border: 2px solid var(--line); border-radius: 12px; padding: 6px 10px; }
+.pf-row.current { background: var(--bg); }
+[data-theme="dark"] .pf-row.current { background: #1a2635; }
+.pf-av-btn { font-size: 28px; min-width: 44px; min-height: 44px; border-radius: 10px; }
+.pf-row-name { font-weight: 800; font-size: 16px; flex: 1; min-width: 120px; }
+.pf-row-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-add { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.pf-add label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 700; }
+.pf-add input[type=text], .pf-add #pf-add-name { min-height: 44px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font-size: 16px; max-width: 320px; }
+[data-theme="dark"] .pf-add #pf-add-name { background: #263849; }
+.pf-avatars { border: none; display: flex; flex-wrap: wrap; gap: 4px; }
+.pf-avatars legend { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.pf-av-pick { cursor: pointer; }
+.pf-av-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.pf-av-pick span { display: grid; place-items: center; width: 44px; height: 44px; font-size: 26px; border: 2px solid transparent; border-radius: 10px; }
+.pf-av-pick input:checked + span { border-color: var(--line); background: var(--gold); }
+.pf-av-pick input:focus-visible + span { outline: 3px solid var(--diamond); outline-offset: 2px; }
+.ws-name { font-size: 16px; }
+
 /* ==== ЛИСТ ДЛЯ ПЕЧАТИ ==== */
 .t-ws fieldset { border: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
 .t-ws legend { font-size: 14px; font-weight: 700; margin-bottom: 4px; }

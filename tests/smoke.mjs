@@ -263,7 +263,8 @@ try {
     f('t-pin1').value = '4826'; f('t-pin2').value = '4827'; f('t-pin-form').requestSubmit(); await __sleep(100);
     if (!/не совпадают/.test(f('t-pin-err').textContent)) throw new Error('несовпадение не замечено');
     f('t-pin1').value = '4826'; f('t-pin2').value = '4826'; f('t-pin-form').requestSubmit(); await __sleep(300);
-    const saved = __ls().settings.tutorPin; if (!saved || saved.includes('4826')) throw new Error('PIN сохранён открытым текстом или не сохранён');
+    const saved = JSON.parse(localStorage.getItem('english_quest_profiles')).tutorPin; if (!saved || saved.includes('4826')) throw new Error('PIN сохранён открытым текстом или не сохранён');
+    if (__ls().settings.tutorPin) throw new Error('PIN попал в прогресс ученика');
     f('t-lock-now').click(); await __sleep(200);
     document.getElementById('btn-tutor').click(); await __sleep(150);
     if (document.getElementById('gate-in').type !== 'password') throw new Error('вход не по PIN');
@@ -279,7 +280,7 @@ try {
     const [a, b] = document.querySelector('.gate-q').textContent.match(/\\d+/g).map(Number);
     if (a < 12 || b < 12) throw new Error('пример для сброса слишком простой: ' + a + '×' + b);
     f('gate-in').value = a * b; f('gate-form').requestSubmit(); await __sleep(300);
-    if (__ls().settings.tutorPin) throw new Error('PIN не убран');
+    if (JSON.parse(localStorage.getItem('english_quest_profiles')).tutorPin) throw new Error('PIN не убран');
     if (!document.querySelector('.t-warn')) throw new Error('нет отметки о сбросе PIN');
     f('t-report').click(); await __sleep(200);
     if (!/PIN сбрасывали/.test(f('t-report-out').value)) throw new Error('в отчёте нет отметки о сбросе PIN');
@@ -288,10 +289,54 @@ try {
     f('t-reset').click(); await __sleep(400);
     const st = __ls();
     if (st.xp !== 0 || Object.keys(st.inventory).length || Object.keys(st.mistakes).length) throw new Error('сброс неполный');
-    if (!st.settings.tutorPin || st.settings.theme !== 'dark') throw new Error('сброс стёр настройки');
+    if (!JSON.parse(localStorage.getItem('english_quest_profiles')).tutorPin || st.settings.theme !== 'dark') throw new Error('сброс стёр настройки');
     f('t-bk-undo').click(); await __sleep(400);
     if (__ls().xp !== xp) throw new Error('отмена сброса не вернула прогресс');
     __close(); return 'PIN, пауза, «Забыли PIN?», сброс с отменой';`)));
+
+  await test('несколько учеников', () => js(`
+    const f = id => document.getElementById(id);
+    if (!f('btn-profile').hidden) throw new Error('чип виден при одном ученике');
+    const mainXp = __ls().xp;
+    await __gate('1357');
+    f('pf-add-name').value = 'Маша <b>'; document.querySelector('input[name=pf-av][value="🐼"]').checked = true;
+    f('pf-add').requestSubmit(); await __sleep(400);
+    const idx = JSON.parse(localStorage.getItem('english_quest_profiles'));
+    if (idx.list.length !== 2) throw new Error('учеников: ' + idx.list.length);
+    if (f('btn-profile').hidden) throw new Error('чип не появился');
+    document.querySelector('.pf-list [data-act=switch]').click(); await __sleep(500);
+    if (!/Маша/.test(f('pf-name').textContent) || document.querySelector('#pf-name b')) throw new Error('не переключилось или имя не экранировано: ' + f('pf-name').innerHTML);
+    if (f('stat-xp').textContent !== '0') throw new Error('у нового ученика XP ' + f('stat-xp').textContent);
+    const L = window.EQ.LESSONS[0];
+    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
+    const ans = L.words.find(w => w.emoji === document.querySelector('.q-emoji').textContent).en;
+    [...document.querySelectorAll('.opt')].find(o => o.dataset.en === ans).click(); await __sleep(300); __close(); await __sleep(200);
+    const mashaXp = +f('stat-xp').textContent; if (!mashaXp) throw new Error('Маша не получила XP');
+    f('btn-profile').click(); await __sleep(400);
+    const cards = document.querySelectorAll('.pf-card'); if (cards.length !== 2) throw new Error('карточек: ' + cards.length);
+    [...cards].find(c => !c.classList.contains('current')).click(); await __sleep(500);
+    if (+f('stat-xp').textContent !== mainXp) throw new Error('прогресс первого ученика изменился: ' + f('stat-xp').textContent + ' вместо ' + mainXp);
+    window.__mashaXp = mashaXp; return true;`).then(() => load(APP + '#hw&lesson=g2-family&tasks=vocab')).then(() => js(`
+    const f = id => document.getElementById(id);
+    const note = document.querySelector('.pf-note')?.textContent || '';
+    if (!/домашнее задание/.test(note)) throw new Error('при запуске не спросили, для кого задание');
+    const masha = [...document.querySelectorAll('.pf-card')].find(c => /Маша/.test(c.textContent));
+    if (!/Уровень \\d+ · \\d+ XP/.test(masha.textContent)) throw new Error('на карточке нет уровня: ' + masha.textContent);
+    masha.click(); await __sleep(600);
+    if (f('homework-sec').hidden) throw new Error('задание не пришло Маше');
+    const idx = JSON.parse(localStorage.getItem('english_quest_profiles'));
+    const main = JSON.parse(localStorage.getItem('english_quest_v2'));
+    if (main.homework) throw new Error('задание попало и первому ученику');
+    await __gate('1357');
+    if (!/Маша/.test(document.querySelector('.modal .lead').textContent)) throw new Error('в панели не видно, чей прогресс');
+    const del = [...document.querySelectorAll('.pf-list [data-act=delete]')].find(b => /Маша/.test(b.getAttribute('aria-label')));
+    del.click(); await __sleep(600);
+    const after = JSON.parse(localStorage.getItem('english_quest_profiles'));
+    if (after.list.length !== 1) throw new Error('не удалилось');
+    if (localStorage.getItem('english_quest_v2__' + idx.list.find(p => /Маша/.test(p.name)).id)) throw new Error('данные Маши остались');
+    __close(); await __sleep(100);
+    if (!f('btn-profile').hidden) throw new Error('чип остался после удаления');
+    return 'раздельный прогресс, выбор при запуске, задание — выбранному, удаление';`)));
 
   await test('говори, гид, офлайн-раздел', () => js(`
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(600);

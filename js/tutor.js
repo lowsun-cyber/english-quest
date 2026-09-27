@@ -7,10 +7,11 @@ import { renderHUD } from './hud.js';
 import { CHECKPOINTS, CHECKPOINT_SIZE, PARTS, renderMap } from './map.js';
 import { mistakeEntries } from './mistakes.js';
 import { offlineSectionHtml, wireOfflineSection } from './offline.js';
-import { realState, saveState, state } from './state.js';
+import { activeProfile, realState, saveState, state } from './state.js';
 import { closeModal, openModal, toast } from './ui.js';
 import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
+import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, parseDay, plural, shiftDay } from './util.js';
 
 // ---------- РЕЖИМ РЕПЕТИТОРА ----------
@@ -74,7 +75,8 @@ export function minutesChart(days, goal){
 
 export function tutorReport(s){
   const d = new Date();
-  const lines = [`English Quest — отчёт на ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`];
+  const who = realState ? (state._viewMeta?.profile?.name || '') : (multi() || activeProfile().name !== 'Ученик' ? activeProfile().name : '');
+  const lines = [`English Quest — отчёт${who ? ` · ${who}` : ''} на ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`];
   lines.push(`За 7 дней: ${s.min} мин, занятия в ${s.active} из 7 дней`);
   lines.push(s.total ? `Ответов: ${s.total}, верных ${s.pct}%` : 'Ответов за неделю нет');
   lines.push(`Цель дня ${s.goal} мин: выполнена в ${s.metDays} из 7 дней, серия ${s.streak} (рекорд ${s.best})`);
@@ -108,7 +110,7 @@ export function openTutorPanel(){
         <b>👀 Просмотр копии.</b> ${escapeHtml(summaryText(state._viewMeta.summary, state._viewMeta.exportedAt))}
         Здесь ничего не сохраняется, прогресс на этом устройстве не меняется.
         <button class="btn secondary" id="t-view-close">Вернуться к своему прогрессу</button>
-      </div>` : '<div class="lead">Прогресс ученика на этом устройстве.</div>'}
+      </div>` : `<div class="lead">${multi() ? `Прогресс ученика: <b>${activeProfile().avatar} ${escapeHtml(activeProfile().name)}</b>. Переключить — в разделе «Ученики» ниже.` : 'Прогресс ученика на этом устройстве.'}</div>`}
 
     <div class="t-tiles">
       <div class="t-tile"><span class="t-num">${s.min}</span><span class="t-lbl">минут за 7 дней</span></div>
@@ -200,6 +202,9 @@ export function openTutorPanel(){
     <h3 class="t-h">Без интернета</h3>
     ${offlineSectionHtml()}
 
+    <h3 class="t-h">Ученики на этом устройстве</h3>
+    ${profilesSectionHtml()}
+
     <h3 class="t-h">Замок панели</h3>
     ${lockSectionHtml()}
 
@@ -243,6 +248,7 @@ export function openTutorPanel(){
   if (!realState){
     wireOfflineSection(); wireBackupSection(); wireResetSection();
     wireLockSection(openTutorPanel, closeModal);
+    wireProfilesSection(openTutorPanel);
   }
   const goalSel = document.getElementById('t-goal');
   if (goalSel) goalSel.onchange = () => {

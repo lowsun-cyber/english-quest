@@ -30,7 +30,6 @@ export const STORE_KEY = 'english_quest_v2';
 export const IDB_NAME = 'EnglishQuest';
 export const IDB_STORE = 'state';
 export let idbReady = false;
-export let memoryStore = null;
 
 export function getLS(){ try { return window['local' + 'Storage']; } catch(e){ return null; } }
 export function getIDB(){ try { return window['index' + 'edDB']; } catch(e){ return null; } }
@@ -48,41 +47,86 @@ export function openIDB(){
   });
 }
 
-export async function loadState(){
-  // 1) try browser storage
+// ---------- УЧЕНИКИ НА УСТРОЙСТВЕ ----------
+// Индекс устройства: { active, list: [{ id, name, avatar, created }], tutorPin?, pinResetAt? }.
+// Первый ученик ('main') хранится под старым ключом — прогресс, сделанный до профилей, не теряется.
+// PIN — общий для устройства (один взрослый замок), остальные настройки — у каждого ученика свои.
+export const MAIN_ID = 'main';
+const PROFILES_KEY = 'english_quest_profiles';
+export let profiles = null;
+export function setProfiles(p){ profiles = p; }
+export const activeId = () => profiles?.active || MAIN_ID;
+export const activeProfile = () => profiles?.list.find(p => p.id === activeId()) || { id: MAIN_ID, name: 'Ученик', avatar: '🦊' };
+export function stateKey(id = activeId()){ return id === MAIN_ID ? STORE_KEY : `${STORE_KEY}__${id}`; }
+const idbKey = id => id === MAIN_ID ? 'state' : `state__${id}`;
+const memory = {};   // запасное хранилище в памяти, если браузер не даёт писать
+
+async function idbGet(key){
+  const db = await openIDB();
+  return new Promise(resolve => {
+    const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+    req.onsuccess = () => resolve(req.result ?? null);
+    req.onerror = () => resolve(null);
+  });
+}
+async function idbPut(key, value){
+  const db = await openIDB();
+  const store = db.transaction(IDB_STORE, 'readwrite').objectStore(IDB_STORE);
+  value === undefined ? store.delete(key) : store.put(value, key);
+}
+
+export async function loadProfiles(){
+  let p = null;
+  try { p = JSON.parse(getLS()?.getItem(PROFILES_KEY) || 'null'); } catch (e) {}
+  if (!p) try { p = await idbGet('profiles'); } catch (e) {}
+  if (!p) p = memory.profiles || null;
+  if (!p || !Array.isArray(p.list) || !p.list.length) p = { active: MAIN_ID, list: [{ id: MAIN_ID, name: 'Ученик', avatar: '🦊', created: Date.now() }] };
+  if (!p.list.some(x => x.id === p.active)) p.active = p.list[0].id;
+  return p;
+}
+export async function saveProfiles(){
+  memory.profiles = JSON.parse(JSON.stringify(profiles));
+  try { getLS()?.setItem(PROFILES_KEY, JSON.stringify(profiles)); } catch (e) {}
+  try { await idbPut('profiles', profiles); } catch (e) {}
+}
+// PIN раньше жил в настройках ученика — переносим в индекс устройства
+export function takeDeviceSettings(st){
+  if (st?.settings?.tutorPin && !profiles.tutorPin){
+    profiles.tutorPin = st.settings.tutorPin;
+    if (st.settings.pinResetAt) profiles.pinResetAt = st.settings.pinResetAt;
+    saveProfiles();
+  }
+  if (st?.settings){ delete st.settings.tutorPin; delete st.settings.pinResetAt; }
+  return st;
+}
+export async function deleteStoredState(id){
+  delete memory[id];
+  try { getLS()?.removeItem(stateKey(id)); getLS()?.removeItem(stateKey(id) + '_before_restore'); } catch (e) {}
+  try { await idbPut(idbKey(id), undefined); } catch (e) {}
+}
+export async function writeStoredState(id, st){
+  memory[id] = JSON.parse(JSON.stringify(st));
+  try { getLS()?.setItem(stateKey(id), JSON.stringify(st)); } catch (e) {}
+  try { await idbPut(idbKey(id), st); } catch (e) {}
+}
+
+export async function loadState(id = activeId()){
+  // 1) localStorage
   try {
-    const ls = getLS();
-    if (ls) {
-      const raw = ls.getItem(STORE_KEY);
-      if (raw) return { ...freshState(), ...JSON.parse(raw) };
-    }
+    const raw = getLS()?.getItem(stateKey(id));
+    if (raw) return { ...freshState(), ...JSON.parse(raw) };
   } catch(e){}
-  // 2) try IDB
+  // 2) IndexedDB
   try {
-    const db = await openIDB();
-    return await new Promise((resolve) => {
-      const tx = db.transaction(IDB_STORE, 'readonly');
-      const req = tx.objectStore(IDB_STORE).get('state');
-      req.onsuccess = () => resolve(req.result ? { ...freshState(), ...req.result } : freshState());
-      req.onerror = () => resolve(freshState());
-    });
+    const v = await idbGet(idbKey(id));
+    if (v) return { ...freshState(), ...v };
   } catch(e){}
-  // 3) in-memory
-  if (memoryStore) return { ...freshState(), ...memoryStore };
+  // 3) память
+  if (memory[id]) return { ...freshState(), ...memory[id] };
   return freshState();
 }
 
 export async function saveState(){
   if (realState) return; // репетитор смотрит копию чужого прогресса — ничего не пишем
-  memoryStore = JSON.parse(JSON.stringify(state));
-  try {
-    const ls = getLS();
-    if (ls) ls.setItem(STORE_KEY, JSON.stringify(state));
-  } catch(e){}
-  try {
-    if (!idbReady) await openIDB();
-    const db = await openIDB();
-    const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put(state, 'state');
-  } catch(e){}
+  await writeStoredState(activeId(), state);
 }

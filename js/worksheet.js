@@ -1,7 +1,8 @@
 // English Quest — Печатный лист «Трудные слова» для занятия на бумаге.
 import { LESSONS } from './eq.js';
 import { mistakeEntries } from './mistakes.js';
-import { state } from './state.js';
+import { activeProfile, realState, state } from './state.js';
+import { multi } from './profiles.js';
 import { escapeHtml, shuffle } from './util.js';
 
 // Столько помещается на одну страницу А4 вместе со всеми тремя заданиями
@@ -26,6 +27,12 @@ function collect(source, lessonId){
 // «t _ _ _ _   b _ _ _» — первая буква и черточки, пробелы между словами сохраняются
 function hint(en){
   return en.split(' ').map(w => [...w].map((c, i) => i === 0 ? c : /[a-z]/i.test(c) ? '_' : c).join(' ')).join(' ');
+}
+
+function studentName(){
+  if (realState) return state._viewMeta?.profile?.name || '';
+  const p = activeProfile();
+  return multi() || p.name !== 'Ученик' ? p.name : '';
 }
 
 export function worksheetSectionHtml(){
@@ -67,7 +74,7 @@ export function worksheetHtml({ source, lessonId, withHint, withMatch, withKey }
     <section class="ws-page">
       <header class="ws-head">
         <div><div class="ws-brand">English Quest</div><h1>${escapeHtml(title)}</h1></div>
-        <div class="ws-meta"><div>Имя: <span class="ws-fill"></span></div><div>Дата: <span class="ws-fill short"></span></div></div>
+        <div class="ws-meta"><div>Имя: ${studentName() ? `<b class="ws-name">${escapeHtml(studentName())}</b>` : '<span class="ws-fill"></span>'}</div><div>Дата: <span class="ws-fill short"></span></div></div>
       </header>
 
       <div class="ws-sec">

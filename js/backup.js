@@ -5,8 +5,9 @@ import { renderHomework } from './homework.js';
 import { isLessonComplete, renderHUD, renderInventory } from './hud.js';
 import { renderMap } from './map.js';
 import { renderMistakes } from './mistakes.js';
-import { STORE_KEY, freshState, getLS, realState, saveState, setRealState, setState, state } from './state.js';
+import { activeProfile, freshState, getLS, realState, saveState, setRealState, setState, state, stateKey } from './state.js';
 import { openTutorPanel } from './tutor.js';
+import { createProfile } from './profiles.js';
 import { toast } from './ui.js';
 import { DAY, copyText, dayKey, escapeHtml, fmtDay, startOfDay } from './util.js';
 
@@ -15,9 +16,10 @@ import { DAY, copyText, dayKey, escapeHtml, fmtDay, startOfDay } from './util.js
 // Файл: JSON { app, format, exportedAt, summary, state }.
 // Код: «EQ1.» + base64url(gzip(тот же JSON)); если браузер не умеет gzip — «EQ0.» без сжатия.
 // Загруженный прогресс можно только посмотреть (репетитор) или поставить вместо текущего —
-// тогда текущий откладывается в UNDO_KEY и замену можно отменить.
+// тогда текущий откладывается в undoKey() и замену можно отменить.
 export const BACKUP_APP = 'english-quest';
-export const UNDO_KEY = STORE_KEY + '_before_restore';
+// у каждого ученика свой «прежний прогресс» для отмены
+export const undoKey = () => stateKey() + '_before_restore';
 export let pendingImport = null;   // разобранный файл/код, ждёт решения
 
 export function stateSummary(st){
@@ -32,7 +34,8 @@ export function summaryText(sum, exportedAt){
 }
 
 export function backupPayload(){
-  return { app: BACKUP_APP, format: 1, exportedAt: Date.now(), summary: stateSummary(state), state };
+  const { name, avatar } = activeProfile();
+  return { app: BACKUP_APP, format: 1, exportedAt: Date.now(), profile: { name, avatar }, summary: stateSummary(state), state };
 }
 export function b64url(bytes){
   let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -73,6 +76,7 @@ export function sanitizeState(src){
     else if (k === 'homework' && (v === null || isObj(v))) out[k] = v;
   }
   out.hearts = Math.min(5, out.hearts);
+  delete out.settings.tutorPin; delete out.settings.pinResetAt; // PIN — дело устройства, не копии
   out.settings = { ...freshState().settings, ...out.settings };
   if (!['light', 'dark'].includes(out.settings.theme)) out.settings.theme = 'light';
   return out;
@@ -80,7 +84,8 @@ export function sanitizeState(src){
 export function parseBackup(obj){
   if (!obj || obj.app !== BACKUP_APP || !obj.state) throw new Error('В файле нет прогресса English Quest.');
   const st = sanitizeState(obj.state);
-  return { state: st, exportedAt: obj.exportedAt, summary: stateSummary(st) };
+  const pr = obj.profile && typeof obj.profile === 'object' ? obj.profile : {};
+  return { state: st, exportedAt: obj.exportedAt, summary: stateSummary(st), profile: { name: String(pr.name || '').slice(0, 20), avatar: String(pr.avatar || '') } };
 }
 
 export function backupFileName(){ return `english-quest-progress-${dayKey()}.json`; }
@@ -88,7 +93,7 @@ export function markBackedUp(){ state.settings.lastBackup = Date.now(); saveStat
 
 export function backupSectionHtml(){
   const last = state.settings.lastBackup;
-  const hasUndo = (() => { try { return !!getLS()?.getItem(UNDO_KEY); } catch (e) { return false; } })();
+  const hasUndo = (() => { try { return !!getLS()?.getItem(undoKey()); } catch (e) { return false; } })();
   const canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [new File(['{}'], 'x.json', { type: 'application/json' })] }));
   return `
     <p class="t-muted">Прогресс хранится только в этом браузере. Сохраните копию, чтобы не потерять его, перенести на другое устройство или отправить репетитору.</p>
@@ -119,10 +124,11 @@ export function showImportPreview(parsed){
   const box = document.getElementById('t-bk-preview');
   box.innerHTML = `
     <div class="t-bk-card">
-      <p>${escapeHtml(summaryText(parsed.summary, parsed.exportedAt))}</p>
+      <p>${parsed.profile.name ? `<b>${escapeHtml(parsed.profile.avatar)} ${escapeHtml(parsed.profile.name)}.</b> ` : ''}${escapeHtml(summaryText(parsed.summary, parsed.exportedAt))}</p>
       <div class="controls">
         <button class="btn" id="t-bk-view">👀 Только посмотреть</button>
-        <button class="btn rose" id="t-bk-replace">♻️ Заменить прогресс на этом устройстве</button>
+        <button class="btn secondary" id="t-bk-add">➕ Добавить как нового ученика</button>
+        <button class="btn rose" id="t-bk-replace">♻️ Заменить прогресс: ${escapeHtml(activeProfile().name)}</button>
         <button class="icon-btn" id="t-bk-cancel">Отмена</button>
       </div>
       <p class="t-muted">«Посмотреть» — для репетитора: откроется статистика из копии, здесь ничего не изменится.</p>
@@ -132,6 +138,13 @@ export function showImportPreview(parsed){
     if (!confirm('Заменить прогресс на этом устройстве прогрессом из копии? Текущий прогресс можно будет вернуть.')) return;
     restoreState(parsed.state);
   };
+  document.getElementById('t-bk-add').onclick = async () => {
+    const name = parsed.profile.name || prompt('Как зовут ученика?', '') || '';
+    await createProfile(name, parsed.profile.avatar, parsed.state);
+    pendingImport = null;
+    toast('➕ Ученик добавлен — переключиться можно через «Кто занимается?»');
+    openTutorPanel();
+  };
   document.getElementById('t-bk-cancel').onclick = () => { pendingImport = null; box.innerHTML = ''; };
   box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -140,7 +153,7 @@ export function importError(e){
 }
 
 export function restoreState(newState){
-  try { getLS()?.setItem(UNDO_KEY, JSON.stringify(state)); } catch (e) {}
+  try { getLS()?.setItem(undoKey(), JSON.stringify(state)); } catch (e) {}
   setState(newState);
   applyLoadedState();
   toast('♻️ Прогресс восстановлен из копии');
@@ -156,7 +169,7 @@ export function wireResetSection(){
   const btn = document.getElementById('t-reset');
   if (btn) btn.onclick = () => {
     if (!confirm('Сбросить весь прогресс ученика на этом устройстве? Его можно будет вернуть.')) return;
-    try { getLS()?.setItem(UNDO_KEY, JSON.stringify(state)); } catch (e) {}
+    try { getLS()?.setItem(undoKey(), JSON.stringify(state)); } catch (e) {}
     const fresh = freshState();
     const { lastBackup, ...keep } = state.settings;
     fresh.settings = { ...fresh.settings, ...keep };
@@ -169,10 +182,10 @@ export function wireResetSection(){
 
 export function undoRestore(){
   let prev = null;
-  try { prev = JSON.parse(getLS()?.getItem(UNDO_KEY) || 'null'); } catch (e) {}
+  try { prev = JSON.parse(getLS()?.getItem(undoKey()) || 'null'); } catch (e) {}
   if (!prev) return;
   setState(sanitizeState(prev));
-  try { getLS()?.removeItem(UNDO_KEY); } catch (e) {}
+  try { getLS()?.removeItem(undoKey()); } catch (e) {}
   applyLoadedState();
   toast('↩︎ Прежний прогресс возвращён');
   openTutorPanel();

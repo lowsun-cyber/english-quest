@@ -1,7 +1,7 @@
 // English Quest — Замок панели для взрослых: пример на умножение или PIN-код.
 // Это защита от случайного входа ребёнка, а не от взлома: код открыт, данные в браузере.
-// PIN хранится не открытым текстом, а хешем (чтобы не светился в копии прогресса).
-import { saveState, state } from './state.js';
+// PIN общий для устройства (индекс учеников) и хранится хешем, а не цифрами.
+import { profiles, saveProfiles } from './state.js';
 import { openModal, toast } from './ui.js';
 import { fmtDay, dayKey } from './util.js';
 
@@ -15,7 +15,7 @@ function pinHash(pin){
   for (const c of 'english-quest|' + pin){ h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
   return h.toString(16);
 }
-export const hasPin = () => !!state.settings.tutorPin;
+export const hasPin = () => !!profiles?.tutorPin;
 export const isUnlocked = () => Date.now() < unlockedUntil;
 function unlock(){ unlockedUntil = Date.now() + UNLOCK_MINUTES * 60000; fails = 0; }
 export function lockNow(){ unlockedUntil = 0; }
@@ -48,7 +48,7 @@ export function openGate(onOpen){
   document.getElementById('gate-form').onsubmit = (e) => {
     e.preventDefault();
     if (Date.now() < blockedUntil) return;
-    if (pinHash(input.value) === state.settings.tutorPin){ unlock(); onOpen(); return; }
+    if (pinHash(input.value) === profiles.tutorPin){ unlock(); onOpen(); return; }
     input.value = '';
     if (++fails >= MAX_TRIES){ fails = 0; blockedUntil = Date.now() + COOLDOWN_SEC * 1000; cooldown(); }
     else err.textContent = `Неверный PIN. Осталось попыток: ${MAX_TRIES - fails}.`;
@@ -56,9 +56,9 @@ export function openGate(onOpen){
   document.getElementById('gate-forgot').onclick = () => mathGate(onOpen, 12, 28, 12, 18,
     'Если PIN забыт, его можно убрать, решив пример. В панели останется отметка, что PIN сбрасывали.',
     () => {
-      delete state.settings.tutorPin;
-      state.settings.pinResetAt = Date.now();
-      saveState();
+      delete profiles.tutorPin;
+      profiles.pinResetAt = Date.now();
+      saveProfiles();
       unlock();
       toast('PIN убран — придумайте новый в разделе «Замок панели»');
       onOpen();
@@ -88,7 +88,7 @@ function mathGate(onOpen, aMin, aSpan, bMin, bSpan, lead, onOk){
 
 // ---- раздел «Замок панели» в панели для взрослых ----
 export function pinResetNote(){
-  const t = state.settings.pinResetAt;
+  const t = profiles?.pinResetAt;
   return t ? `PIN сбрасывали через «Забыли PIN?» ${fmtDay(dayKey(t))}` : '';
 }
 export function lockSectionHtml(){
@@ -121,9 +121,9 @@ export function wireLockSection(onChange, onLock){
     const p1 = document.getElementById('t-pin1').value, p2 = document.getElementById('t-pin2').value;
     if (!/^\d{4}$/.test(p1)){ err.textContent = 'PIN — ровно 4 цифры.'; return; }
     if (p1 !== p2){ err.textContent = 'PIN-коды не совпадают.'; return; }
-    state.settings.tutorPin = pinHash(p1);
-    delete state.settings.pinResetAt;
-    saveState();
+    profiles.tutorPin = pinHash(p1);
+    delete profiles.pinResetAt;
+    saveProfiles();
     toast('🔒 PIN установлен');
     onChange();
   };
@@ -132,8 +132,8 @@ export function wireLockSection(onChange, onLock){
   const remove = document.getElementById('t-pin-remove');
   if (remove) remove.onclick = () => {
     if (!confirm('Убрать PIN? Вход снова будет по примеру на умножение.')) return;
-    delete state.settings.tutorPin;
-    saveState();
+    delete profiles.tutorPin;
+    saveProfiles();
     toast('PIN убран');
     onChange();
   };
