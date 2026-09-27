@@ -12,7 +12,7 @@ const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
 
 const SHELL = [
   './', 'index.html', 'base.css', 'style.css', 'content.js', 'translations.js',
-  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js',
+  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js', 'js/lock.js',
   'tts_manifest.json', 'tts_manifest_ru.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];

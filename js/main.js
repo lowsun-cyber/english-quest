@@ -16,6 +16,7 @@ import './tutor.js';
 import './ui.js';
 import './util.js';
 import './worksheet.js';
+import './lock.js';
 import { renderGoal } from './activity.js';
 import { CHARACTERS, HARLOW_LINES } from './eq.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';
@@ -34,15 +35,6 @@ document.getElementById('btn-theme').onclick = () => {
   state.settings.theme = nxt;
   document.getElementById('btn-theme').textContent = nxt === 'light' ? '🌙' : '☀️';
   saveState();
-};
-
-// ---------- RESET ----------
-document.getElementById('btn-reset').onclick = () => {
-  if (!confirm('Сбросить весь прогресс?')) return;
-  setState(freshState());
-  saveState();
-  renderHUD(); renderInventory(); renderMap(); renderMistakes(); renderHomework(); renderGoal(true);
-  toast('Прогресс сброшен');
 };
 
 // ---------- CTA ----------

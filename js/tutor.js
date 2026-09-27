@@ -1,6 +1,6 @@
 // English Quest — Режим репетитора: замок, статистика, график, отчёт.
 import { GOAL_OPTIONS, checkGoal, goalMinutes, renderGoal, streakInfo } from './activity.js';
-import { backupSectionHtml, endView, summaryText, wireBackupSection } from './backup.js';
+import { backupSectionHtml, endView, resetSectionHtml, summaryText, wireBackupSection, wireResetSection } from './backup.js';
 import { LESSONS } from './eq.js';
 import { EX_NAMES, EX_ORDER, assignHomework, dueLabel, homeworkLink, homeworkTaskDone, renderHomework } from './homework.js';
 import { renderHUD } from './hud.js';
@@ -8,33 +8,15 @@ import { CHECKPOINTS, CHECKPOINT_SIZE, PARTS, renderMap } from './map.js';
 import { mistakeEntries } from './mistakes.js';
 import { offlineSectionHtml, wireOfflineSection } from './offline.js';
 import { realState, saveState, state } from './state.js';
-import { openModal, toast } from './ui.js';
+import { closeModal, openModal, toast } from './ui.js';
 import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
+import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, parseDay, plural, shiftDay } from './util.js';
 
 // ---------- РЕЖИМ РЕПЕТИТОРА ----------
-export let tutorUnlocked = false;
 
 export function openTutorGate(){
-  if (tutorUnlocked) return openTutorPanel();
-  const a = 6 + Math.floor(Math.random()*4), b = 6 + Math.floor(Math.random()*4);
-  openModal(`
-    <h2>Для взрослых</h2>
-    <div class="lead">Здесь статистика и домашние задания. Чтобы войти, реши пример.</div>
-    <form class="gate" id="gate-form">
-      <label for="gate-in" class="gate-q">${a} × ${b} =</label>
-      <input id="gate-in" type="text" inputmode="numeric" autocomplete="off" maxlength="3" required />
-      <button class="btn" type="submit">Войти</button>
-    </form>
-    <p class="gate-err" id="gate-err" role="alert"></p>
-  `);
-  const input = document.getElementById('gate-in');
-  input.focus();
-  document.getElementById('gate-form').onsubmit = (e) => {
-    e.preventDefault();
-    if (parseInt(input.value, 10) === a * b){ tutorUnlocked = true; openTutorPanel(); }
-    else { document.getElementById('gate-err').textContent = 'Неверно. Попробуйте ещё раз.'; input.select(); }
-  };
+  openGate(openTutorPanel);
 }
 
 export function lastDays(n){
@@ -103,6 +85,7 @@ export function tutorReport(s){
   const words = s.hard.filter(x => x.m.type === 'word').slice(0, 8).map(x => x.data.word.en);
   if (words.length) lines.push(`Трудные слова: ${words.join(', ')}`);
   if (state.mastered) lines.push(`Выучено после ошибок: ${state.mastered}`);
+  if (pinResetNote()) lines.push(pinResetNote());
   const cpsDone = CHECKPOINTS.filter(cp => state.checkpoints[cp.id]?.passedAt);
   if (cpsDone.length) lines.push(`Сданы проверки: ${cpsDone.map(cp => `${cp.grade} кл. ч.${cp.part} (${state.checkpoints[cp.id].best}/${CHECKPOINT_SIZE})`).join(', ')}`);
   const hw = state.homework, hl = hw && LESSONS.find(l => l.id === hw.lessonId);
@@ -215,7 +198,13 @@ export function openTutorPanel(){
     ${backupSectionHtml()}
 
     <h3 class="t-h">Без интернета</h3>
-    ${offlineSectionHtml()}`}
+    ${offlineSectionHtml()}
+
+    <h3 class="t-h">Замок панели</h3>
+    ${lockSectionHtml()}
+
+    <h3 class="t-h">Сброс прогресса</h3>
+    ${resetSectionHtml()}`}
 
     <h3 class="t-h">Отчёт</h3>
     <p class="t-muted">Короткий текст для мессенджера — например, чтобы родитель отправил его репетитору.</p>
@@ -251,7 +240,10 @@ export function openTutorPanel(){
   const viewClose = document.getElementById('t-view-close');
   if (viewClose) viewClose.onclick = () => { endView(); openTutorPanel(); };
   wireWorksheet();
-  if (!realState){ wireOfflineSection(); wireBackupSection(); }
+  if (!realState){
+    wireOfflineSection(); wireBackupSection(); wireResetSection();
+    wireLockSection(openTutorPanel, closeModal);
+  }
   const goalSel = document.getElementById('t-goal');
   if (goalSel) goalSel.onchange = () => {
     state.settings.dailyGoal = +goalSel.value;

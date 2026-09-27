@@ -710,6 +710,13 @@ section { margin-top: 32px; }
 [data-theme="dark"] :is(.gate input, .t-hw-form input, .t-hw-form select, .t-report, .t-link) { background: #263849; }
 .gate input { width: 90px; font-size: 20px; text-align: center; }
 .gate-err { color: var(--lava-2); font-weight: 700; min-height: 1.5em; margin-top: 8px; }
+.gate-forgot { margin-top: 4px; min-height: 44px; color: var(--muted); font-size: 14px; font-weight: 700; text-decoration: underline; }
+.t-warn { background: #fff3c2; color: var(--on-color); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 15px; margin-bottom: 8px; }
+[data-theme="dark"] .t-warn { background: #3a3320; color: var(--ink); }
+.t-pin-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 8px; }
+.t-pin-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 700; }
+.t-pin-form input { width: 110px; min-height: 44px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font-size: 20px; letter-spacing: 4px; text-align: center; }
+[data-theme="dark"] .t-pin-form input { background: #263849; }
 [data-theme="dark"] .gate-err { color: #ffb39a; }
 
 .t-h { margin: 22px 0 10px; font-size: 14px; }

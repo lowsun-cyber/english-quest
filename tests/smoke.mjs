@@ -38,7 +38,10 @@ const STUBS = `
   window.confirm = () => true;
   window.__sleep = t => new Promise(r => setTimeout(r, t));
   window.__toasts = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.classList?.contains('toast') && window.__toasts.push(n.textContent)))).observe(document.body, { childList: true });
-  window.__gate = async () => { document.getElementById('btn-tutor').click(); await __sleep(150); const q = document.querySelector('.gate-q'); if (q){ const [a, b] = q.textContent.match(/\\d+/g).map(Number); document.getElementById('gate-in').value = a * b; document.getElementById('gate-form').requestSubmit(); await __sleep(300); } };
+  window.__gate = async (pin) => { document.getElementById('btn-tutor').click(); await __sleep(150); const q = document.querySelector('.gate-q'); if (!q) return;
+    if (/×/.test(q.textContent)){ const [a, b] = q.textContent.match(/\\d+/g).map(Number); document.getElementById('gate-in').value = a * b; }
+    else document.getElementById('gate-in').value = pin || '';
+    document.getElementById('gate-form').requestSubmit(); await __sleep(300); };
   window.__ls = () => JSON.parse(localStorage.getItem('english_quest_v2') || 'null');
   window.__close = () => document.getElementById('modal-close').click();
   return true;`;
@@ -241,7 +244,7 @@ try {
     if (!__toasts.some(t => t.includes('Цель дня выполнена'))) throw new Error('нет сообщения');
     return 'серия 2 → 3';`)));
 
-  await test('тёмная тема, Escape и сброс', () => js(`
+  await test('тёмная тема и Escape', () => js(`
     document.getElementById('btn-theme').click(); await __sleep(100);
     if (document.documentElement.dataset.theme !== 'dark') throw new Error('тема не переключилась');
     document.querySelector('.map-node').click(); await __sleep(200);
@@ -249,9 +252,46 @@ try {
     if (document.getElementById('modal-back').classList.contains('open')) throw new Error('Escape не закрыл окно');
     return true;`).then(() => load()).then(() => js(`
     if (document.documentElement.dataset.theme !== 'dark') throw new Error('тема не сохранилась');
-    document.getElementById('btn-reset').click(); await __sleep(200);
-    const st = __ls(); if (st.xp !== 0 || Object.keys(st.inventory).length || Object.keys(st.mistakes).length) throw new Error('сброс неполный');
-    return 'тема сохраняется, сброс чистый';`)));
+    if (document.getElementById('btn-reset')) throw new Error('кнопка сброса всё ещё в шапке');
+    return 'тема сохраняется';`)));
+
+  await test('PIN-код и сброс в панели', () => js(`
+    await __gate();
+    const f = id => document.getElementById(id);
+    f('t-pin1').value = '12'; f('t-pin2').value = '12'; f('t-pin-form').requestSubmit(); await __sleep(100);
+    if (!/4 цифры/.test(f('t-pin-err').textContent)) throw new Error('короткий PIN принят');
+    f('t-pin1').value = '4826'; f('t-pin2').value = '4827'; f('t-pin-form').requestSubmit(); await __sleep(100);
+    if (!/не совпадают/.test(f('t-pin-err').textContent)) throw new Error('несовпадение не замечено');
+    f('t-pin1').value = '4826'; f('t-pin2').value = '4826'; f('t-pin-form').requestSubmit(); await __sleep(300);
+    const saved = __ls().settings.tutorPin; if (!saved || saved.includes('4826')) throw new Error('PIN сохранён открытым текстом или не сохранён');
+    f('t-lock-now').click(); await __sleep(200);
+    document.getElementById('btn-tutor').click(); await __sleep(150);
+    if (document.getElementById('gate-in').type !== 'password') throw new Error('вход не по PIN');
+    for (let i = 0; i < 5; i++){ f('gate-in').value = '0000'; f('gate-form').requestSubmit(); await __sleep(50); }
+    if (!/Подождите/.test(f('gate-err').textContent) || !f('gate-go').disabled) throw new Error('нет паузы после 5 попыток: ' + f('gate-err').textContent);
+    __close(); return true;`).then(() => load()).then(() => js(`
+    const f = id => document.getElementById(id);
+    await __gate('4826');
+    if (!document.getElementById('t-pin-change')) throw new Error('верный PIN не пустил в панель');
+    f('t-lock-now').click(); await __sleep(200);
+    document.getElementById('btn-tutor').click(); await __sleep(150);
+    f('gate-forgot').click(); await __sleep(150);
+    const [a, b] = document.querySelector('.gate-q').textContent.match(/\\d+/g).map(Number);
+    if (a < 12 || b < 12) throw new Error('пример для сброса слишком простой: ' + a + '×' + b);
+    f('gate-in').value = a * b; f('gate-form').requestSubmit(); await __sleep(300);
+    if (__ls().settings.tutorPin) throw new Error('PIN не убран');
+    if (!document.querySelector('.t-warn')) throw new Error('нет отметки о сбросе PIN');
+    f('t-report').click(); await __sleep(200);
+    if (!/PIN сбрасывали/.test(f('t-report-out').value)) throw new Error('в отчёте нет отметки о сбросе PIN');
+    f('t-pin1').value = '1357'; f('t-pin2').value = '1357'; f('t-pin-form').requestSubmit(); await __sleep(300);
+    const before = __ls(); const xp = before.xp;
+    f('t-reset').click(); await __sleep(400);
+    const st = __ls();
+    if (st.xp !== 0 || Object.keys(st.inventory).length || Object.keys(st.mistakes).length) throw new Error('сброс неполный');
+    if (!st.settings.tutorPin || st.settings.theme !== 'dark') throw new Error('сброс стёр настройки');
+    f('t-bk-undo').click(); await __sleep(400);
+    if (__ls().xp !== xp) throw new Error('отмена сброса не вернула прогресс');
+    __close(); return 'PIN, пауза, «Забыли PIN?», сброс с отменой';`)));
 
   await test('говори, гид, офлайн-раздел', () => js(`
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(600);

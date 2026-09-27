@@ -107,7 +107,7 @@ export function backupSectionHtml(){
     <textarea class="t-report" id="t-bk-paste" rows="3" placeholder="…или вставьте сюда код (начинается с EQ1.)" aria-label="Код прогресса для загрузки"></textarea>
     <div class="controls"><button class="btn secondary" id="t-bk-paste-go">Загрузить код</button></div>
     <div id="t-bk-preview"></div>
-    ${hasUndo ? '<p class="t-muted">Прогресс недавно заменили из копии. <button class="icon-btn" id="t-bk-undo">↩︎ Вернуть прежний</button></p>' : ''}`;
+    ${hasUndo ? '<p class="t-muted">Прогресс недавно заменили или сбросили. <button class="icon-btn" id="t-bk-undo">↩︎ Вернуть прежний</button></p>' : ''}`;
 }
 export function daysAgo(t){
   const d = Math.round((startOfDay(Date.now()) - startOfDay(t)) / DAY);
@@ -146,6 +146,27 @@ export function restoreState(newState){
   toast('♻️ Прогресс восстановлен из копии');
   openTutorPanel();
 }
+// Сброс прогресса: настройки (PIN, тема, цель дня) остаются, прежний прогресс можно вернуть.
+export function resetSectionHtml(){
+  return `
+    <p class="t-muted">Удалит прогресс, ошибки, задания и награды на этом устройстве. PIN, тема и цель дня сохранятся. Сброс можно отменить кнопкой «Вернуть прежний» в разделе «Перенос и резервная копия».</p>
+    <div class="controls"><button class="btn rose" id="t-reset">♻️ Сбросить прогресс</button></div>`;
+}
+export function wireResetSection(){
+  const btn = document.getElementById('t-reset');
+  if (btn) btn.onclick = () => {
+    if (!confirm('Сбросить весь прогресс ученика на этом устройстве? Его можно будет вернуть.')) return;
+    try { getLS()?.setItem(UNDO_KEY, JSON.stringify(state)); } catch (e) {}
+    const fresh = freshState();
+    const { lastBackup, ...keep } = state.settings;
+    fresh.settings = { ...fresh.settings, ...keep };
+    setState(fresh);
+    applyLoadedState();
+    toast('Прогресс сброшен');
+    openTutorPanel();
+  };
+}
+
 export function undoRestore(){
   let prev = null;
   try { prev = JSON.parse(getLS()?.getItem(UNDO_KEY) || 'null'); } catch (e) {}
