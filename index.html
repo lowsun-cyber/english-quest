@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>English Quest — Госпиталь, Крафт-мир и Roblox-школа</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%233fb650'/><rect x='8' y='6' width='16' height='20' fill='%23fff' stroke='%23000' stroke-width='2'/><rect x='14' y='10' width='4' height='12' fill='%23e53935'/><rect x='10' y='14' width='12' height='4' fill='%23e53935'/></svg>" />
+</head>
+<body>
+  <div class="app">
+    <!-- HUD -->
+    <header class="hud">
+      <div class="logo">
+        <!-- Logo SVG -->
+        <svg width="42" height="42" viewBox="0 0 42 42" role="img" aria-label="English Quest logo">
+          <rect x="1" y="1" width="40" height="40" fill="#3fb650" stroke="#000" stroke-width="2"/>
+          <rect x="11" y="7" width="20" height="26" fill="#fffdf6" stroke="#000" stroke-width="2"/>
+          <rect x="19" y="12" width="4" height="16" fill="#e53935"/>
+          <rect x="13" y="18" width="16" height="4" fill="#e53935"/>
+          <rect x="9" y="30" width="24" height="6" fill="#f5c02b" stroke="#000" stroke-width="2"/>
+        </svg>
+        <div>
+          <div class="title">ENGLISH QUEST</div>
+          <div class="sub">Госпиталь · Крафт-мир · Roblox-школа</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="stat xp" title="Опыт"><span>⭐</span><span id="stat-xp">0</span> XP</div>
+      <div class="stat gold" title="Монеты"><span>🪙</span><span id="stat-gold">0</span></div>
+      <div class="stat hearts" title="Жизни"><span id="stat-hearts">❤️❤️❤️❤️❤️</span></div>
+      <div class="stat streak" title="Серия побед"><span>🔥</span><span id="stat-streak">0</span></div>
+      <button class="icon-btn" id="btn-theme" title="Сменить тему">🌙</button>
+      <button class="icon-btn" id="btn-reset" title="Сбросить прогресс">↺</button>
+    </header>
+
+    <!-- Level bar -->
+    <div class="level-bar">
+      <div class="level-badge" id="level-badge">L1</div>
+      <div class="level-info">
+        <div class="rank" id="rank-title">🌱 Rookie Explorer</div>
+        <div class="progress"><span id="level-progress" style="width:0%"></span></div>
+        <div class="xp-text" id="xp-text">0 / 52 XP до следующего уровня</div>
+      </div>
+      <div>
+        <div class="stat gold">🏆 <span id="stat-quests">0</span>/24</div>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div>
+        <h1>Учи английский, как в Minecraft и Roblox</h1>
+        <p id="hero-p">
+          Три класса Spotlight (2, 3, 4), 24 темы, 60 уровней. Лечи животных в госпитале, крафти
+          блоки в шахте, читай сказки с профессором Совой. Каждый правильный ответ приносит опыт,
+          золото и новые предметы в инвентарь.
+        </p>
+        <div class="cta">
+          <button class="btn" id="btn-hero-start">🚀 Начать урок</button>
+          <button class="btn secondary" id="btn-hero-team">👥 Команда</button>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="cloud" style="left:10%"></div>
+        <div class="cloud c2"></div>
+        <div class="sun"></div>
+        <!-- house (Minecraft) -->
+        <svg viewBox="0 0 400 300" style="position:absolute; inset:0; width:100%; height:100%; z-index:2;">
+          <!-- diamond block -->
+          <g transform="translate(280,140)">
+            <rect x="0" y="0" width="46" height="46" fill="#3a9fe0" stroke="#000" stroke-width="3"/>
+            <rect x="6" y="6" width="10" height="10" fill="#7bd0f5"/>
+            <rect x="24" y="18" width="8" height="8" fill="#7bd0f5"/>
+          </g>
+          <!-- tree -->
+          <g transform="translate(30,140)">
+            <rect x="16" y="40" width="12" height="30" fill="#7a4b1c" stroke="#000" stroke-width="3"/>
+            <rect x="0" y="0" width="44" height="44" fill="#3fb650" stroke="#000" stroke-width="3"/>
+            <rect x="8" y="8" width="8" height="8" fill="#61d074"/>
+            <rect x="24" y="20" width="8" height="8" fill="#2e8a3d"/>
+          </g>
+          <!-- Dr. Harlow (deer doctor — Animal Hospital style, redrawn v2) -->
+          <g transform="translate(160,100) scale(0.85)" id="hero-deer">
+            <!-- shadow -->
+            <ellipse cx="36" cy="152" rx="42" ry="7" fill="rgba(0,0,0,0.25)"/>
+
+            <!-- back legs -->
+            <rect x="14" y="128" width="12" height="22" fill="#c88a4a" stroke="#000" stroke-width="3"/>
+            <rect x="46" y="128" width="12" height="22" fill="#c88a4a" stroke="#000" stroke-width="3"/>
+            <!-- hooves -->
+            <rect x="12" y="146" width="16" height="6" fill="#3a2412" stroke="#000" stroke-width="2"/>
+            <rect x="44" y="146" width="16" height="6" fill="#3a2412" stroke="#000" stroke-width="2"/>
+            <!-- little white sock accents -->
+            <rect x="14" y="140" width="12" height="4" fill="#fff2e0"/>
+            <rect x="46" y="140" width="12" height="4" fill="#fff2e0"/>
+
+            <!-- body (fur peeking under coat) -->
+            <rect x="10" y="64" width="52" height="66" rx="6" fill="#c88a4a" stroke="#000" stroke-width="3"/>
+            <!-- fawn spots on body -->
+            <circle cx="18" cy="124" r="2" fill="#fff2e0"/>
+            <circle cx="54" cy="126" r="2" fill="#fff2e0"/>
+
+            <!-- lab coat (open V collar) -->
+            <path d="M 10 70 L 62 70 L 62 128 L 10 128 Z" fill="#fff" stroke="#000" stroke-width="3"/>
+            <!-- V neck -->
+            <path d="M 26 70 L 36 88 L 46 70 Z" fill="#c88a4a" stroke="#000" stroke-width="2"/>
+            <!-- coat center placket + buttons -->
+            <rect x="35" y="90" width="2" height="38" fill="#000"/>
+            <circle cx="36" cy="100" r="2" fill="#000"/>
+            <circle cx="36" cy="114" r="2" fill="#000"/>
+            <circle cx="36" cy="126" r="2" fill="#000"/>
+            <!-- pocket with red medical cross -->
+            <rect x="14" y="104" width="16" height="18" fill="#fff" stroke="#000" stroke-width="2"/>
+            <rect x="20" y="108" width="4" height="12" fill="#e53935"/>
+            <rect x="16" y="112" width="12" height="4" fill="#e53935"/>
+            <!-- name badge -->
+            <rect x="44" y="92" width="14" height="8" fill="#ffe66b" stroke="#000" stroke-width="2"/>
+            <text x="51" y="98" font-family="'Press Start 2P', monospace" font-size="5" text-anchor="middle" fill="#000">DR.H</text>
+
+            <!-- arms -->
+            <rect x="-2" y="78" width="14" height="38" rx="3" fill="#fff" stroke="#000" stroke-width="3"/>
+            <rect x="60" y="78" width="14" height="38" rx="3" fill="#fff" stroke="#000" stroke-width="3"/>
+            <!-- hooves at arm ends -->
+            <rect x="-2" y="114" width="14" height="8" rx="2" fill="#c88a4a" stroke="#000" stroke-width="2"/>
+            <rect x="60" y="114" width="14" height="8" rx="2" fill="#c88a4a" stroke="#000" stroke-width="2"/>
+
+            <!-- clipboard in right hand -->
+            <g transform="translate(62,116)">
+              <rect x="0" y="0" width="18" height="22" fill="#a86a2a" stroke="#000" stroke-width="2"/>
+              <rect x="2" y="3" width="14" height="17" fill="#fff" stroke="#000" stroke-width="1"/>
+              <rect x="7" y="-2" width="4" height="4" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
+              <rect x="4" y="6" width="10" height="1" fill="#666"/>
+              <rect x="4" y="10" width="8" height="1" fill="#666"/>
+              <rect x="4" y="14" width="9" height="1" fill="#666"/>
+            </g>
+
+            <!-- stethoscope (draped over neck) -->
+            <path d="M 22 74 Q 18 90 22 106 Q 30 116 42 108 Q 52 100 48 84 Q 46 76 42 74" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <circle cx="42" cy="110" r="6" fill="#d8d8d8" stroke="#000" stroke-width="2"/>
+            <circle cx="42" cy="110" r="3" fill="#8a8a8a"/>
+            <!-- ear tips of stethoscope -->
+            <circle cx="22" cy="72" r="2.5" fill="#111"/>
+            <circle cx="46" cy="72" r="2.5" fill="#111"/>
+
+            <!-- neck -->
+            <rect x="26" y="56" width="20" height="14" fill="#c88a4a" stroke="#000" stroke-width="3"/>
+
+            <!-- antlers (bigger + branchier) -->
+            <g stroke="#000" stroke-width="3" fill="#8b5a2b">
+              <!-- left antler -->
+              <rect x="12" y="-2" width="6" height="14"/>
+              <rect x="4" y="-10" width="10" height="6"/>
+              <rect x="-2" y="-18" width="8" height="8"/>
+              <rect x="14" y="-16" width="8" height="6"/>
+              <rect x="8" y="-26" width="6" height="8"/>
+              <!-- right antler (mirrored) -->
+              <rect x="54" y="-2" width="6" height="14"/>
+              <rect x="58" y="-10" width="10" height="6"/>
+              <rect x="66" y="-18" width="8" height="8"/>
+              <rect x="50" y="-16" width="8" height="6"/>
+              <rect x="58" y="-26" width="6" height="8"/>
+            </g>
+
+            <!-- ears -->
+            <ellipse cx="10" cy="22" rx="7" ry="11" fill="#c88a4a" stroke="#000" stroke-width="3" transform="rotate(-18 10 22)"/>
+            <ellipse cx="62" cy="22" rx="7" ry="11" fill="#c88a4a" stroke="#000" stroke-width="3" transform="rotate(18 62 22)"/>
+            <ellipse cx="10" cy="22" rx="3" ry="6" fill="#ffd0aa" transform="rotate(-18 10 22)"/>
+            <ellipse cx="62" cy="22" rx="3" ry="6" fill="#ffd0aa" transform="rotate(18 62 22)"/>
+
+            <!-- head (rounded, wider at top) -->
+            <path d="M 12 12 Q 12 4 22 4 L 50 4 Q 60 4 60 12 L 60 40 Q 60 50 50 52 L 22 52 Q 12 50 12 40 Z" fill="#c88a4a" stroke="#000" stroke-width="3"/>
+            <!-- doctor's headband mirror -->
+            <rect x="28" y="6" width="16" height="6" fill="#fff" stroke="#000" stroke-width="2"/>
+            <circle cx="36" cy="9" r="4" fill="#c0c0c0" stroke="#000" stroke-width="2"/>
+            <circle cx="36" cy="9" r="2" fill="#7bb7e0"/>
+
+            <!-- white muzzle -->
+            <path d="M 20 34 Q 36 30 52 34 L 50 50 Q 36 54 22 50 Z" fill="#fff2e0" stroke="#000" stroke-width="3"/>
+            <!-- fawn spots on head -->
+            <circle cx="18" cy="20" r="2" fill="#fff2e0"/>
+            <circle cx="54" cy="22" r="2" fill="#fff2e0"/>
+
+            <!-- eyes (big Roblox-style with eyelashes) -->
+            <rect x="18" y="18" width="10" height="10" rx="1" fill="#fff" stroke="#000" stroke-width="2"/>
+            <rect x="44" y="18" width="10" height="10" rx="1" fill="#fff" stroke="#000" stroke-width="2"/>
+            <rect x="21" y="20" width="5" height="6" fill="#2b2b2b"/>
+            <rect x="47" y="20" width="5" height="6" fill="#2b2b2b"/>
+            <rect x="22" y="21" width="2" height="2" fill="#fff"/>
+            <rect x="48" y="21" width="2" height="2" fill="#fff"/>
+            <!-- eyelashes -->
+            <path d="M 18 18 L 15 15 M 22 17 L 21 14 M 26 17 L 27 14" stroke="#000" stroke-width="1.5" fill="none"/>
+            <path d="M 54 18 L 57 15 M 50 17 L 51 14 M 46 17 L 45 14" stroke="#000" stroke-width="1.5" fill="none"/>
+            <!-- eyebrows -->
+            <rect x="18" y="14" width="10" height="2" fill="#5a3818"/>
+            <rect x="44" y="14" width="10" height="2" fill="#5a3818"/>
+
+            <!-- pink nose -->
+            <path d="M 30 36 L 42 36 L 40 42 L 32 42 Z" fill="#ff7bb0" stroke="#000" stroke-width="2"/>
+            <rect x="34" y="37" width="2" height="2" fill="#ffb6d1"/>
+            <!-- mouth (open smile) -->
+            <path d="M 30 46 Q 36 52 42 46" stroke="#000" stroke-width="2" fill="#fff"/>
+            <path d="M 32 48 Q 36 50 40 48" stroke="#ff7bb0" stroke-width="1.5" fill="none"/>
+            <!-- cheeks -->
+            <ellipse cx="20" cy="36" rx="3" ry="2" fill="#ff9fbf" opacity="0.55"/>
+            <ellipse cx="52" cy="36" rx="3" ry="2" fill="#ff9fbf" opacity="0.55"/>
+
+            <!-- bow tie -->
+            <path d="M 26 60 L 32 56 L 32 66 Z" fill="#e53935" stroke="#000" stroke-width="2"/>
+            <path d="M 46 60 L 40 56 L 40 66 Z" fill="#e53935" stroke="#000" stroke-width="2"/>
+            <rect x="32" y="58" width="8" height="6" fill="#c62828" stroke="#000" stroke-width="2"/>
+            <rect x="35" y="60" width="2" height="2" fill="#fff"/>
+
+            <!-- floating heart particle (kindness) -->
+            <g transform="translate(74,26)" opacity="0.9">
+              <path d="M 0 4 C 0 0 6 0 6 4 C 6 0 12 0 12 4 C 12 8 6 12 6 12 C 6 12 0 8 0 4 Z" fill="#ff5c8a" stroke="#000" stroke-width="1.5"/>
+            </g>
+            <!-- sparkle -->
+            <g transform="translate(-6,30)" fill="#ffe66b" stroke="#000" stroke-width="1">
+              <rect x="0" y="2" width="6" height="2"/>
+              <rect x="2" y="0" width="2" height="6"/>
+            </g>
+          </g>
+          <!-- Roblox-style character (Miner Max) -->
+          <g transform="translate(90,155)" id="hero-max">
+            <ellipse cx="24" cy="82" rx="24" ry="5" fill="rgba(0,0,0,0.2)"/>
+            <!-- body -->
+            <rect x="8" y="34" width="32" height="34" fill="#3a9fe0" stroke="#000" stroke-width="3"/>
+            <!-- head (blocky) -->
+            <rect x="6" y="4" width="36" height="30" fill="#f5c078" stroke="#000" stroke-width="3"/>
+            <!-- helmet -->
+            <rect x="4" y="0" width="40" height="10" fill="#a2812a" stroke="#000" stroke-width="3"/>
+            <rect x="18" y="-4" width="12" height="6" fill="#ffcf3d" stroke="#000" stroke-width="3"/>
+            <!-- eyes -->
+            <rect x="14" y="14" width="6" height="6" fill="#000"/>
+            <rect x="28" y="14" width="6" height="6" fill="#000"/>
+            <!-- pickaxe -->
+            <rect x="38" y="28" width="4" height="24" fill="#7a4b1c" stroke="#000" stroke-width="2"/>
+            <polygon points="34,26 46,26 42,22 38,22" fill="#7a7a7a" stroke="#000" stroke-width="2"/>
+            <!-- feet -->
+            <rect x="10" y="68" width="12" height="10" fill="#000"/>
+            <rect x="26" y="68" width="12" height="10" fill="#000"/>
+          </g>
+        </svg>
+        <div class="stud-floor"></div>
+      </div>
+    </section>
+
+    <!-- Team -->
+    <section id="team-sec">
+      <div class="section-head">
+        <h2>Команда English Quest</h2>
+        <p>Каждый герой ведёт свою тему. Dr. Harlow — ваш главный гид.</p>
+      </div>
+      <div class="team" id="team"></div>
+    </section>
+
+    <!-- Lessons -->
+    <section id="lessons-sec">
+      <div class="section-head">
+        <h2>Уроки по учебнику Spotlight</h2>
+        <p>Три класса — 24 темы. Выбирай тему, слушай Dr. Harlow, играй.</p>
+      </div>
+      <div class="grade-tabs" id="grade-tabs">
+        <button class="tab active" data-grade="all">Все</button>
+        <button class="tab" data-grade="2">2 класс</button>
+        <button class="tab" data-grade="3">3 класс</button>
+        <button class="tab" data-grade="4">4 класс</button>
+      </div>
+      <div class="lessons" id="lessons"></div>
+    </section>
+
+    <!-- Inventory -->
+    <section id="inv-sec">
+      <div class="section-head">
+        <h2>Инвентарь героя</h2>
+        <p>Каждое выученное слово — новый предмет.</p>
+      </div>
+      <div class="inv" id="inv"></div>
+    </section>
+
+    <footer>
+      <p>English Quest · создано для юного искателя приключений · Spotlight 2/3/4</p>
+    </footer>
+  </div>
+
+  <!-- Guide bubble -->
+  <div class="guide-bubble" id="guide" hidden>
+    <div class="avatar" id="guide-avatar" title="Нажми — Dr. Harlow заговорит">🐱</div>
+    <div class="bubble" id="guide-bubble">
+      <strong id="guide-name">Dr. Harlow</strong>
+      <div id="guide-text">Привет! Я твой гид.</div>
+      <button id="guide-close">Скрыть</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-back" id="modal-back">
+    <div class="modal" id="modal">
+      <button class="close" id="modal-close">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="content.js"></script>
+  <script src="translations.js"></script>
+  <script src="app.js"></script>
+<script data-pplx-inline-edit>
+(function () {
+  if (window === window.top) return;
+
+  const allowedParentOrigins = ["https://www.perplexity.ai","https://perplexity.ai","https://testing.perplexity.ai","https://staging.perplexity.ai","https://*.preview.i.perplexity.ai","http://perplexity.localhost","http://localhost:1420","http://127.0.0.1:1420","http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","http://127.0.0.1:5173"];
+  const MAX_FONT_BYTES = 500 * 1024;
+  const MAX_TOTAL_FONT_BYTES = 2 * 1024 * 1024;
+  let scrollForwarding = false;
+  let scrollRaf = 0;
+  let trustedTopOrigin = null;
+
+  // Allow entries like "https://*.preview.i.perplexity.ai" — the wildcard
+  // matches a single DNS label (no dots), so "https://*.foo" cannot stretch
+  // across multiple labels.
+  function matchesAllowedOrigin(origin) {
+    if (!origin) return false;
+    for (const entry of allowedParentOrigins) {
+      if (!entry.includes("*")) {
+        if (entry === origin) return true;
+        continue;
+      }
+      const pattern = new RegExp(
+        "^" +
+          entry.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]+") +
+          "$",
+      );
+      if (pattern.test(origin)) return true;
+    }
+    return false;
+  }
+
+  // Trust decision: when the sender is same-origin-visible (event.origin is a
+  // real origin like https://www.perplexity.ai) we trust event.origin directly.
+  // When event.origin is "null" (opaque broker srcdoc), we fall back to the
+  // broker's stamped `parentOrigin` to identify the top window. The fallback
+  // is claim-only — we rely on the browser's native `targetOrigin` enforcement
+  // on the response path (see postToTrustedTop) to ensure replies can't be
+  // delivered to anyone but the actual top window of that claimed origin.
+  function getTrustedParentOrigin(event) {
+    const forwardedParentOrigin =
+      typeof event.data.parentOrigin === "string" ? event.data.parentOrigin : null;
+    const parentOrigin = event.origin === "null" ? forwardedParentOrigin : event.origin;
+    return matchesAllowedOrigin(parentOrigin) ? parentOrigin : null;
+  }
+
+  // All responses go to window.top with targetOrigin = the allowlisted origin.
+  // An attacker that iframes us inside their own null-origin broker can claim
+  // any parentOrigin they like, but the browser will drop the reply whenever
+  // the real top's origin doesn't match — so the screenshot never leaves.
+  function postToTrustedTop(message) {
+    if (!trustedTopOrigin) return;
+    try {
+      window.top.postMessage(message, trustedTopOrigin);
+    } catch (_error) {}
+  }
+
+  function inlineAll(original, clone) {
+    if (original.nodeType !== 1 || clone.nodeType !== 1) return;
+
+    try {
+      const computedStyle = getComputedStyle(original);
+      // cssText on a computed style is the serialized declaration in modern
+      // Chromium/Safari — a single read beats enumerating ~400 longhand
+      // properties. Firefox returns "" here, so we fall back on empty.
+      const serialized = computedStyle.cssText;
+      if (serialized) {
+        clone.style.cssText = serialized;
+      } else {
+        const parts = new Array(computedStyle.length);
+        for (let index = 0; index < computedStyle.length; index += 1) {
+          const property = computedStyle[index];
+          parts[index] = `${property}:${computedStyle.getPropertyValue(property)};`;
+        }
+        clone.style.cssText = parts.join("");
+      }
+    } catch (_error) {}
+
+    const originalChildren = original.children;
+    const clonedChildren = clone.children;
+    for (
+      let index = 0;
+      index < originalChildren.length && index < clonedChildren.length;
+      index += 1
+    ) {
+      inlineAll(originalChildren[index], clonedChildren[index]);
+    }
+  }
+
+  function extractFontUrl(srcValue) {
+    const matches = [
+      ...srcValue.matchAll(
+        /url\(["']?([^"')]+)["']?\)(?:\s*format\(["']?([^"')]+)["']?\))?/gi,
+      ),
+    ];
+    if (matches.length === 0) return null;
+    const woff2 = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff2"));
+    if (woff2) return woff2[1];
+    const woff = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff"));
+    if (woff) return woff[1];
+    return matches[0][1];
+  }
+
+  // Cache resolved font URL -> data URI across captures. Fonts on a page
+  // essentially never change, and a batch run emits multiple captures back to
+  // back — without this we'd refetch + re-base64 every time.
+  const fontDataUriCache = new Map();
+  const SRC_DECLARATION_RE = /src\s*:\s*[^;}]+/i;
+
+  async function fetchAsDataUri(url) {
+    if (fontDataUriCache.has(url)) return fontDataUriCache.get(url);
+    let dataUri = null;
+    try {
+      const response = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size <= MAX_FONT_BYTES) {
+          dataUri = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () =>
+              resolve(typeof reader.result === "string" ? reader.result : null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch (_error) {
+      dataUri = null;
+    }
+    fontDataUriCache.set(url, dataUri);
+    return dataUri;
+  }
+
+  function collectFontFaceRuleTexts() {
+    const rules = [];
+    for (const sheet of document.styleSheets) {
+      let cssRules;
+      try {
+        cssRules = sheet.cssRules;
+      } catch (_error) {
+        continue;
+      }
+      if (!cssRules) continue;
+      for (const rule of cssRules) {
+        const cssText = rule.cssText || "";
+        if (cssText.startsWith("@font-face")) rules.push(cssText);
+      }
+    }
+    return rules;
+  }
+
+  async function buildInlinedFontCss() {
+    const ruleTexts = collectFontFaceRuleTexts();
+    if (ruleTexts.length === 0) return null;
+
+    const resolved = ruleTexts.map((cssText) => {
+      if (!SRC_DECLARATION_RE.test(cssText)) return null;
+      const srcMatch = cssText.match(/src\s*:\s*([^;}]+)[;}]/i);
+      if (!srcMatch) return null;
+      const url = extractFontUrl(srcMatch[1]);
+      if (!url) return null;
+      try {
+        return { cssText, url: new URL(url, document.baseURI).href };
+      } catch (_error) {
+        return null;
+      }
+    });
+
+    const dataUris = await Promise.all(
+      resolved.map((entry) => (entry ? fetchAsDataUri(entry.url) : Promise.resolve(null))),
+    );
+
+    const inlined = [];
+    let totalBytes = 0;
+    for (let index = 0; index < resolved.length; index += 1) {
+      const entry = resolved[index];
+      const dataUri = dataUris[index];
+      if (!entry || !dataUri) continue;
+      const approxBytes = dataUri.length * 0.75;
+      if (totalBytes + approxBytes > MAX_TOTAL_FONT_BYTES) break;
+      totalBytes += approxBytes;
+      inlined.push(entry.cssText.replace(SRC_DECLARATION_RE, `src: url("${dataUri}")`));
+    }
+    return inlined.length > 0 ? inlined.join("\n") : null;
+  }
+
+  function stripExternal(clone) {
+    const images = clone.querySelectorAll("img");
+    for (let index = 0; index < images.length; index += 1) {
+      const src = images[index].getAttribute("src");
+      if (src && !src.startsWith("data:")) images[index].removeAttribute("src");
+    }
+
+    const elements = clone.querySelectorAll("*");
+    for (let index = 0; index < elements.length; index += 1) {
+      const style = elements[index].style.cssText;
+      if (style && style.includes("url(")) {
+        elements[index].style.cssText = style.replace(
+          /url\(["']?(?!data:)[^)"']*["']?\)/gi,
+          "none",
+        );
+      }
+    }
+  }
+
+  function emitScroll() {
+    scrollRaf = 0;
+    if (!scrollForwarding) return;
+    postToTrustedTop({
+      type: "INLINE_EDIT_SCROLL",
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    });
+  }
+
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (!scrollForwarding || scrollRaf) return;
+      scrollRaf = requestAnimationFrame(emitScroll);
+    },
+    { passive: true, capture: true },
+  );
+
+  async function handleCaptureRequest(event) {
+    const requestId = event.data.requestId;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    function postResult(dataUrl) {
+      postToTrustedTop({
+        type: "INLINE_EDIT_SCREENSHOT_RESULT",
+        requestId,
+        dataUrl,
+        scrollX,
+        scrollY,
+      });
+    }
+
+    try {
+      // Wait for any pending web fonts to resolve so both inline metrics and
+      // the @font-face inlining below see the same loaded faces.
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (_error) {}
+      }
+
+      const clone = document.documentElement.cloneNode(true);
+      inlineAll(document.documentElement, clone);
+
+      const removedNodes = clone.querySelectorAll("script,link[rel=\"stylesheet\"],style");
+      for (let index = 0; index < removedNodes.length; index += 1) {
+        removedNodes[index].remove();
+      }
+
+      stripExternal(clone);
+
+      // Re-embed web fonts as data-URI @font-face rules so the SVG rasterizer
+      // can resolve them — external font URLs aren't fetched during
+      // foreignObject rendering, which would otherwise force a fallback face
+      // and change text metrics.
+      const inlinedFontCss = await buildInlinedFontCss();
+      if (inlinedFontCss) {
+        const styleEl = document.createElement("style");
+        styleEl.textContent = inlinedFontCss;
+        const head = clone.querySelector("head");
+        if (head) head.appendChild(styleEl);
+        else clone.insertBefore(styleEl, clone.firstChild);
+      }
+
+      const html = new XMLSerializer().serializeToString(clone);
+      const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+        '<foreignObject width="100%" height="100%">' +
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden">` +
+        `<div style="position:relative;left:-${scrollX}px;top:-${scrollY}px">` +
+        html +
+        "</div></div></foreignObject></svg>";
+      const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      const image = new Image();
+      image.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+        postResult(canvas.toDataURL("image/png"));
+      };
+      image.onerror = function () {
+        postResult(null);
+      };
+      image.src = svgUrl;
+    } catch (_error) {
+      postResult(null);
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!event.data) return;
+    // Only accept messages from the direct parent frame. Blocks sibling /
+    // unrelated-window postMessage senders that could otherwise reach us.
+    if (event.source !== window.parent) return;
+
+    const trustedParentOrigin = getTrustedParentOrigin(event);
+    if (!trustedParentOrigin) return;
+    trustedTopOrigin = trustedParentOrigin;
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_START") {
+      scrollForwarding = true;
+      emitScroll();
+      return;
+    }
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_STOP") {
+      scrollForwarding = false;
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = 0;
+      return;
+    }
+
+    if (event.data.type !== "INLINE_EDIT_CAPTURE_REQUEST") return;
+
+    handleCaptureRequest(event);
+  });
+})();
+
+
+</script></body>
+</html>

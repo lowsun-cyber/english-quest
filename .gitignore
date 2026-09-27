@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# локальные настройки Claude Code
+.claude/
