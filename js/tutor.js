@@ -41,7 +41,7 @@ export function tutorStats(){
   });
   const hard = mistakeEntries().sort((a, b) => b.m.wrong - a.m.wrong);
   const si = streakInfo();
-  return { days, goal: goalMinutes(), metDays: days.filter(d => d.goalMet).length, streak: si.streak, best: si.best,
+  return { days, goal: goalMinutes(), metDays: days.filter(d => d.goalMet).length, streak: si.streak, best: si.best, freezes: si.freezes,
     min: sec > 0 && sec < 60 ? '<1' : Math.round(sec / 60), ok, bad, total: ok + bad, pct: ok + bad ? Math.round(ok * 100 / (ok + bad)) : null, active, lessons, hard };
 }
 
@@ -64,11 +64,11 @@ export function minutesChart(days, goal){
             <span class="bar" style="height:${mins[i] ? Math.max(4, Math.round(mins[i] * 100 / max)) : 0}%"></span>
           </div>`).join('')}
       </div>
-      <div class="bar-days" aria-hidden="true">${days.map(d => `<span>${WEEKDAYS[new Date(d.t).getDay()]}${d.goalMet ? '<b class="day-met">✓</b>' : ''}</span>`).join('')}</div>
+      <div class="bar-days" aria-hidden="true">${days.map(d => `<span>${WEEKDAYS[new Date(d.t).getDay()]}${d.goalMet ? '<b class="day-met">✓</b>' : d.frozen ? '<b class="day-met" title="день закрыт заморозкой">🧊</b>' : ''}</span>`).join('')}</div>
       <table class="sr-only">
         <caption>Минуты занятий по дням</caption>
         <tr><th>День</th><th>Минуты</th><th>Цель выполнена</th><th>Верных ответов</th><th>Ошибок</th></tr>
-        ${days.map((d, i) => `<tr><td>${fmtDay(d.key)}</td><td>${label(mins[i])}</td><td>${d.goalMet ? 'да' : 'нет'}</td><td>${d.ok}</td><td>${d.bad}</td></tr>`).join('')}
+        ${days.map((d, i) => `<tr><td>${fmtDay(d.key)}</td><td>${label(mins[i])}</td><td>${d.goalMet ? 'да' : d.frozen ? 'заморозка' : 'нет'}</td><td>${d.ok}</td><td>${d.bad}</td></tr>`).join('')}
       </table>
     </figure>`;
 }
@@ -79,7 +79,7 @@ export function tutorReport(s){
   const lines = [`English Quest — отчёт${who ? ` · ${who}` : ''} на ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`];
   lines.push(`За 7 дней: ${s.min} мин, занятия в ${s.active} из 7 дней`);
   lines.push(s.total ? `Ответов: ${s.total}, верных ${s.pct}%` : 'Ответов за неделю нет');
-  lines.push(`Цель дня ${s.goal} мин: выполнена в ${s.metDays} из 7 дней, серия ${s.streak} (рекорд ${s.best})`);
+  lines.push(`Цель дня ${s.goal} мин: выполнена в ${s.metDays} из 7 дней, серия ${s.streak} (рекорд ${s.best}), заморозок ${s.freezes}`);
   const started = s.lessons.filter(x => x.parts > 0);
   if (started.length) lines.push(`Темы в работе: ${started.map(x => `${x.l.title} (${x.parts}/${PARTS.length})`).join(', ')}`);
   const worst = s.lessons.filter(x => x.wrong > 0).sort((a,b) => b.wrong - a.wrong).slice(0, 3);
@@ -117,7 +117,7 @@ export function openTutorPanel(){
       <div class="t-tile"><span class="t-num">${s.active}<small>/7</small></span><span class="t-lbl">дней с занятиями</span></div>
       <div class="t-tile"><span class="t-num">${s.total}</span><span class="t-lbl">ответов за 7 дней</span></div>
       <div class="t-tile"><span class="t-num">${s.pct === null ? '—' : s.pct + '%'}</span><span class="t-lbl">верных ответов</span></div>
-      <div class="t-tile"><span class="t-num">🔥 ${s.streak}</span><span class="t-lbl">${plural(s.streak, 'день', 'дня', 'дней')} подряд · рекорд ${s.best}</span></div>
+      <div class="t-tile"><span class="t-num">🔥 ${s.streak}</span><span class="t-lbl">${plural(s.streak, 'день', 'дня', 'дней')} подряд · рекорд ${s.best} · 🧊 ${s.freezes}</span></div>
       <div class="t-tile"><span class="t-num">${s.metDays}<small>/7</small></span><span class="t-lbl">дней с выполненной целью</span></div>
     </div>
     ${realState ? `<p class="t-muted t-goal">Цель дня: ${s.goal} мин</p>` : `

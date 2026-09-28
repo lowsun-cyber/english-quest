@@ -2,7 +2,8 @@
 
 // ---------- STATE ----------
 export const DEFAULT_STATE = {
-  xp: 0, gold: 0, hearts: 5, streak: 0,
+  xp: 0, gold: 0, streak: 0, // streak — верные ответы подряд (внутренний счётчик)
+  freezes: 0,      // 🧊 заморозки серии дней, не больше FREEZE_MAX (см. activity.js)
   inventory: {},   // { en: count }
   lessonProgress: {}, // { lessonId: { vocab: n, reading: 0/1, grammar: n, listen: n, speak: n, match: n } }
   mistakes: {},    // { 'type:lessonId:ref': { type, lessonId, ref, box, due, wrong, last } } — см. «Мои ошибки»

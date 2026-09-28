@@ -60,7 +60,7 @@ Signature elements:
    - The existing breakpoint is 720px.
    - Modals must fit a phone screen and scroll inside themselves.
 4. **Motivation / game feel:**
-   - Keep XP, gold, hearts, streaks, levels, inventory, and characters.
+   - Keep XP, gold, day streaks with 🧊 freezes, levels, inventory, and characters. No hearts: mistakes are not punished, they go to «Мои ошибки».
    - Every answer gets immediate, clear feedback.
    - Rewards should feel earned and tactile: pop, press, a short burst.
 

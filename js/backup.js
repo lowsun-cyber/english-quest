@@ -75,7 +75,7 @@ export function sanitizeState(src){
     else if (isObj(def) && isObj(v)) out[k] = v;
     else if (k === 'homework' && (v === null || isObj(v))) out[k] = v;
   }
-  out.hearts = Math.min(5, out.hearts);
+  out.freezes = Math.min(2, out.freezes);
   delete out.settings.tutorPin; delete out.settings.pinResetAt; // PIN — дело устройства, не копии
   out.settings = { ...freshState().settings, ...out.settings };
   if (!['light', 'dark'].includes(out.settings.theme)) out.settings.theme = 'light';

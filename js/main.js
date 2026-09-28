@@ -18,7 +18,7 @@ import './util.js';
 import './worksheet.js';
 import './lock.js';
 import './profiles.js';
-import { renderGoal } from './activity.js';
+import { applyFreezes, openFreezeInfo, renderGoal } from './activity.js';
 import { CHARACTERS, HARLOW_LINES } from './eq.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';
 import { renderHUD, renderInventory, renderTeam } from './hud.js';
@@ -52,6 +52,7 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
   setProfiles(await loadProfiles());
   setState(takeDeviceSettings(await loadState()));
   saveState(); // PIN из старого места уже перенесён в индекс устройства — пересохраняем без него
+  applyFreezes();
   const theme = state.settings?.theme || 'light';
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('btn-theme').textContent = theme === 'light' ? '🌙' : '☀️';
@@ -71,6 +72,7 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
   // ссылка на задание, открытая во вкладке, где приложение уже запущено
   window.addEventListener('hashchange', () => { if (location.hash.startsWith('#hw')) chooseThenHomework(); });
   document.getElementById('btn-profile').onclick = () => openProfileChooser();
+  document.getElementById('stat-freeze').onclick = openFreezeInfo;
   renderHomework();
   renderGoal(true);
   // welcome from Harlow

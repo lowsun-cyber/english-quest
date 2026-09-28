@@ -120,12 +120,13 @@ img, svg { shape-rendering: crispEdges; image-rendering: pixelated; }
 }
 .stat.xp { background: #ffe388; }
 .stat.gold { background: #ffe388; }
-.stat.hearts { background: #ffd0d0; }
+.stat.freeze { background: #d5eefa; cursor: pointer; color: var(--on-color); }
+.stat.freeze.empty > span:first-child { filter: grayscale(1); opacity: 0.6; }
 .stat.streak { background: #ffd6b3; }
 [data-theme="dark"] .stat { background: #263849; color: var(--ink); }
 [data-theme="dark"] .stat.xp { background: #3a3320; color: #ffe388; }
 [data-theme="dark"] .stat.gold { background: #3a3320; color: #ffe388; }
-[data-theme="dark"] .stat.hearts { background: #3a2432; color: #ffb3c0; }
+[data-theme="dark"] .stat.freeze { background: #1f3346; color: #cfe8ff; }
 [data-theme="dark"] .stat.streak { background: #3a2a20; color: #ffcda4; }
 
 .icon-btn {
@@ -791,6 +792,13 @@ section { margin-top: 32px; }
 
 .t-hard { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
 .t-hard li { display: flex; justify-content: space-between; gap: 10px; align-items: center; border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 15px; }
+
+/* ==== ЗАМОРОЗКИ ==== */
+.freeze-box { margin-top: 12px; }
+.freeze-count { font-size: 44px; letter-spacing: 6px; text-align: center; }
+.freeze-slot { filter: grayscale(1); opacity: 0.3; }
+.freeze-box p { font-size: 16px; margin: 8px 0; }
+.freeze-rules { padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
 
 /* ==== УЧЕНИКИ ==== */
 .profile-chip {

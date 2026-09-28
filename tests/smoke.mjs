@@ -114,9 +114,9 @@ try {
       [...document.querySelectorAll('.opt')].find(o => i < 2 ? o.dataset.en !== ans : o.dataset.en === ans).click(); await __sleep(i < 2 ? 1600 : 1000); }
     const st = __ls(); __close();
     if (Object.keys(st.mistakes).length !== 2) throw new Error('ошибок: ' + Object.keys(st.mistakes).length);
-    if (st.hearts !== 3) throw new Error('сердечек: ' + st.hearts);
+    if (document.getElementById('stat-hearts')) throw new Error('сердечки всё ещё в шапке');
     if (st.lessonProgress['g2-letters'].vocab !== 4) throw new Error('прогресс: ' + JSON.stringify(st.lessonProgress));
-    return 'XP ' + st.xp + ', ошибок 2, сердечек 3';`));
+    return 'XP ' + st.xp + ', ошибок 2, без штрафа';`));
 
   await test('слушай: все верно', () => js(`
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=listen]').click(); await __sleep(700);
@@ -259,6 +259,40 @@ try {
     if (document.getElementById('stat-streak').textContent !== '3') throw new Error('серия после: ' + document.getElementById('stat-streak').textContent);
     if (!__toasts.some(t => t.includes('Цель дня выполнена'))) throw new Error('нет сообщения');
     return 'серия 2 → 3';`)));
+
+  await test('заморозки серии', () => js(`
+    const k = d => { const x = new Date(); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+    const st = __ls(); st.activity = { [k(-3)]: { sec: 700, ok: 1, bad: 0, goalMet: true }, [k(-2)]: { sec: 700, ok: 1, bad: 0, goalMet: true } };
+    st.freezes = 1; st.gold = 0;
+    localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
+    const k = d => { const x = new Date(); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+    const st = __ls();
+    if (!st.activity[k(-1)]?.frozen || st.freezes !== 0) throw new Error('заморозка не закрыла вчерашний день: ' + JSON.stringify(st.activity[k(-1)]) + ', freezes ' + st.freezes);
+    if (document.getElementById('stat-streak').textContent !== '2') throw new Error('серия после заморозки: ' + document.getElementById('stat-streak').textContent);
+    st.activity = { [k(-4)]: { sec: 700, ok: 1, bad: 0, goalMet: true }, [k(-3)]: { sec: 700, ok: 1, bad: 0, goalMet: true } }; st.freezes = 1; st.gold = 60;
+    localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`)).then(() => load()).then(() => js(`
+    const st = __ls();
+    if (st.freezes !== 1) throw new Error('при двух пропусках и одной заморозке она потратилась');
+    if (document.getElementById('stat-streak').textContent !== '0') throw new Error('серия должна прерваться');
+    document.getElementById('stat-freeze').click(); await __sleep(200);
+    document.getElementById('freeze-buy').click(); await __sleep(200);
+    const b = __ls(); if (b.freezes !== 2 || b.gold !== 10) throw new Error('покупка: заморозок ' + b.freezes + ', монет ' + b.gold);
+    if (!document.getElementById('freeze-buy').disabled) throw new Error('можно купить больше двух');
+    __close(); await __sleep(100);
+    if (document.getElementById('stat-freezes').textContent !== '2') throw new Error('шапка не обновилась');
+    return true;`)).then(() => js(`
+    const k = d => { const x = new Date(); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+    const st = __ls(); st.activity = {}; for (let d = -6; d <= -1; d++) st.activity[k(d)] = { sec: 700, ok: 1, bad: 0, goalMet: true };
+    st.activity[k(0)] = { sec: 590, ok: 0, bad: 0 }; st.freezes = 0;
+    localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`)).then(() => load()).then(() => js(`
+    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=cards]').click(); await __sleep(200);
+    for (let i = 0; i < 5; i++){ window.dispatchEvent(new Event('pointerdown')); await __sleep(2500); }
+    __close(); await __sleep(2800);
+    const st = __ls();
+    if (document.getElementById('stat-streak').textContent !== '7') throw new Error('серия: ' + document.getElementById('stat-streak').textContent);
+    if (st.freezes !== 1) throw new Error('за 7 дней не дали заморозку: ' + st.freezes);
+    if (!__toasts.some(t => t.includes('+1 заморозка'))) throw new Error('нет сообщения о подарке');
+    return 'спасла серию; не тратится впустую; покупка до 2; подарок за 7 дней';`)));
 
   await test('тёмная тема и Escape', () => js(`
     document.getElementById('btn-theme').click(); await __sleep(100);

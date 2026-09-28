@@ -1,4 +1,5 @@
 // English Quest — Несколько учеников на одном устройстве: выбор, добавление, переименование, удаление.
+import { applyFreezes } from './activity.js';
 import { applyLoadedState } from './backup.js';
 import { levelFromXp } from './eq.js';
 import { activeId, activeProfile, deleteStoredState, freshState, loadState, profiles, saveProfiles, saveState, setState, state, takeDeviceSettings, writeStoredState } from './state.js';
@@ -27,6 +28,7 @@ export async function switchProfile(id){
   profiles.active = id;
   await saveProfiles();
   setState(takeDeviceSettings(await loadState(id)));
+  applyFreezes();
   applyLoadedState();
   renderProfileChip();
   toast(`${activeProfile().avatar} Привет, ${activeProfile().name}!`);

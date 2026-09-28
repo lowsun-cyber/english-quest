@@ -120,7 +120,7 @@ export function startReview(){
   let idx = 0, right = 0;
   const header = `
     <h2>Мои ошибки</h2>
-    <div class="lead">Повторяем то, что было трудно. Сердечки здесь не тратятся.</div>`;
+    <div class="lead">Повторяем то, что было трудно.</div>`;
   const progress = () => `<div class="review-progress" aria-label="Вопрос ${idx+1} из ${queue.length}"><span style="width:${Math.round(idx*100/queue.length)}%"></span></div>`;
 
   render();

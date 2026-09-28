@@ -1,4 +1,4 @@
-// English Quest — Шапка (XP, монеты, сердечки, серия), команда героев, инвентарь, награды и штрафы.
+// English Quest — Шапка (XP, монеты, серия, заморозки), команда героев, инвентарь, награды и штрафы.
 import { logAnswer, streakInfo } from './activity.js';
 import { CHARACTERS, HARLOW_LINES, LESSONS, MAX_LEVEL, heroIntro, levelFromXp, rankFor, totalXpForLevel } from './eq.js';
 import { CHECKPOINTS } from './map.js';
@@ -11,7 +11,12 @@ import { pick } from './util.js';
 export function renderHUD(){
   document.getElementById('stat-xp').textContent = state.xp;
   document.getElementById('stat-gold').textContent = state.gold;
-  document.getElementById('stat-hearts').textContent = '❤️'.repeat(Math.max(0, state.hearts)) + '🖤'.repeat(Math.max(0, 5 - state.hearts));
+  const fz = state.freezes || 0;
+  document.getElementById('stat-freezes').textContent = fz;
+  const fzBtn = document.getElementById('stat-freeze');
+  fzBtn.classList.toggle('empty', !fz);
+  fzBtn.title = fz ? `Заморозок: ${fz}. Спасут серию, если пропустишь день` : 'Заморозок нет — нажми, чтобы узнать, как их получить';
+  fzBtn.setAttribute('aria-label', fzBtn.title);
   const si = streakInfo();
   const fire = document.getElementById('stat-streak');
   fire.textContent = si.streak;
@@ -130,14 +135,10 @@ export function reward(xp, gold, opts={}){
   renderHUD();
   renderInventory();
 }
+// Неверный ответ: без штрафа (сердечек больше нет) — ошибка уходит в «Мои ошибки», сбрасывается счётчик верных подряд
 export function penalty(){
   logAnswer(false);
-  state.hearts = Math.max(0, state.hearts - 1);
   state.streak = 0;
-  if (state.hearts === 0){
-    toast('Сердечки восстанавливаются…');
-    state.hearts = 5;
-  }
   saveState();
   renderHUD();
 }

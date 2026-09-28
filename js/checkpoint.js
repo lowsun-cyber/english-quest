@@ -23,7 +23,7 @@ export function startCheckpoint(cp){
   let idx = 0, right = 0;
   const header = `
     <h2>${cp.emoji} ${escapeHtml(cp.title)}</h2>
-    <div class="lead">Темы: ${cp.lessons.map(l => escapeHtml(l.title)).join(', ')}. Нужно ${CHECKPOINT_PASS} из ${queue.length}. Сердечки не тратятся.</div>`;
+    <div class="lead">Темы: ${cp.lessons.map(l => escapeHtml(l.title)).join(', ')}. Нужно ${CHECKPOINT_PASS} из ${queue.length}.</div>`;
   render();
 
   function render(){
