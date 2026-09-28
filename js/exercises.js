@@ -1,4 +1,5 @@
 // English Quest — Упражнения: карточки, слова, слушай, пары, напиши, грамматика, чтение, говори.
+import { PASS_SCORE, candidatesFromResults, phraseWords, scoreSpeech } from './speech.js';
 import { logAnswer } from './activity.js';
 import { CHARACTERS, LESSONS, lessonStartLine } from './eq.js';
 import { checkHomework } from './homework.js';
@@ -6,7 +7,7 @@ import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
 import { renderMap } from './map.js';
 import { recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
-import { speak } from './tts.js';
+import { speak, stopSpeech } from './tts.js';
 import { afterFeedback, back, closeModal, modal, openModal, showGuide, toast } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle, uniqueByEmoji } from './util.js';
 
@@ -535,10 +536,22 @@ export function translateFromWords(phrase, lesson){
   return parts.join(' ');
 }
 
-// === Speak: repeat a phrase, score via SpeechRecognition ===
+// === Говори: повторить фразу, распознавание речи браузера ===
+// Сравнение — в speech.js (цифры, сокращения, британское/американское, порядок слов).
+// Без штрафа: можно пробовать снова; после MAX_TRIES неудач — «Засчитать».
+const MAX_TRIES = 3, SILENCE_MS = 1800, MAX_LISTEN_MS = 12000;
+const SPEECH_ERRORS = {
+  'not-allowed': 'Нет доступа к микрофону. Разреши микрофон для этого сайта: значок 🔒 или «аА» рядом с адресом → Микрофон → Разрешить. На iPad: Настройки → Safari → Микрофон.',
+  'service-not-allowed': 'Браузер не разрешил распознавание речи. Попробуй открыть сайт в Chrome или Safari.',
+  'no-speech': 'Я ничего не услышал. Нажми 🎤 и говори погромче.',
+  'audio-capture': 'Микрофон не найден. Проверь, что он подключён и не занят другой программой.',
+  'network': 'Для распознавания речи нужен интернет. Можно повторить фразу вслух и нажать «Я сказал(а)».',
+};
+
 export function exSpeak(lesson, guide){
   let idx = 0;
   const list = shuffle(lesson.phrases);
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   render();
   function render(){
     if (idx >= list.length){
@@ -552,71 +565,112 @@ export function exSpeak(lesson, guide){
     }
     const phrase = list[idx];
     const ruTr = (window.EQ_TRANSLATIONS && window.EQ_TRANSLATIONS[phrase]) || translateFromWords(phrase, lesson);
+    let tries = 0, done = false;
     openModal(`
       ${lessonHeader(lesson, guide)}
       <div class="question">
         <div class="q-text pixel">Повтори за DJ Robo</div>
-        <div class="q-text speak-phrase">
-          "${phrase}"
+        <div class="q-text speak-phrase" id="speak-words" lang="en">
+          ${phraseWords(phrase).map((w, i) => `<span class="sw" data-i="${i}">${escapeHtml(w.raw)}</span>`).join(' ')}
         </div>
-        <div class="speak-translation">
-          🇷🇺 ${ruTr}
-        </div>
-        <div class="q-hint">Нажми на микрофон и произнеси фразу</div>
-        <button class="mic-btn" id="mic">🎤</button>
-        <div id="rec-result" class="rec-result"></div>
+        <div class="speak-translation">🇷🇺 ${escapeHtml(ruTr)}</div>
+        <div class="q-hint" id="speak-hint">${SR ? 'Нажми на микрофон и произнеси фразу' : 'Этот браузер не умеет распознавать речь (например, Firefox). Повтори фразу вслух и нажми «Я сказал(а)» — или открой сайт в Chrome или Safari.'}</div>
+        ${SR ? '<button class="mic-btn" id="mic" aria-label="Начать запись">🎤</button>' : ''}
+        <div id="rec-live" class="rec-live" aria-live="polite"></div>
+        <div id="rec-result" class="rec-result" role="status"></div>
       </div>
       <div class="controls">
         <button class="btn secondary" id="hear">🔊 Услышать снова</button>
+        <button class="btn" id="self-ok" ${SR ? 'hidden' : ''}>${SR ? '✅ Засчитать' : '✅ Я сказал(а)'}</button>
         <button class="btn gold" id="skip">Пропустить</button>
       </div>
     `);
+    const resEl = document.getElementById('rec-result'), liveEl = document.getElementById('rec-live');
+    const selfOk = document.getElementById('self-ok');
     document.getElementById('hear').onclick = () => speak(phrase);
     document.getElementById('skip').onclick = () => { idx++; render(); };
-    setTimeout(() => speak(phrase), 400);
+    // засчитать без распознавания: браузер не умеет, нет интернета или 3 неудачи подряд
+    selfOk.onclick = () => {
+      if (done) return;
+      done = true;
+      reward(8, 2);
+      markProgress(lesson.id, 'speak');
+      toast('✅ +8 XP');
+      afterFeedback(() => { idx++; render(); }, 700);
+    };
+    afterFeedback(() => speak(phrase), 400);
+    if (!SR) return;
+
     const mic = document.getElementById('mic');
-    const resEl = document.getElementById('rec-result');
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR){
-      resEl.textContent = 'Микрофон не поддерживается в этом браузере.';
-      mic.disabled = true;
-      return;
-    }
+    let rec = null;
+    const paint = (words) => document.querySelectorAll('#speak-words .sw').forEach((el, i) => {
+      const ok = words[i]?.ok;
+      el.classList.toggle('ok', !!ok);
+      el.classList.toggle('miss', !ok);
+      if (!ok){
+        el.setAttribute('role', 'button'); el.tabIndex = 0;
+        el.title = 'Нажми, чтобы услышать слово';
+        el.onclick = el.onkeydown = (e) => { if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return; e.preventDefault?.(); speak(el.textContent.replace(/[^A-Za-z' ]/g, '')); };
+      } else { el.removeAttribute('role'); el.removeAttribute('tabindex'); el.onclick = el.onkeydown = null; el.title = ''; }
+    });
+
     mic.onclick = () => {
+      if (done) return;
+      if (rec){ rec.stop(); return; }                 // повторное нажатие — закончить запись
+      stopSpeech();
+      let finals = [], silence = null, hardStop = null, errored = false;
       try {
-        const rec = new SR();
+        rec = new SR();
         rec.lang = 'en-US';
-        rec.interimResults = false;
-        rec.maxAlternatives = 1;
-        mic.classList.add('rec');
-        resEl.textContent = 'Слушаю...';
-        rec.start();
-        rec.onresult = (e) => {
-          mic.classList.remove('rec');
-          const said = e.results[0][0].transcript.toLowerCase();
-          const target = phrase.toLowerCase().replace(/[.,!?"]/g,'');
-          const targetWords = target.split(/\s+/);
-          const saidWords = said.split(/\s+/);
-          let hits = 0;
-          for (const tw of targetWords) if (saidWords.includes(tw)) hits++;
-          const score = Math.round(hits * 100 / targetWords.length);
-          resEl.innerHTML = `Ты сказал: <em>"${said}"</em> · <b>${score}%</b>`;
-          if (score >= 60){
-            reward(18, 4);
-            markProgress(lesson.id, 'speak');
-            toast(`✅ +18 XP · ${score}%`);
-            afterFeedback(() => { idx++; render(); }, 1500);
-          } else {
-            penalty();
-            setTimeout(() => {}, 300);
-          }
-        };
-        rec.onerror = () => { mic.classList.remove('rec'); resEl.textContent = 'Ошибка микрофона. Попробуй ещё раз.'; };
-        rec.onend = () => mic.classList.remove('rec');
-      } catch(e){
-        resEl.textContent = 'Не удалось запустить распознавание.';
+        rec.interimResults = true;
+        rec.continuous = true;                        // не обрывать на первой паузе
+        rec.maxAlternatives = 5;                      // выбрать вариант, который лучше совпадает
+      } catch (e){ resEl.textContent = 'Не удалось запустить распознавание.'; rec = null; return; }
+      const stop = () => { try { rec && rec.stop(); } catch (e) {} };
+      mic.classList.add('rec');
+      mic.setAttribute('aria-label', 'Закончить запись');
+      resEl.textContent = '';
+      liveEl.textContent = 'Слушаю…';
+      rec.onresult = (e) => {
+        finals = Array.from(e.results).filter(r => r.isFinal);
+        liveEl.textContent = 'Слышу: ' + Array.from(e.results).map(r => r[0].transcript).join(' ');
+        clearTimeout(silence);
+        silence = setTimeout(stop, SILENCE_MS);         // замолчал — заканчиваем
+      };
+      rec.onerror = (e) => {
+        errored = true;
+        if (e.error === 'aborted') return;
+        resEl.textContent = SPEECH_ERRORS[e.error] || 'Не получилось распознать. Попробуй ещё раз.';
+        if (e.error === 'network' || e.error === 'not-allowed' || e.error === 'service-not-allowed') selfOk.hidden = false;
+      };
+      rec.onend = () => {
+        clearTimeout(silence); clearTimeout(hardStop);
         mic.classList.remove('rec');
-      }
+        mic.setAttribute('aria-label', 'Начать запись');
+        rec = null;
+        liveEl.textContent = '';
+        if (done) return;
+        const cands = candidatesFromResults(finals);
+        if (!cands.length){ if (!errored) resEl.textContent = SPEECH_ERRORS['no-speech']; return; }
+        const r = scoreSpeech(phrase, cands);
+        paint(r.words);
+        tries++;
+        if (r.score >= PASS_SCORE){
+          done = true;
+          resEl.innerHTML = `Ты сказал: <em>«${escapeHtml(r.said)}»</em> · <b>${r.score}%</b> ${r.score === 100 ? '🌟' : '✅'}`;
+          reward(18, 4);
+          markProgress(lesson.id, 'speak');
+          toast(`✅ +18 XP · ${r.score}%`);
+          afterFeedback(() => { idx++; render(); }, 1600);
+        } else {
+          logAnswer(false);                           // для статистики; без штрафа
+          resEl.innerHTML = `Ты сказал: <em>«${escapeHtml(r.said)}»</em> · <b>${r.score}%</b>. Почти! Красные слова можно послушать — нажми на них и попробуй ещё раз.`;
+          if (tries >= MAX_TRIES) selfOk.hidden = false;
+        }
+      };
+      try { rec.start(); } catch (e){ mic.classList.remove('rec'); rec = null; resEl.textContent = 'Не удалось запустить распознавание.'; return; }
+      hardStop = setTimeout(stop, MAX_LISTEN_MS);
+      silence = setTimeout(stop, SILENCE_MS + 4000); // если так и не начал говорить
     };
   }
 }

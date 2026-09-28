@@ -1103,6 +1103,13 @@ section { margin-top: 32px; }
 }
 [data-theme="dark"] .speak-phrase { background: #2e3a2a; color: var(--ink); border-color: var(--muted); }
 [data-theme="dark"] .speak-translation { background: #1f3346; color: var(--ink-2); border-color: #3f6f96; }
+.speak-phrase .sw { display: inline-block; padding: 0 3px; border-radius: 6px; }
+.speak-phrase .sw.ok { background: #b8f0c1; color: var(--on-color); }
+.speak-phrase .sw.miss { background: #f7b8b8; color: var(--on-color); text-decoration: underline dotted; cursor: pointer; }
+.speak-phrase .sw.miss::after { content: ' 🔊'; font-size: 0.6em; vertical-align: super; }
+[data-theme="dark"] .speak-phrase .sw.ok { background: #2f6c3c; color: var(--ink); }
+[data-theme="dark"] .speak-phrase .sw.miss { background: #6c2f34; color: var(--ink); }
+.rec-live { text-align: center; min-height: 22px; color: var(--muted); font-size: 15px; font-style: italic; }
 .mic-btn {
   width: 88px; height: 88px; border-radius: 50%;
   background: var(--lava);

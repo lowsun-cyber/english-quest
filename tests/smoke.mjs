@@ -388,13 +388,42 @@ try {
     if (!f('btn-profile').hidden) throw new Error('чип остался после удаления');
     return 'раздельный прогресс, выбор при запуске, задание — выбранному, удаление';`)));
 
-  await test('говори, гид, офлайн-раздел', () => js(`
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(600);
-    if (!document.querySelector('.speak-phrase')) throw new Error('нет фразы для повторения');
-    const mic = document.querySelector('.mic-btn'); if (!mic) throw new Error('нет кнопки микрофона');
-    mic.click(); await __sleep(500); mic.click(); await __sleep(200);
-    const skip = document.getElementById('skip'); if (skip) { skip.click(); await __sleep(300); }
+  await test('говори: попытки, подсказки, «Засчитать»', () => js(`
+    // поддельное распознавание: отдаёт по очереди заданные ответы или ошибки
+    window.__sr = [];
+    window.SpeechRecognition = class { start(){ const it = window.__sr.shift(); setTimeout(() => {
+      if (it.error){ this.onerror?.({ error: it.error }); this.onend?.(); return; }
+      const r = Object.assign(it.alts.map(t => ({ transcript: t })), { isFinal: true });
+      this.onresult?.({ results: [r] }); setTimeout(() => this.onend?.(), 30); }, 30); } stop(){} };
+    const f = id => document.getElementById(id);
+    const attempt = async (item) => { window.__sr.push(item); document.getElementById('mic').click(); await __sleep(250); };
+    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(500);
+    const phrase = [...document.querySelectorAll('#speak-words .sw')].map(x => x.textContent).join(' ');
+    const before = __ls().lessonProgress['g2-letters']?.speak || 0, xpBefore = __ls().xp;
+    await attempt({ alts: ['banana rocket'] });
+    if (!document.querySelector('#speak-words .sw.miss')) throw new Error('нет красных слов после неудачи');
+    if (!/Почти/.test(f('rec-result').textContent)) throw new Error('нет подсказки после неудачи: ' + f('rec-result').textContent);
+    if (__ls().xp !== xpBefore) throw new Error('за неудачу что-то списали или начислили');
+    await attempt({ alts: ['zzz'] });
+    if (!f('self-ok').hidden) throw new Error('«Засчитать» появилось слишком рано');
+    await attempt({ alts: ['zzz'] });
+    if (f('self-ok').hidden) throw new Error('после 3 неудач нет «Засчитать»');
+    await attempt({ alts: ['totally wrong', phrase.toLowerCase().replace(/[.,!?]/g, '')] });
+    if (!/100%/.test(f('rec-result').textContent)) throw new Error('не выбран лучший вариант распознавания: ' + f('rec-result').textContent);
+    await __sleep(1800);
+    if ((__ls().lessonProgress['g2-letters']?.speak || 0) !== before + 1) throw new Error('фраза не засчитана');
+    await attempt({ error: 'not-allowed' });
+    if (!/Нет доступа к микрофону/.test(f('rec-result').textContent)) throw new Error('непонятная ошибка микрофона: ' + f('rec-result').textContent);
+    if (f('self-ok').hidden) throw new Error('при запрете микрофона нет «Засчитать»');
     __close(); await __sleep(100);
+    delete window.SpeechRecognition; delete window.webkitSpeechRecognition;
+    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(400);
+    if (document.getElementById('mic') || f('self-ok').hidden || !/не умеет распознавать/.test(f('speak-hint').textContent)) throw new Error('нет запасного варианта для браузера без распознавания');
+    f('self-ok').click(); await __sleep(900);
+    if ((__ls().lessonProgress['g2-letters']?.speak || 0) !== before + 2) throw new Error('«Я сказал(а)» не засчитало');
+    __close(); return 'красные слова, без штрафа, «Засчитать» после 3 попыток, лучший вариант, ошибки, без распознавания';`));
+
+  await test('гид и офлайн-раздел', () => js(`
     document.getElementById('guide').hidden = false; window.__said = null;
     document.getElementById('guide-avatar').click(); await __sleep(300);
     if (!window.__said) throw new Error('иконка гида не озвучила текст');
