@@ -36,7 +36,7 @@ const lines = items.map(x => x.text);
 const FORCE = process.argv.includes('--force');
 
 if (process.argv.includes('--list')){
-  items.forEach((x, i) => console.log(`${String(i + 1).padStart(2)}. [${x.speaker}, ${x.lang}] ${x.text}`));
+  items.forEach((x, i) => console.log(`${String(i + 1).padStart(3)}. [${x.speaker}, ${x.kind || x.lang}] ${x.text}`));
   process.exit(0);
 }
 const KEY = process.env.GEMINI_API_KEY;
@@ -65,8 +65,12 @@ function toWav(buf){
   return Buffer.concat([h, buf]);
 }
 
-async function synth(text, speaker){
-  const { voice, style } = VOICES[speaker];
+const KIND_STYLE = {
+  letter: 'назови английскую букву — её название, как в английском алфавите; чётко, для ребёнка',
+  word: 'чётко и не спеша произнеси одно английское слово для ребёнка 7–10 лет, с естественным английским произношением',
+};
+async function synth(text, speaker, kind){
+  const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || VOICES[speaker].style;
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
@@ -85,14 +89,14 @@ async function synth(text, speaker){
 }
 
 let made = 0, kept = 0, failed = 0;
-for (const [i, { text, speaker }] of items.entries()){
+for (const [i, { text, speaker, kind }] of items.entries()){
   const file = fileFor(text, speaker);
   const out = join(ROOT, 'tts_cache', file);
   if (!FORCE && manifest[text] && existsSync(join(ROOT, 'tts_cache', manifest[text]))){ kept++; continue; }
   process.stdout.write(`${i + 1}/${lines.length} ${text.slice(0, 60)}… `);
   try {
     const wav = join(tmp, 'line.wav');
-    writeFileSync(wav, await synth(text, speaker));
+    writeFileSync(wav, await synth(text, speaker, kind));
     execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '64000', wav, out]);
     const old = manifest[text];
     manifest[text] = file;

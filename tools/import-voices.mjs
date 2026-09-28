@@ -4,7 +4,8 @@
 //   node tools/import-voices.mjs ~/Downloads/harlow
 //
 // В папке — файлы с номером фразы в начале имени: 01.wav, 02.mp3, 31 луна.m4a …
-// Номера — как в `node tools/gen-voices.mjs --list` (1–30 — Dr. Harlow, 31–38 — остальные герои).
+// Номера — как в `node tools/gen-voices.mjs --list` (1–30 — Dr. Harlow, 31–38 — остальные герои,
+// 39–64 — буквы, 65+ — отдельные слова).
 // Подходят wav, mp3, m4a, aiff. Файлы сжимаются в AAC и записываются в tts_cache/, словарь — в tts_voices.json.
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';

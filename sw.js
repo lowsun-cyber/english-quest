@@ -5,14 +5,14 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v5';
+const SHELL_CACHE = 'eq-shell-v7';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
 
 const SHELL = [
-  './', 'index.html', 'base.css', 'style.css', 'content.js', 'translations.js',
-  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js', 'js/lock.js', 'js/profiles.js', 'js/speech.js',
+  './', 'index.html', 'how-to.html', 'base.css', 'style.css', 'content.js', 'translations.js',
+  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js', 'js/lock.js', 'js/profiles.js', 'js/speech.js', 'js/howto.js',
   'tts_manifest.json', 'tts_voices.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
@@ -61,7 +61,10 @@ self.addEventListener('fetch', (event) => {
 async function shellFirstNetwork(req){
   const cache = await caches.open(SHELL_CACHE);
   try {
-    const res = await fetch(req);
+    // no-cache: всегда сверяемся с сервером (если файл не менялся — короткий ответ 304).
+    // Иначе HTTP-кэш сразу после выкладки может отдать смесь старых и новых модулей,
+    // и приложение не запустится из-за несовпадения импортов.
+    const res = await fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' });
     if (res.ok && res.type === 'basic') cache.put(stripSearch(req), res.clone());
     return res;
   } catch (e) {

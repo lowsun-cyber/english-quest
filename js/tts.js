@@ -196,7 +196,7 @@ export async function recordedKey(text){
 // Слово, которое ребёнок не произнёс: есть запись слова — звучит оно, нет — вся фраза медленнее.
 // Так всегда звучит живой голос, а не голос устройства.
 export async function speakWordOrPhrase(word, phrase){
-  const w = String(word).replace(/[^A-Za-z' ]/g, '').trim();
+  const w = String(word).replace(/[’‘`´]/g, "'").replace(/[^A-Za-z' ]/g, '').replace(/^'+|'+$/g, '').trim();
   const key = w && await recordedKey(w);
   if (key) speak(key);
   else speak(phrase, { rate: 0.8 });

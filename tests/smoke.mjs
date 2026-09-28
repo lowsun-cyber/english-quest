@@ -45,6 +45,7 @@ async function load(url = APP){
 const STUBS = `
   window.__said = null;
   const man = await (await fetch('tts_manifest.json')).json(); const rev = {}; for (const [k, v] of Object.entries(man)) rev[v] = rev[v] || k;
+  const voices = await (await fetch('tts_voices.json')).json(); for (const [k, v] of Object.entries(voices)) rev[v.replace(/\\.(mp3|m4a)$/, '')] = k;
   window.speechSynthesis.speak = u => { window.__said = u.text; };
   window.Audio = function(src){ const k = String(src).split('/').pop().replace(/\\.(mp3|m4a)$/, ''); window.__said = rev[k] || src; const o = { play: () => Promise.resolve(), pause(){}, set currentTime(v){} }; window.__lastAudio = o; return o; };
   window.confirm = () => true;
@@ -405,10 +406,17 @@ try {
     const before = __ls().lessonProgress['g2-letters']?.speak || 0, xpBefore = __ls().xp;
     await attempt({ alts: ['banana rocket'] });
     if (!document.querySelector('#speak-words .sw.miss')) throw new Error('нет красных слов после неудачи');
-    // красное слово без своей записи («is») — звучит вся фраза медленнее; со своей записью — само слово
+    // красное слово: есть своя запись — звучит само слово (теперь записаны все слова фраз и буквы),
+    // нет записи — вся фраза медленнее (проверяем на слове, запись которого временно «прячем»)
     const byWord = w => [...document.querySelectorAll('#speak-words .sw')].find(x => x.textContent.replace(/[^A-Za-z]/g, '').toLowerCase() === w);
     window.__said = null; byWord('is').click(); await __sleep(300);
-    if (__said !== phrase || __lastAudio.playbackRate !== 0.8) throw new Error('для «is» ожидалась фраза медленно, прозвучало: ' + __said + ' @' + __lastAudio.playbackRate);
+    if (__said !== 'is') throw new Error('для «is» ожидалось само слово, прозвучало: ' + __said);
+    const first = document.querySelector('#speak-words .sw'); const letter = first.textContent.replace(/[^A-Za-z]/g, '');
+    window.__said = null; first.click(); await __sleep(300);
+    if (__said !== letter) throw new Error('для буквы «' + letter + '» ожидалось её название, прозвучало: ' + __said);
+    // без записи слова → фраза медленнее
+    window.__said = null; byWord('is').textContent = 'isx'; byWord('isx')?.click(); await __sleep(300);
+    if (__said !== phrase || __lastAudio.playbackRate !== 0.8) throw new Error('для слова без записи ожидалась фраза медленно, прозвучало: ' + __said + ' @' + __lastAudio.playbackRate);
     const last = [...document.querySelectorAll('#speak-words .sw')].pop(); const lw = last.textContent.replace(/[^A-Za-z]/g, '').toLowerCase();
     window.__said = null; last.click(); await __sleep(300);
     if (String(__said).toLowerCase() !== lw) throw new Error('для «' + lw + '» ожидалось само слово, прозвучало: ' + __said);
@@ -444,6 +452,27 @@ try {
     const stat = document.getElementById('t-audio-stat')?.textContent || '';
     if (!/Озвучка на устройстве|Вся озвучка сохранена/.test(stat)) throw new Error('раздел «Без интернета»: ' + stat);
     __close(); return 'ок';`));
+
+  await test('гайд How to', async () => {
+    const before = await js(`localStorage.removeItem('eq_howto_seen'); return true;`).then(() => load()).then(() => js(`
+      const b = document.getElementById('btn-howto');
+      if (!b || b.getAttribute('href') !== 'how-to.html') throw new Error('нет кнопки ❓ в шапке');
+      if (!__shown(document.getElementById('howto-new'))) throw new Error('нет метки «новое» до первого открытия');
+      if (!document.querySelector('.footer-links a[href="how-to.html"]')) throw new Error('нет ссылки внизу страницы');
+      return true;`));
+    await send('Page.navigate', { url: APP + 'how-to.html' }); await sleep(1500);
+    const info = await js(`
+      for (const id of ['kids', 'parents', 'tutors', 'faq', 'map', 'rewards', 'mistakes', 'homework', 'team'])
+        if (!document.getElementById(id)) throw new Error('нет раздела #' + id);
+      const r = document.querySelectorAll('.ht-rank').length, t = document.querySelectorAll('.ht-hero-card').length, g = document.querySelectorAll('.ht-grade').length;
+      if (r !== window.EQ.RANKS.length || t !== 5 || g !== 3) throw new Error('списки из контента: званий ' + r + ', героев ' + t + ', классов ' + g);
+      if (document.documentElement.scrollWidth > innerWidth + 1) throw new Error('горизонтальная прокрутка');
+      if (![...document.querySelectorAll('a[href="./"]')].length) throw new Error('нет ссылки назад к урокам');
+      return r + ' званий, ' + t + ' героев, ' + g + ' класса';`);
+    await load();
+    await js(`if (__shown(document.getElementById('howto-new'))) throw new Error('метка «новое» не исчезла после открытия гайда'); return true;`);
+    return info + '; метка снимается после посещения';
+  });
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {

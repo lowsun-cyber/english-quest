@@ -73,6 +73,7 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
   window.addEventListener('hashchange', () => { if (location.hash.startsWith('#hw')) chooseThenHomework(); });
   document.getElementById('btn-profile').onclick = () => openProfileChooser();
   document.getElementById('stat-freeze').onclick = openFreezeInfo;
+  try { document.getElementById('howto-new').hidden = !!localStorage.getItem('eq_howto_seen'); } catch (e) {}
   renderHomework();
   renderGoal(true);
   // welcome from Harlow

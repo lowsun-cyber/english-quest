@@ -105,6 +105,7 @@ export function openTutorPanel(){
 
   openModal(`
     <h2>Режим репетитора</h2>
+    <a class="t-guide-link" href="how-to.html#parents" target="_blank" rel="noopener">📖 Гайд для родителей и репетиторов</a>
     ${realState ? `
       <div class="t-view-banner" role="status">
         <b>👀 Просмотр копии.</b> ${escapeHtml(summaryText(state._viewMeta.summary, state._viewMeta.exportedAt))}

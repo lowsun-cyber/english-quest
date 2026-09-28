@@ -945,15 +945,22 @@ function lessonStartLine(lesson){ return `Урок «${lesson.title}». ${lesson
 // Что говорит герой при нажатии на его карточку в «Команде»
 function heroIntro(ch){ return { en: ch.introEn, ru: ch.introRu || HARLOW_LINES.teamCard }; }
 // Все фразы, записанные голосами героев (tts_voices.json). Порядок = номера файлов при импорте:
-// 1–30 — русские реплики Dr. Harlow, дальше — остальные герои (по-английски и по-русски).
+// 1–30 — русские реплики Dr. Harlow, 31–38 — остальные герои, 39–64 — буквы, 65+ — отдельные слова.
 function voiceLines(){
   const out = harlowRussianLines().map(text => ({ speaker: 'harlow', lang: 'ru', text }));
   for (const id of ['luna', 'max', 'owl', 'robo']){
     const ch = CHARACTERS[id];
     out.push({ speaker: id, lang: 'en', text: ch.introEn }, { speaker: id, lang: 'ru', text: ch.introRu });
   }
+  // 39–64 — буквы, 65 и дальше — отдельные слова (голос Dr. Harlow)
+  WORD_AUDIO_LETTERS.forEach(text => out.push({ speaker: 'harlow', lang: 'en', kind: 'letter', text }));
+  WORD_AUDIO_WORDS.forEach(text => out.push({ speaker: 'harlow', lang: 'en', kind: 'word', text }));
   return out;
 }
+// Отдельные буквы и слова из фраз «Говори», у которых нет своей записи (по нажатию на красное слово).
+// Буквы — названия букв; слова — в нижнем регистре, кроме имён. Пока записи нет, звучит вся фраза медленнее.
+const WORD_AUDIO_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const WORD_AUDIO_WORDS = ["a", "after", "always", "am", "and", "animal", "Anna", "are", "at", "bear", "big", "bike", "blackboard", "blue", "box", "by", "can", "cream", "day", "do", "does", "don't", "early", "ears", "eat", "elephants", "ever", "fair", "fly", "football", "for", "friends", "gets", "go", "going", "got", "great", "hair", "happily", "Harry", "has", "have", "he", "help", "her", "here", "home", "how", "ice", "in", "is", "it", "jump", "jumped", "jumping", "Kostya", "last", "later", "leaves", "legs", "lemons", "let's", "like", "lived", "living", "London", "long", "look", "lot", "love", "many", "meet", "monkeys", "much", "my", "need", "next", "nice", "of", "old", "on", "open", "playing", "please", "put", "red", "remember", "riding", "roared", "room", "running", "sea", "see", "she", "singing", "sleep", "small", "snowing", "some", "song", "stronger", "sunny", "tallest", "tasty", "teddy", "than", "the", "there", "they", "this", "to", "today", "under", "up", "usually", "very", "visit", "was", "we", "wear", "were", "what", "where", "windows", "with", "works", "yes", "you", "your", "zoo"];
 // Все русские реплики Dr. Harlow, которые можно озвучить заранее
 function harlowRussianLines(){
   const ru = s => /[а-яё]/i.test(s);
