@@ -15,12 +15,14 @@ const PORT = 8765, APP = `http://127.0.0.1:${PORT}/`;
 const CHROME = process.env.CHROME || ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(existsSync);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+if (!CHROME){ console.error('Не найден Google Chrome. Укажите путь: CHROME=/путь/к/chrome node tests/smoke.mjs'); process.exit(2); }
 // если порт уже занят (например, другим сервером), тест упал бы на всём подряд — лучше сказать прямо
 try { await fetch(APP); console.error(`Порт ${PORT} уже занят — остановите другой сервер и запустите тест снова.`); process.exit(2); } catch (e) {}
 
 const profile = mkdtempSync(join(tmpdir(), 'eq-smoke-'));
 const server = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1', '--directory', ROOT], { stdio: 'ignore', cwd: tmpdir() });
-const chrome = spawn(CHROME, ['--headless=new', '--remote-debugging-port=9335', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--window-size=1200,900', 'about:blank'], { stdio: 'ignore' });
+// на сервере GitHub (CI) Chrome запускается без песочницы — там нет нужных прав
+const chrome = spawn(CHROME, ['--headless=new', '--remote-debugging-port=9335', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--window-size=1200,900', ...(process.env.CI ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), 'about:blank'], { stdio: 'ignore' });
 
 let ws, id = 0;
 const pending = new Map(), errors = [];
