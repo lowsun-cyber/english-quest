@@ -7,7 +7,7 @@ import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
 import { renderMap } from './map.js';
 import { recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
-import { speak, stopSpeech } from './tts.js';
+import { speak, speakWordOrPhrase, stopSpeech } from './tts.js';
 import { afterFeedback, back, closeModal, modal, openModal, showGuide, toast } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle, uniqueByEmoji } from './util.js';
 
@@ -609,8 +609,8 @@ export function exSpeak(lesson, guide){
       el.classList.toggle('miss', !ok);
       if (!ok){
         el.setAttribute('role', 'button'); el.tabIndex = 0;
-        el.title = 'Нажми, чтобы услышать слово';
-        el.onclick = el.onkeydown = (e) => { if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return; e.preventDefault?.(); speak(el.textContent.replace(/[^A-Za-z' ]/g, '')); };
+        el.title = 'Нажми, чтобы послушать';
+        el.onclick = el.onkeydown = (e) => { if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return; e.preventDefault?.(); speakWordOrPhrase(el.textContent, phrase); };
       } else { el.removeAttribute('role'); el.removeAttribute('tabindex'); el.onclick = el.onkeydown = null; el.title = ''; }
     });
 

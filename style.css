@@ -401,12 +401,13 @@ section { margin-top: 32px; }
   max-width: 560px; margin: 8px auto 0;
   padding: 10px 0 20px;
 }
-.map-step { position: relative; display: flex; justify-content: center; padding-top: 44px; }
+.map-step { position: relative; display: flex; justify-content: center; padding-top: 52px; }
 .map-step:first-child { padding-top: 0; }
 .map-node {
   position: relative;
   transform: translateX(calc(var(--x) * var(--step)));
   display: flex; flex-direction: column; align-items: center; gap: 4px;
+  /* подпись отодвинута от блока с учётом его «тени» снизу (6px) */
   min-width: 120px; padding: 4px;
   border-radius: 16px;
   color: var(--ink);
@@ -448,17 +449,17 @@ section { margin-top: 32px; }
   padding: 4px 8px; border-radius: 6px;
 }
 [data-theme="dark"] .mn-now { background: #f2f8ff; color: #0f1721; }
-.mn-title { font-family: var(--font-pixel); font-size: 11px; text-align: center; max-width: 150px; line-height: 1.3; }
-.mn-sub { font-size: 13px; color: var(--muted); font-weight: 700; }
+.mn-title { font-family: var(--font-pixel); font-size: 11px; text-align: center; max-width: 150px; line-height: 1.3; margin-top: 10px; }
+.mn-sub { font-size: 13px; color: var(--muted); font-weight: 700; margin-top: 2px; }
 .map-node.locked .mn-title { color: var(--muted); }
 /* «камушки» между узлами — на трети и двух третях пути от предыдущего узла */
-.map-stones { position: absolute; top: 4px; left: 50%; width: 0; height: 40px; }
+.map-stones { position: absolute; top: 6px; left: 50%; width: 0; height: 44px; }
 .map-stones i {
   position: absolute; width: 12px; height: 12px; margin-left: -6px;
   background: var(--surface); border: 2px solid var(--line); border-radius: 3px;
 }
 .map-stones i:nth-child(1) { top: 4px;  left: calc((var(--px) * 2 + var(--x)) / 3 * var(--step)); }
-.map-stones i:nth-child(2) { top: 22px; left: calc((var(--px) + var(--x) * 2) / 3 * var(--step)); }
+.map-stones i:nth-child(2) { top: 26px; left: calc((var(--px) + var(--x) * 2) / 3 * var(--step)); }
 
 /* ==== ЭКРАН ТЕМЫ ==== */
 .hub-progress { margin-top: 14px; font-weight: 700; color: var(--ink-2); }

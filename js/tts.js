@@ -142,7 +142,7 @@ export function speak(text, opts={}){
       return;
     }
     const a = new Audio(url);
-    a.playbackRate = 1.0;
+    a.playbackRate = opts.rate || 1.0;   // 0.8 — «медленно» (слово, которое не расслышали)
     a.volume = 1.0;
     _currentAudio = a;
     a.play().catch(err => {
@@ -185,4 +185,19 @@ if ('speechSynthesis' in window){
     window.speechSynthesis.getVoices();
   };
   window.speechSynthesis.getVoices();
+}
+
+// Есть ли живая запись фразы/слова (общий голос или голос героя). Возвращает ключ записи или null.
+export async function recordedKey(text){
+  const [man, voices] = await Promise.all([loadManifest(), loadVoiceManifest()]);
+  for (const k of [text, text.toLowerCase()]) if (man[k] || voices[k]) return k;
+  return null;
+}
+// Слово, которое ребёнок не произнёс: есть запись слова — звучит оно, нет — вся фраза медленнее.
+// Так всегда звучит живой голос, а не голос устройства.
+export async function speakWordOrPhrase(word, phrase){
+  const w = String(word).replace(/[^A-Za-z' ]/g, '').trim();
+  const key = w && await recordedKey(w);
+  if (key) speak(key);
+  else speak(phrase, { rate: 0.8 });
 }

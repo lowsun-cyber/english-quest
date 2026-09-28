@@ -46,7 +46,7 @@ const STUBS = `
   window.__said = null;
   const man = await (await fetch('tts_manifest.json')).json(); const rev = {}; for (const [k, v] of Object.entries(man)) rev[v] = rev[v] || k;
   window.speechSynthesis.speak = u => { window.__said = u.text; };
-  window.Audio = function(src){ const k = String(src).split('/').pop().replace(/\\.(mp3|m4a)$/, ''); window.__said = rev[k] || src; return { play: () => Promise.resolve(), pause(){}, set currentTime(v){} }; };
+  window.Audio = function(src){ const k = String(src).split('/').pop().replace(/\\.(mp3|m4a)$/, ''); window.__said = rev[k] || src; const o = { play: () => Promise.resolve(), pause(){}, set currentTime(v){} }; window.__lastAudio = o; return o; };
   window.confirm = () => true;
   window.__sleep = t => new Promise(r => setTimeout(r, t));
   window.__toasts = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.classList?.contains('toast') && window.__toasts.push(n.textContent)))).observe(document.body, { childList: true });
@@ -56,6 +56,8 @@ const STUBS = `
     document.getElementById('gate-form').requestSubmit(); await __sleep(300); };
   window.__ls = () => JSON.parse(localStorage.getItem('english_quest_v2') || 'null');
   window.__close = () => document.getElementById('modal-close').click();
+  // «виден ли на экране» — атрибута hidden мало: его может перебить display из CSS
+  window.__shown = el => !!el && getComputedStyle(el).display !== 'none' && el.getClientRects().length > 0;
   // ответ «по картинке»: слово с этой картинкой, которое есть среди вариантов (у некоторых слов картинки совпадают)
   window.__byEmoji = (words, emoji) => { const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.en || o.dataset.o); return words.filter(w => w.emoji === emoji).map(w => w.en).find(e => opts.includes(e)); };
   return true;`;
@@ -315,6 +317,7 @@ try {
     f('t-pin1').value = '4826'; f('t-pin2').value = '4826'; f('t-pin-form').requestSubmit(); await __sleep(300);
     const saved = JSON.parse(localStorage.getItem('english_quest_profiles')).tutorPin; if (!saved || saved.includes('4826')) throw new Error('PIN сохранён открытым текстом или не сохранён');
     if (__ls().settings.tutorPin) throw new Error('PIN попал в прогресс ученика');
+    if (__shown(f('t-pin-form'))) throw new Error('форма нового PIN видна, хотя PIN уже установлен');
     f('t-lock-now').click(); await __sleep(200);
     document.getElementById('btn-tutor').click(); await __sleep(150);
     if (document.getElementById('gate-in').type !== 'password') throw new Error('вход не по PIN');
@@ -346,14 +349,14 @@ try {
 
   await test('несколько учеников', () => js(`
     const f = id => document.getElementById(id);
-    if (!f('btn-profile').hidden) throw new Error('чип виден при одном ученике');
+    if (__shown(f('btn-profile'))) throw new Error('чип виден при одном ученике');
     const mainXp = __ls().xp;
     await __gate('1357');
     f('pf-add-name').value = 'Маша <b>'; document.querySelector('input[name=pf-av][value="🐼"]').checked = true;
     f('pf-add').requestSubmit(); await __sleep(400);
     const idx = JSON.parse(localStorage.getItem('english_quest_profiles'));
     if (idx.list.length !== 2) throw new Error('учеников: ' + idx.list.length);
-    if (f('btn-profile').hidden) throw new Error('чип не появился');
+    if (!__shown(f('btn-profile'))) throw new Error('чип не появился');
     document.querySelector('.pf-list [data-act=switch]').click(); await __sleep(500);
     if (!/Маша/.test(f('pf-name').textContent) || document.querySelector('#pf-name b')) throw new Error('не переключилось или имя не экранировано: ' + f('pf-name').innerHTML);
     if (f('stat-xp').textContent !== '0') throw new Error('у нового ученика XP ' + f('stat-xp').textContent);
@@ -385,7 +388,7 @@ try {
     if (after.list.length !== 1) throw new Error('не удалилось');
     if (localStorage.getItem('english_quest_v2__' + idx.list.find(p => /Маша/.test(p.name)).id)) throw new Error('данные Маши остались');
     __close(); await __sleep(100);
-    if (!f('btn-profile').hidden) throw new Error('чип остался после удаления');
+    if (__shown(f('btn-profile'))) throw new Error('чип остался после удаления');
     return 'раздельный прогресс, выбор при запуске, задание — выбранному, удаление';`)));
 
   await test('говори: попытки, подсказки, «Засчитать»', () => js(`
@@ -402,6 +405,13 @@ try {
     const before = __ls().lessonProgress['g2-letters']?.speak || 0, xpBefore = __ls().xp;
     await attempt({ alts: ['banana rocket'] });
     if (!document.querySelector('#speak-words .sw.miss')) throw new Error('нет красных слов после неудачи');
+    // красное слово без своей записи («is») — звучит вся фраза медленнее; со своей записью — само слово
+    const byWord = w => [...document.querySelectorAll('#speak-words .sw')].find(x => x.textContent.replace(/[^A-Za-z]/g, '').toLowerCase() === w);
+    window.__said = null; byWord('is').click(); await __sleep(300);
+    if (__said !== phrase || __lastAudio.playbackRate !== 0.8) throw new Error('для «is» ожидалась фраза медленно, прозвучало: ' + __said + ' @' + __lastAudio.playbackRate);
+    const last = [...document.querySelectorAll('#speak-words .sw')].pop(); const lw = last.textContent.replace(/[^A-Za-z]/g, '').toLowerCase();
+    window.__said = null; last.click(); await __sleep(300);
+    if (String(__said).toLowerCase() !== lw) throw new Error('для «' + lw + '» ожидалось само слово, прозвучало: ' + __said);
     if (!/Почти/.test(f('rec-result').textContent)) throw new Error('нет подсказки после неудачи: ' + f('rec-result').textContent);
     if (__ls().xp !== xpBefore) throw new Error('за неудачу что-то списали или начислили');
     await attempt({ alts: ['zzz'] });
@@ -427,6 +437,8 @@ try {
     document.getElementById('guide').hidden = false; window.__said = null;
     document.getElementById('guide-avatar').click(); await __sleep(300);
     if (!window.__said) throw new Error('иконка гида не озвучила текст');
+    document.getElementById('guide-close').click(); await __sleep(100);
+    if (__shown(document.getElementById('guide'))) throw new Error('«Скрыть» не скрыло пузырь гида');
     await __gate();
     for (let i = 0; i < 20 && /Проверяю/.test(document.getElementById('t-audio-stat')?.textContent || 'Проверяю'); i++) await __sleep(200);
     const stat = document.getElementById('t-audio-stat')?.textContent || '';
