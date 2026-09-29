@@ -1,11 +1,10 @@
 // English Quest — Режим репетитора: замок, статистика, график, отчёт.
-import { GOAL_OPTIONS, checkGoal, goalMinutes, renderGoal, streakInfo } from './activity.js';
+import { GOAL_OPTIONS, checkGoal, renderGoal } from './activity.js';
 import { backupSectionHtml, endView, resetSectionHtml, summaryText, wireBackupSection, wireResetSection } from './backup.js';
 import { LESSONS } from './eq.js';
 import { EX_NAMES, EX_ORDER, assignHomework, dueLabel, homeworkLink, homeworkTaskDone, renderHomework } from './homework.js';
 import { renderHUD } from './hud.js';
 import { CHECKPOINTS, CHECKPOINT_SIZE, PARTS, renderMap } from './map.js';
-import { mistakeEntries } from './mistakes.js';
 import { offlineSectionHtml, wireOfflineSection } from './offline.js';
 import { activeProfile, realState, saveState, state } from './state.js';
 import { closeModal, openModal, toast } from './ui.js';
@@ -13,7 +12,8 @@ import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
 import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
 import { cloudOn, cloudSectionHtml, wireCloudSection } from './cloud.js';
-import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, parseDay, plural, shiftDay } from './util.js';
+import { lastDaysOf, reportText, studentStats } from './stats.js';
+import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, plural } from './util.js';
 
 // ---------- РЕЖИМ РЕПЕТИТОРА ----------
 
@@ -21,30 +21,9 @@ export function openTutorGate(){
   openGate(openTutorPanel);
 }
 
-export function lastDays(n){
-  const out = [];
-  for (let i = n - 1; i >= 0; i--){
-    const k = shiftDay(dayKey(), -i);
-    out.push({ key: k, t: parseDay(k), ...(state.activity[k] || { sec: 0, ok: 0, bad: 0 }) });
-  }
-  return out;
-}
+export function lastDays(n){ return lastDaysOf(state, n); }
 
-export function tutorStats(){
-  const days = lastDays(7);
-  const sec = days.reduce((s, d) => s + d.sec, 0);
-  const ok = days.reduce((s, d) => s + d.ok, 0);
-  const bad = days.reduce((s, d) => s + d.bad, 0);
-  const active = days.filter(d => d.sec > 0 || d.ok + d.bad > 0).length;
-  const lessons = LESSONS.map(l => {
-    const p = state.lessonProgress[l.id] || {};
-    return { l, parts: PARTS.filter(ex => p[ex]).length, wrong: state.lessonWrong[l.id] || 0 };
-  });
-  const hard = mistakeEntries().sort((a, b) => b.m.wrong - a.m.wrong);
-  const si = streakInfo();
-  return { days, goal: goalMinutes(), metDays: days.filter(d => d.goalMet).length, streak: si.streak, best: si.best, freezes: si.freezes,
-    min: sec > 0 && sec < 60 ? '<1' : Math.round(sec / 60), ok, bad, total: ok + bad, pct: ok + bad ? Math.round(ok * 100 / (ok + bad)) : null, active, lessons, hard };
-}
+export function tutorStats(){ return studentStats(state); }
 
 
 export function minutesChart(days, goal){
@@ -75,25 +54,8 @@ export function minutesChart(days, goal){
 }
 
 export function tutorReport(s){
-  const d = new Date();
   const who = realState ? (state._viewMeta?.profile?.name || '') : (multi() || activeProfile().name !== 'Ученик' ? activeProfile().name : '');
-  const lines = [`English Quest — отчёт${who ? ` · ${who}` : ''} на ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`];
-  lines.push(`За 7 дней: ${s.min} мин, занятия в ${s.active} из 7 дней`);
-  lines.push(s.total ? `Ответов: ${s.total}, верных ${s.pct}%` : 'Ответов за неделю нет');
-  lines.push(`Цель дня ${s.goal} мин: выполнена в ${s.metDays} из 7 дней, серия ${s.streak} (рекорд ${s.best}), заморозок ${s.freezes}`);
-  const started = s.lessons.filter(x => x.parts > 0);
-  if (started.length) lines.push(`Темы в работе: ${started.map(x => `${x.l.title} (${x.parts}/${PARTS.length})`).join(', ')}`);
-  const worst = s.lessons.filter(x => x.wrong > 0).sort((a,b) => b.wrong - a.wrong).slice(0, 3);
-  if (worst.length) lines.push(`Больше всего ошибок: ${worst.map(x => `${x.l.title} (${x.wrong})`).join(', ')}`);
-  const words = s.hard.filter(x => x.m.type === 'word').slice(0, 8).map(x => x.data.word.en);
-  if (words.length) lines.push(`Трудные слова: ${words.join(', ')}`);
-  if (state.mastered) lines.push(`Выучено после ошибок: ${state.mastered}`);
-  if (pinResetNote()) lines.push(pinResetNote());
-  const cpsDone = CHECKPOINTS.filter(cp => state.checkpoints[cp.id]?.passedAt);
-  if (cpsDone.length) lines.push(`Сданы проверки: ${cpsDone.map(cp => `${cp.grade} кл. ч.${cp.part} (${state.checkpoints[cp.id].best}/${CHECKPOINT_SIZE})`).join(', ')}`);
-  const hw = state.homework, hl = hw && LESSONS.find(l => l.id === hw.lessonId);
-  if (hl) lines.push(`Домашнее задание: ${hl.title} — ${hw.tasks.map(ex => `${EX_NAMES[ex].replace(/^\S+\s/, '')} ${homeworkTaskDone(hw, ex) ? '✓' : '—'}`).join(', ')}${hw.due ? ` (срок ${fmtDay(hw.due)})` : ''}`);
-  return lines.join('\n');
+  return reportText(state, who, s, pinResetNote() ? [pinResetNote()] : []);
 }
 
 

@@ -176,6 +176,33 @@ function need_owner(): array {
   if (!in_array($u['role'], ['owner', 'admin'], true)) throw new HttpError(403, 'forbidden', 'Это может сделать только администратор.');
   return $u;
 }
+function is_admin(array $u): bool { return in_array($u['role'], ['owner', 'admin'], true); }
+// Роль при создании/изменении: администраторов назначает только владелец
+function role_for_change(array $u, mixed $role): string {
+  if (!in_array($role, ['teacher', 'admin'], true)) throw new HttpError(400, 'role', 'Неизвестная роль.');
+  if ($role === 'admin' && $u['role'] !== 'owner') throw new HttpError(403, 'forbidden', 'Администраторов назначает только владелец.');
+  return $role;
+}
+// Взрослый своей организации, которым можно управлять: администратор не трогает владельца и других администраторов
+function managed_user(array $u, string $id, bool $selfOk): array {
+  $t = one('SELECT * FROM users WHERE id = ? AND org_id = ?', [$id, $u['org_id']]);
+  if (!$t) throw new HttpError(404, 'not_found', 'Пользователь не найден.');
+  if ($t['id'] === $u['id'] && $selfOk) return $t;
+  if ($u['role'] === 'admin' && $t['role'] !== 'teacher') throw new HttpError(403, 'forbidden', 'Это может сделать только владелец.');
+  return $t;
+}
+// Проверка формы домашнего задания (как в js/stats.js → makeHomeworkFor)
+function valid_homework(object $hw): bool {
+  $tasks = $hw->tasks ?? null;
+  return is_string($hw->id ?? null) && strlen($hw->id) <= 600
+    && is_string($hw->lessonId ?? null) && preg_match('/^[a-z0-9-]{1,40}$/', $hw->lessonId)
+    && is_array($tasks) && count($tasks) >= 1 && count($tasks) <= 10
+    && count(array_filter($tasks, fn($t) => is_string($t) && preg_match('/^[a-z]{2,10}$/', $t))) === count($tasks)
+    && is_string($hw->due ?? '') && preg_match('/^(\d{4}-\d{2}-\d{2})?$/', $hw->due ?? '')
+    && is_string($hw->note ?? '') && mb_strlen($hw->note ?? '') <= 300
+    && is_numeric($hw->assigned ?? null) && is_object($hw->baseline ?? null)
+    && (($hw->doneAt ?? null) === null || is_numeric($hw->doneAt));
+}
 // Учитель видит только своих учеников; владелец и администратор — всех в организации.
 function student_for(array $u, string $id): array {
   $s = one('SELECT * FROM students WHERE id = ? AND org_id = ?', [$id, $u['org_id']]);
@@ -296,7 +323,13 @@ function routes(): array {
       $name = array_key_exists('name', body()) ? clean_name(body()['name'], 20) : $s['name'];
       if ($name === '') throw new HttpError(400, 'name', 'Введите имя ученика.');
       $avatar = in_array(body()['avatar'] ?? '', AVATARS, true) ? body()['avatar'] : $s['avatar'];
-      q('UPDATE students SET name = ?, avatar = ? WHERE id = ?', [$name, $avatar, $id]);
+      $teacher = $s['teacher_id'];
+      if (array_key_exists('teacherId', body()) && body()['teacherId'] !== $teacher){
+        if (!is_admin($u)) throw new HttpError(403, 'forbidden', 'Сменить репетитора может только администратор.');
+        if (!one('SELECT id FROM users WHERE id = ? AND org_id = ?', [(string)body()['teacherId'], $u['org_id']])) throw new HttpError(400, 'teacher', 'Репетитор не найден.');
+        $teacher = (string)body()['teacherId'];
+      }
+      q('UPDATE students SET name = ?, avatar = ?, teacher_id = ? WHERE id = ?', [$name, $avatar, $teacher, $id]);
       return ['student' => student_out(one('SELECT * FROM students WHERE id = ?', [$id]))];
     }],
     // удаление — полностью: прогресс, ключи устройств и неиспользованные коды
@@ -319,6 +352,26 @@ function routes(): array {
       $s = student_for(need_user(), $id);
       $p = one('SELECT * FROM progress WHERE student_id = ?', [$id]);
       return ['student' => student_out($s, false), 'state' => $p ? state_out($p['state']) : null, 'version' => $p ? (int)$p['version'] : 0, 'updated' => $p ? (int)$p['updated'] : null];
+    }],
+    // Домашнее задание из админ-панели: меняется только поле homework, с проверкой версии, как у устройства.
+    // Устройство получит задание при следующей синхронизации (объединение — js/merge.js).
+    ['POST', '#^/students/(s[0-9a-f]{16})/homework$#', function($id){
+      student_for(need_user(), $id);
+      $o = json_decode(raw_body());
+      $hw = is_object($o) ? ($o->homework ?? null) : null;
+      if ($hw !== null && !valid_homework($hw)) throw new HttpError(400, 'bad_homework', 'Задание в неверном формате.');
+      $base = (int)(body()['base'] ?? -1);
+      $cur = one('SELECT version, state, updated FROM progress WHERE student_id = ?', [$id]);
+      $curVersion = $cur ? (int)$cur['version'] : 0;
+      if ($base !== $curVersion) throw new HttpError(409, 'conflict', 'Прогресс ученика только что изменился. Обновите страницу и повторите.', ['version' => $curVersion]);
+      $st = $cur ? state_out($cur['state']) : new \stdClass();
+      $st->homework = $hw;
+      $json = json_encode($st, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+      $n = $cur
+        ? q('UPDATE progress SET state = ?, version = ?, updated = ?, device_id = NULL WHERE student_id = ? AND version = ?', [$json, $curVersion + 1, now(), $id, $curVersion])->rowCount()
+        : (function() use ($id, $json){ try { q('INSERT INTO progress (student_id, state, version, updated, device_id) VALUES (?, ?, 1, ?, NULL)', [$id, $json, now()]); return 1; } catch (\PDOException $e){ return 0; } })();
+      if ($n !== 1) throw new HttpError(409, 'conflict', 'Прогресс ученика только что изменился. Обновите страницу и повторите.', ['version' => $curVersion]);
+      return ['version' => $curVersion + 1, 'homework' => $hw];
     }],
     ['GET', '#^/students/(s[0-9a-f]{16})/devices$#', function($id){
       student_for(need_user(), $id);
@@ -376,22 +429,56 @@ function routes(): array {
       return ['version' => $next, 'updated' => now()];
     }],
 
-    // взрослые (учителя) — создаёт владелец или администратор
+    // взрослые: репетиторы и администраторы — управляют владелец и администраторы
     ['GET', '#^/users$#', function(){
       $u = need_owner();
-      return ['users' => array_map('EQ\user_out', all('SELECT * FROM users WHERE org_id = ? ORDER BY created', [$u['org_id']]))];
+      $rows = all('SELECT * FROM users WHERE org_id = ? ORDER BY created', [$u['org_id']]);
+      return ['users' => array_map(fn($r) => user_out($r) + [
+        'created' => (int)$r['created'],
+        'students' => (int)one('SELECT COUNT(*) AS n FROM students WHERE teacher_id = ?', [$r['id']])['n'],
+        'lastSeen' => ($t = one("SELECT MAX(last_used) AS t FROM tokens WHERE kind = 'user' AND subject = ?", [$r['id']])['t']) ? (int)$t : null,
+      ], $rows)];
     }],
     ['POST', '#^/users$#', function(){
       $u = need_owner();
       $name = clean_name(body()['name'] ?? '', 60);
-      if ($name === '') throw new HttpError(400, 'name', 'Введите имя учителя.');
+      if ($name === '') throw new HttpError(400, 'name', 'Введите имя.');
+      $role = role_for_change($u, body()['role'] ?? 'teacher');
       $id = new_id('u');
-      q('INSERT INTO users (id, org_id, role, name, created) VALUES (?, ?, ?, ?, ?)', [$id, $u['org_id'], 'teacher', $name, now()]);
+      q('INSERT INTO users (id, org_id, role, name, created) VALUES (?, ?, ?, ?, ?)', [$id, $u['org_id'], $role, $name, now()]);
       return ['user' => user_out(one('SELECT * FROM users WHERE id = ?', [$id])), 'login' => issue_code('login', $id)];
+    }],
+    ['POST', '#^/users/(u[0-9a-f]{16})$#', function($id){
+      $u = need_owner();
+      $t = managed_user($u, $id, true);
+      $name = array_key_exists('name', body()) ? clean_name(body()['name'], 60) : $t['name'];
+      if ($name === '') throw new HttpError(400, 'name', 'Введите имя.');
+      $role = $t['role'];
+      if (array_key_exists('role', body()) && body()['role'] !== $t['role']){
+        if ($t['role'] === 'owner' || $t['id'] === $u['id']) throw new HttpError(403, 'forbidden', 'Свою роль и роль владельца поменять нельзя.');
+        $role = role_for_change($u, body()['role']);
+      }
+      q('UPDATE users SET name = ?, role = ? WHERE id = ?', [$name, $role, $id]);
+      return ['user' => user_out(one('SELECT * FROM users WHERE id = ?', [$id]))];
+    }],
+    // удаление взрослого: его ученики переходят другому (transferTo) или тому, кто удаляет
+    ['POST', '#^/users/(u[0-9a-f]{16})/delete$#', function($id){
+      $u = need_owner();
+      $t = managed_user($u, $id, false);
+      if ($t['role'] === 'owner' || $t['id'] === $u['id']) throw new HttpError(403, 'forbidden', 'Владельца и себя удалить нельзя.');
+      $to = (string)(body()['transferTo'] ?? $u['id']);
+      if ($to === $id || !one('SELECT id FROM users WHERE id = ? AND org_id = ?', [$to, $u['org_id']])) throw new HttpError(400, 'teacher', 'Кому передать учеников — не найден.');
+      db()->beginTransaction();
+      q('UPDATE students SET teacher_id = ? WHERE teacher_id = ?', [$to, $id]);
+      q("DELETE FROM tokens WHERE kind = 'user' AND subject = ?", [$id]);
+      q("DELETE FROM codes WHERE kind = 'login' AND subject = ?", [$id]);
+      q('DELETE FROM users WHERE id = ?', [$id]);
+      db()->commit();
+      return ['ok' => true];
     }],
     ['POST', '#^/users/(u[0-9a-f]{16})/code$#', function($id){
       $u = need_owner();
-      if (!one('SELECT id FROM users WHERE id = ? AND org_id = ?', [$id, $u['org_id']])) throw new HttpError(404, 'not_found', 'Учитель не найден.');
+      managed_user($u, $id, false);
       return issue_code('login', $id);
     }],
   ];

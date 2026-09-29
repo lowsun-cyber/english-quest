@@ -3,6 +3,7 @@ import { renderHUD, reward } from './hud.js';
 import { realState, saveState, state } from './state.js';
 import { back, closeModal, confetti, modal, openModal, toast } from './ui.js';
 import { dayKey, plural, shiftDay } from './util.js';
+import { GOAL_OPTIONS, goalOf, streakOf } from './stats.js';
 
 // ---------- АКТИВНОСТЬ (для режима репетитора) ----------
 // По дням: секунды занятий и ответы. Время считаем только пока открыт урок/повторение
@@ -37,17 +38,12 @@ setInterval(() => {
 // включая сегодня или, если сегодня ещё не выполнено, заканчивая вчера.
 // 🧊 Заморозка закрывает пропущенный день (activity[день].frozen): серия не рвётся, но и не растёт.
 // Заморозку дают за каждые 7 дней серии или продают за монеты; хранить можно FREEZE_MAX.
-export const GOAL_OPTIONS = [5, 10, 15, 20];
-export function goalMinutes(){ return GOAL_OPTIONS.includes(state.settings.dailyGoal) ? state.settings.dailyGoal : 10; }
+export { GOAL_OPTIONS };
+export function goalMinutes(){ return goalOf(state); }
 export const FREEZE_MAX = 2, FREEZE_PRICE = 50, FREEZE_EVERY = 7;
 export function dayMet(k){ return !!state.activity[k]?.goalMet; }
 export function dayFrozen(k){ return !!state.activity[k]?.frozen; }
-export function streakInfo(){
-  const today = dayKey(), todayMet = dayMet(today);
-  let k = todayMet ? today : shiftDay(today, -1), n = 0;
-  while (dayMet(k) || dayFrozen(k)){ if (dayMet(k)) n++; k = shiftDay(k, -1); }
-  return { streak: n, todayMet, best: Math.max(state.bestStreak || 0, n), freezes: state.freezes || 0 };
-}
+export function streakInfo(){ return streakOf(state); }
 // Закрыть пропуски заморозками — при запуске и при смене ученика.
 // Тратим, только если заморозок хватает на все пропущенные дни, иначе серия всё равно прервётся.
 export function applyFreezes(){

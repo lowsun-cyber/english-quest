@@ -1,46 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Кабинет учителя — English Quest</title>
-  <meta name="description" content="Кабинет учителя English Quest: ученики, прогресс, подключение устройств." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#3fb650" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <link rel="icon" type="image/png" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="base.css" />
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Админ-панель — English Quest</title>
+  <meta name="robots" content="noindex" />
+  <!-- Кабинет учителя переехал в админ-панель; старые ссылки (в том числе с кодом входа) ведут туда -->
+  <script>location.replace('admin/' + location.hash);</script>
+  <meta http-equiv="refresh" content="0; url=admin/" />
 </head>
-<body>
-  <div class="app ht-page tc-page">
-    <header class="hud ht-hud">
-      <a class="logo ht-logo" href="./" aria-label="English Quest — на главную">
-        <svg width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
-          <rect x="1" y="1" width="40" height="40" fill="#3fb650" stroke="#000" stroke-width="2"/>
-          <rect x="11" y="7" width="20" height="26" fill="#fffdf6" stroke="#000" stroke-width="2"/>
-          <rect x="19" y="12" width="4" height="16" fill="#e53935"/>
-          <rect x="13" y="18" width="16" height="4" fill="#e53935"/>
-          <rect x="9" y="30" width="24" height="6" fill="#f5c02b" stroke="#000" stroke-width="2"/>
-        </svg>
-        <div>
-          <div class="title">УЧИТЕЛЬ</div>
-          <div class="sub" id="tc-who">Кабинет English Quest</div>
-        </div>
-      </a>
-      <div class="spacer"></div>
-      <button class="icon-btn" id="tc-logout" hidden>Выйти</button>
-      <a class="btn" href="./">← К урокам</a>
-    </header>
-
-    <main id="tc-main" aria-live="polite">
-      <p class="t-muted">Загрузка…</p>
-    </main>
-  </div>
-  <script src="content.js"></script>
-  <script type="module" src="js/teacher.js"></script>
-</body>
+<body><p><a href="admin/">Админ-панель English Quest</a></p></body>
 </html>

@@ -15,7 +15,7 @@ migrate($pdo);
 
 $printCode = function(array $c){
   echo "Код входа: {$c['code']} (действует до " . date('d.m.Y H:i', intdiv($c['expires'], 1000)) . ")\n";
-  echo "Введите его на странице для учителя (teacher.html).\n";
+  echo "Введите его в админ-панели: адрес сайта/admin/ (например, https://quest.logiqa.ru/admin/).\n";
 };
 
 if ($cmd === 'init'){

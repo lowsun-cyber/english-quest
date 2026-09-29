@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Админ-панель — English Quest</title>
+  <meta name="description" content="Админ-панель English Quest: ученики, репетиторы, прогресс и отчёты." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#3fb650" />
+  <link rel="icon" type="image/png" href="../icons/icon-192.png" />
+  <link rel="stylesheet" href="../base.css" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body class="adm-body">
+  <div class="adm">
+    <header class="adm-top">
+      <a class="adm-brand" href="../" aria-label="English Quest — к урокам">
+        <svg width="28" height="28" viewBox="0 0 42 42" aria-hidden="true">
+          <rect x="1" y="1" width="40" height="40" fill="#3fb650" stroke="#000" stroke-width="2"/>
+          <rect x="11" y="7" width="20" height="26" fill="#fffdf6" stroke="#000" stroke-width="2"/>
+          <rect x="19" y="12" width="4" height="16" fill="#e53935"/>
+          <rect x="13" y="18" width="16" height="4" fill="#e53935"/>
+          <rect x="9" y="30" width="24" height="6" fill="#f5c02b" stroke="#000" stroke-width="2"/>
+        </svg>
+        <span><b id="adm-title">Админ-панель</b><small>English Quest</small></span>
+      </a>
+      <nav class="adm-nav" id="adm-nav" aria-label="Разделы" hidden>
+        <a href="#students" data-tab="students">Ученики</a>
+        <a href="#users" data-tab="users" id="adm-tab-users" hidden>Репетиторы</a>
+      </nav>
+      <div class="adm-me" id="adm-me" hidden>
+        <span id="adm-who"></span>
+        <button class="icon-btn" id="adm-theme" aria-label="Сменить тему">🌙</button>
+        <button class="icon-btn" id="adm-logout">Выйти</button>
+      </div>
+    </header>
+    <main class="adm-main" id="adm-main" tabindex="-1">
+      <p class="t-muted">Загрузка…</p>
+    </main>
+  </div>
+  <script src="../content.js"></script>
+  <script type="module" src="../js/admin.js"></script>
+</body>
+</html>

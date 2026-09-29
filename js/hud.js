@@ -6,6 +6,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { confetti, showGuide, toast } from './ui.js';
 import { pick } from './util.js';
+import { isLessonComplete as lessonComplete } from './stats.js';
 
 // ---------- HUD RENDER ----------
 export function renderHUD(){
@@ -45,11 +46,7 @@ export function renderHUD(){
   document.getElementById('stat-quests').textContent = completed;
 }
 
-export function isLessonComplete(l, st = state){
-  const p = st.lessonProgress[l.id];
-  if (!p) return false;
-  return (p.vocab||0) >= 3 && (p.listen||0) >= 3 && (p.grammar||0) >= 2 && (p.reading||0) >= 1;
-}
+export function isLessonComplete(l, st = state){ return lessonComplete(l, st); }
 
 // ---------- TEAM ----------
 export function renderTeam(){

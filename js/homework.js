@@ -6,10 +6,10 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { confetti, toast } from './ui.js';
 import { daysLabel, escapeHtml, fmtDay, parseDay, startOfDay } from './util.js';
+import { EX_NAMES, EX_ORDER, homeworkDone, makeHomeworkFor } from './stats.js';
 
 // ---------- ДОМАШНЕЕ ЗАДАНИЕ ----------
-export const EX_NAMES = { cards: '🃏 Карточки', vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', spell: '✍️ Напиши', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори' };
-export const EX_ORDER = Object.keys(EX_NAMES);
+export { EX_NAMES, EX_ORDER };   // общие с админ-панелью (stats.js)
 
 export function dueLabel(s){
   if (!s) return '';
@@ -17,17 +17,8 @@ export function dueLabel(s){
   return `сдать ${daysLabel(parseDay(s))} (${fmtDay(s)})`;
 }
 
-export function makeHomework({ lessonId, tasks, due, note }){
-  return {
-    id: [lessonId, tasks.join(','), due || '', note || ''].join('|'),
-    lessonId, tasks, due: due || '', note: note || '',
-    assigned: Date.now(),
-    // что уже было сделано до задания — считаем только новые прохождения
-    baseline: Object.fromEntries(tasks.map(ex => [ex, state.lessonProgress[lessonId]?.[ex] || 0])),
-    doneAt: null,
-  };
-}
-export function homeworkTaskDone(hw, ex){ return (state.lessonProgress[hw.lessonId]?.[ex] || 0) > (hw.baseline[ex] || 0); }
+export function makeHomework(spec){ return makeHomeworkFor(state, spec); }
+export function homeworkTaskDone(hw, ex){ return homeworkDone(state, hw, ex); }
 
 export function assignHomework(spec){
   const lesson = LESSONS.find(l => l.id === spec.lessonId);

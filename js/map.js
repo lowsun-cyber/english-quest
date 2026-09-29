@@ -8,30 +8,16 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonsOf } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка из 8 тем. После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
 // Тема открывается, когда пройдена предыдущая (isLessonComplete), а первая тема части —
 // когда сдана проверка предыдущей части. Первая тема класса открыта всегда.
 // Репетитор может открыть всё сразу (state.settings.unlockAll).
-export const PARTS = ['vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak'];
-export const BLOCK = 4;
-export const CHECKPOINT_SIZE = 10;
-export const CHECKPOINT_PASS = 7;
 export const MAP_OFFSETS = [0, 1, 1.6, 1, 0, -1, -1.6, -1]; // зигзаг дорожки, в шагах --step
-
-export function lessonsOf(grade){ return LESSONS.filter(l => l.grade === grade).sort((a, b) => a.order - b.order); }
-export function checkpointsOf(grade){
-  const ls = lessonsOf(grade), out = [];
-  for (let i = 0; i < ls.length; i += BLOCK){
-    const part = i / BLOCK + 1;
-    out.push({ id: `g${grade}-p${part}`, grade, part, lessons: ls.slice(i, i + BLOCK),
-      emoji: part === 1 ? '💎' : '🏆', title: `Проверка: ${grade} класс, часть ${part}` });
-  }
-  return out;
-}
-export const CHECKPOINTS = [...new Set(LESSONS.map(l => l.grade))].flatMap(checkpointsOf);
-export const GRADES = [...new Set(LESSONS.map(l => l.grade))].sort();
+// уроки, части и проверки — общие с админ-панелью (stats.js)
+export { PARTS, BLOCK, CHECKPOINT_SIZE, CHECKPOINT_PASS, lessonsOf, checkpointsOf, CHECKPOINTS, GRADES };
 
 export function checkpointPassed(cp){ return !!state.checkpoints[cp.id]?.passedAt; }
 export function partsDone(l){ const p = state.lessonProgress[l.id] || {}; return PARTS.filter(ex => p[ex]).length; }

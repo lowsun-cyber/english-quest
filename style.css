@@ -1310,3 +1310,57 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
   .tc-code { font-size: 16px; }
   .cl-form { align-items: stretch; flex-direction: column; }
 }
+
+/* ---------- Админ-панель (admin/): та же палитра и кнопки, но спокойнее — без неба, сетки и картинок ---------- */
+body.adm-body { background: var(--bg); background-image: none; font-size: 15px; }
+body.adm-body::before { display: none; }
+[data-theme="dark"] body.adm-body { background: var(--bg); }
+.adm { max-width: 1180px; margin: 0 auto; padding: 0 20px 60px; }
+.adm-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 10px 0; background: var(--bg); border-bottom: 2px solid var(--line); }
+.adm-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.adm-brand span { display: flex; flex-direction: column; line-height: 1.1; }
+.adm-brand b { font-size: 16px; font-weight: 800; }
+.adm-brand small { font-size: 12px; color: var(--muted); }
+.adm-nav { display: flex; gap: 4px; }
+.adm-nav a { padding: 6px 12px; border: 2px solid transparent; border-radius: 10px; color: var(--ink); text-decoration: none; font-weight: 700; }
+.adm-nav a:hover { border-color: var(--line); }
+.adm-nav a.active { background: var(--surface); border-color: var(--line); box-shadow: 0 3px 0 var(--line); }
+.adm-me { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
+.adm-main { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; outline: none; }
+.adm-card { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: 3px 3px 0 var(--line); }
+.adm-login { max-width: 480px; }
+.adm-h1 { font-family: var(--font-body); font-weight: 800; font-size: 22px; letter-spacing: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.adm-h2 { font-family: var(--font-body); font-weight: 800; font-size: 17px; letter-spacing: 0; margin-bottom: 8px; }
+.adm-h1 .t-muted, .adm-h2 .t-muted { font-weight: 700; font-size: 0.8em; }
+.adm-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.adm-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.adm-tools .btn, .adm-card .controls .btn { font-size: 11px; padding: 9px 12px; }
+.adm-tools input, .adm-tools select, .adm-form input, .adm-form select, .adm-card select[data-role] {
+  font: inherit; font-size: 14px; padding: 7px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); min-height: 40px;
+}
+.adm-tools input[type=search] { min-width: 200px; }
+.adm-av { font-size: 20px; vertical-align: middle; }
+.adm-table tbody tr.adm-row { cursor: pointer; }
+.adm-table tbody tr.adm-row:hover td, .adm-table tbody tr.adm-row:focus-visible td { background: rgba(58,159,224,0.10); }
+.adm-table a { color: inherit; text-decoration: none; }
+.adm-table a:hover { text-decoration: underline; }
+.adm-back { color: var(--ink-2); font-weight: 700; text-decoration: none; }
+.adm-back:hover { text-decoration: underline; }
+.adm-period { display: flex; gap: 6px; margin: 4px 0 2px; }
+.adm-period .tab { padding: 5px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; min-height: 36px; }
+.adm-period .tab.active { background: var(--gold); color: var(--on-color); }
+.adm-card .t-tiles { grid-template-columns: repeat(4, 1fr); }
+.adm-alltime { margin-top: 8px; }
+.adm-chart.dense .bar-days span { font-size: 10px; }
+.adm-form { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.adm-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 14px; }
+.adm-form .pf-avatars { flex-basis: 100%; }
+.adm-wide { flex-basis: 100%; }
+.adm-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.adm-cols .t-hard, .adm-cols .t-cps { max-height: 360px; overflow: auto; }
+@media (max-width: 760px){
+  .adm-cols { grid-template-columns: 1fr; }
+  .adm-card .t-tiles { grid-template-columns: repeat(2, 1fr); }
+  .adm-me { margin-left: 0; width: 100%; justify-content: space-between; }
+  .adm-tools input[type=search] { min-width: 0; flex: 1; }
+}

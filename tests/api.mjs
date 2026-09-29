@@ -109,6 +109,51 @@ if (import.meta.url === `file://${process.argv[1]}`){
     r = await call('/students', { token: teacher, body: { name: 'Петя', teacherId: 'подмена' } });
     check('учитель добавляет ученика себе', r.status === 200 && (await call('/students', { token: teacher })).data.students.length === 1);
 
+    // администрирование: роли, смена репетитора, удаление с передачей учеников
+    r = await call('/users', { token: owner });
+    const anna = r.data.users.find(u => u.name === 'Анна Петровна');
+    check('список взрослых со счётчиком учеников', anna?.students === 1 && anna.role === 'teacher', r.data.users);
+    r = await call('/users', { token: owner, body: { name: 'Завуч', role: 'admin' } });
+    check('владелец создаёт администратора', r.data.user?.role === 'admin');
+    const admin = (await call('/login', { body: { code: r.data.login.code } })).data.token;
+    const adminId = r.data.user.id;
+    check('администратор не создаёт администраторов', (await call('/users', { token: admin, body: { name: 'X', role: 'admin' } })).status === 403);
+    check('…и не меняет владельца', (await call(`/users/${(await call('/me', { token: owner })).data.user.id}`, { token: admin, body: { name: 'Взлом' } })).status === 403);
+    r = await call(`/users/${anna.id}`, { token: admin, body: { name: 'Анна П.' } });
+    check('администратор переименовывает репетитора', r.data.user?.name === 'Анна П.');
+    check('неизвестная роль не принимается', (await call(`/users/${anna.id}`, { token: owner, body: { role: 'boss' } })).status === 400);
+    check('свою роль поменять нельзя', (await call(`/users/${adminId}`, { token: admin, body: { role: 'teacher' } })).status === 403);
+    const petya = (await call('/students', { token: teacher })).data.students[0];
+    check('репетитор не передаёт ученика другому', (await call(`/students/${petya.id}`, { token: teacher, body: { teacherId: adminId } })).status === 403);
+    r = await call(`/students/${masha}`, { token: admin, body: { teacherId: anna.id } });
+    check('администратор меняет репетитора ученика', r.data.student?.teacherId === anna.id);
+    check('теперь Анна видит Машу', (await call('/students', { token: teacher })).data.students.some(x => x.id === masha));
+
+    // домашнее задание из админ-панели
+    r = await call(`/students/${masha}/progress`, { token: teacher });
+    const hwBase = r.data.version;
+    const hw = { id: 'g2-hello|vocab|2026-10-10|', lessonId: 'g2-hello', tasks: ['vocab', 'listen'], due: '2026-10-10', note: 'Повтори слова', assigned: Date.now(), baseline: { vocab: 0, listen: 0 }, doneAt: null };
+    r = await call(`/students/${masha}/homework`, { token: teacher, body: { base: hwBase, homework: hw } });
+    check('домашка назначена с сервера', r.status === 200 && r.data.version === hwBase + 1, r.data);
+    r = await call('/progress', { token: devA });
+    check('устройство получает домашку, остальное не тронуто', r.data.state.homework?.note === 'Повтори слова' && r.data.state.xp === 20 && r.data.version === hwBase + 1);
+    check('старая версия — 409', (await call(`/students/${masha}/homework`, { token: teacher, body: { base: hwBase, homework: null } })).status === 409);
+    check('кривое задание не принимается', (await call(`/students/${masha}/homework`, { token: teacher, body: { base: hwBase + 1, homework: { ...hw, tasks: ['<script>'] } } })).status === 400);
+    r = await call(`/students/${masha}/homework`, { token: teacher, body: { base: hwBase + 1, homework: null } });
+    check('домашку можно отменить', r.status === 200 && (await call('/progress', { token: devA })).data.state.homework === null);
+    const sonya = (await call('/students', { token: owner, body: { name: 'Соня' } })).data.student.id;
+    r = await call(`/students/${sonya}/homework`, { token: owner, body: { base: 0, homework: hw } });
+    check('домашка ученику без прогресса', r.status === 200 && r.data.version === 1);
+    await call(`/students/${sonya}/delete`, { token: owner, body: {} });
+
+    // удаление репетитора: ученики переходят
+    check('владельца удалить нельзя', (await call(`/users/${(await call('/me', { token: owner })).data.user.id}/delete`, { token: admin, body: {} })).status === 403);
+    r = await call(`/users/${anna.id}/delete`, { token: admin, body: {} });
+    check('репетитор удалён', r.status === 200);
+    check('его ключ больше не работает', (await call('/me', { token: teacher })).status === 401);
+    r = await call('/students', { token: admin });
+    check('его ученики перешли к удалившему', r.data.students.filter(x => x.teacherId === adminId).length === 2, r.data.students.map(x => x.teacherId));
+
     // устройства и удаление
     r = await call(`/students/${masha}/devices`, { token: owner });
     check('список устройств', r.data.devices.length === 2 && r.data.devices[0].label === 'Планшет');

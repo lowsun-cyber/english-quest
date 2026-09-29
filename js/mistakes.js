@@ -6,6 +6,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, closeModal, openModal, toast } from './ui.js';
 import { DAY, daysLabel, distractors, escapeHtml, shuffle, startOfDay } from './util.js';
+import { mistakeList, resolveMistake } from './stats.js';
 
 // ---------- МОИ ОШИБКИ (интервальное повторение) ----------
 // Каждая ошибка — карточка в «коробке» 0..3. Верный ответ при повторении двигает её дальше,
@@ -29,30 +30,10 @@ export function recordMistake(type, lesson, ref){
   renderMistakes();
 }
 
-// Достаём из контента всё, что нужно для показа карточки. null — если урок/слово удалены.
-export function resolveMistake(m){
-  const lesson = LESSONS.find(l => l.id === m.lessonId);
-  if (!lesson) return null;
-  if (m.type === 'word'){
-    const w = lesson.words.find(w => w.en === m.ref);
-    return w ? { lesson, word: w } : null;
-  }
-  if (m.type === 'grammar'){
-    const q = lesson.grammar.find(q => q.q === m.ref);
-    return q ? { lesson, q } : null;
-  }
-  if (m.type === 'reading'){
-    const q = lesson.reading?.questions.find(q => q.q === m.ref);
-    return q ? { lesson, q, reading: lesson.reading } : null;
-  }
-  return null;
-}
+// Ошибка → слово или вопрос из контента (общая с админ-панелью, см. stats.js)
+export { resolveMistake };
 
-export function mistakeEntries(){
-  return Object.entries(state.mistakes)
-    .map(([key, m]) => ({ key, m, data: resolveMistake(m) }))
-    .filter(x => x.data);
-}
+export function mistakeEntries(){ return mistakeList(state); }
 
 
 

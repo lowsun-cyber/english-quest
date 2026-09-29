@@ -514,21 +514,41 @@ try {
       for (let i = 0; i < 30; i++){ r = await call(`/students/${stu.id}/progress`, { token: owner }); if (r.data.state?.xp === local.xp + 50) break; await sleep(100); }
       assert(r.data.state?.xp === local.xp + 50, 'объединённый прогресс не ушёл на сервер: ' + r.data.state?.xp);
 
-      // кабинет учителя
+      // админ-панель (старый адрес teacher.html переадресует туда)
       await js(`localStorage.setItem('eq_teacher', '${owner}'); return true;`);
       await send('Page.navigate', { url: APP + 'teacher.html' });
       let cab = null;
-      for (let i = 0; i < 30 && !cab; i++){ await sleep(200); cab = await js(`const row = document.querySelector('tr[data-id="${stu.id}"]'); return row ? row.innerText : null;`).catch(() => null); }
-      assert(cab && /Ваня/.test(cab), 'в кабинете нет ученика');
+      for (let i = 0; i < 40 && !cab; i++){ await sleep(200); cab = await js(`const row = document.querySelector('tr[data-id="${stu.id}"]'); return row ? location.pathname + '|' + row.innerText : null;`).catch(() => null); }
+      assert(cab && /\/admin\/\|/.test(cab) && /Ваня/.test(cab), 'админ-панель не открылась или нет ученика: ' + cab);
       await js(`
+        const wait = async (fn, n = 40) => { for (let i = 0; i < n && !fn(); i++) await new Promise(r => setTimeout(r, 150)); return fn(); };
         const row = document.querySelector('tr[data-id="${stu.id}"]');
-        if (!/\\t2\\t|\\b2\\b/.test(row.children[6].textContent)) throw new Error('устройств: ' + row.children[6].textContent);
-        row.querySelector('[data-act=code]').click();
-        for (let i = 0; i < 30 && !document.querySelector('.tc-code'); i++) await new Promise(r => setTimeout(r, 100));
-        const link = document.querySelector('.tc-code-box .t-link')?.value || '';
+        if (row.children[7].textContent.trim() !== '2') throw new Error('устройств: ' + row.children[7].textContent);
+        if (!document.getElementById('adm-tab-users') || document.getElementById('adm-tab-users').hidden) throw new Error('владелец не видит раздел «Репетиторы»');
+        row.click();
+        if (!await wait(() => document.getElementById('adm-hw'))) throw new Error('карточка ученика не открылась');
+        if (!/Ваня/.test(document.querySelector('.adm-h1').textContent)) throw new Error('не та карточка');
+        document.getElementById('adm-hw-lesson').selectedIndex = 0;
+        document.getElementById('adm-hw-note').value = 'Задание из админки';
+        document.getElementById('adm-hw').requestSubmit();
+        if (!await wait(() => /Задание из админки/.test(document.querySelector('.t-hw-current')?.textContent || ''))) throw new Error('задание не появилось в карточке');
+        document.getElementById('adm-code-btn').click();
+        if (!await wait(() => document.querySelector('.tc-code-box .t-link'))) throw new Error('нет кода подключения');
+        const link = document.querySelector('.tc-code-box .t-link').value;
         if (!/#link=[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(link)) throw new Error('нет ссылки подключения: ' + link);
-        if (document.documentElement.scrollWidth > innerWidth + 1) throw new Error('горизонтальная прокрутка');
+        if (document.documentElement.scrollWidth > innerWidth + 1) throw new Error('горизонтальная прокрутка в карточке');
+        document.getElementById('adm-pdf').click();
+        if (!await wait(() => window.eqAdmin.lastPdf, 200)) throw new Error('PDF не собрался');
+        if (window.eqAdmin.lastPdf.size < 20000) throw new Error('PDF подозрительно маленький: ' + window.eqAdmin.lastPdf.size);
+        location.hash = '#users';
+        if (!await wait(() => document.getElementById('adm-user-add'))) throw new Error('раздел «Репетиторы» не открылся');
+        document.getElementById('adm-user-name').value = 'Ольга Николаевна';
+        document.getElementById('adm-user-add').requestSubmit();
+        if (!await wait(() => /admin\\/#login=/.test(document.querySelector('#adm-user-code .t-link')?.value || ''))) throw new Error('нет кода входа для репетитора');
+        if (!/Ольга Николаевна/.test(document.querySelector('.adm-table').textContent)) throw new Error('репетитор не в списке');
         return true;`);
+      r = await call(`/students/${stu.id}/progress`, { token: owner });
+      assert(r.data.state?.homework?.note === 'Задание из админки', 'домашка не сохранилась на сервере');
 
       // просмотр прогресса ученика из кабинета
       await load(APP + '?view=1#view=' + stu.id);
@@ -546,7 +566,7 @@ try {
         const seen = [...__toasts, ...[...document.querySelectorAll('.toast')].map(t => t.textContent)];   // могло появиться ещё до заглушек теста
         if (!seen.some(t => /отключено от сервера/.test(t))) throw new Error('нет сообщения об отключении');
         return true;`);
-      return 'подключение по ссылке, объединение +50 XP, кабинет, просмотр, отключение';
+      return 'подключение по ссылке, объединение +50 XP, админ-панель (домашка, PDF, репетитор), просмотр, отключение';
     } finally {
       await js(`localStorage.removeItem('eq_api'); localStorage.removeItem('eq_teacher'); return true;`).catch(() => {});
       srv.stop();
