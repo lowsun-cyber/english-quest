@@ -27,8 +27,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'   # самая старая версия, которую должен поддерживать сервер
+          extensions: pdo_sqlite, mbstring
+          coverage: none
       - name: Сравнение речи («Говори»)
         run: node tests/speech.mjs
+      - name: Объединение прогресса с разных устройств
+        run: node tests/merge.mjs
+      - name: Сервер учителя (API)
+        run: node tests/api.mjs
       - name: Сквозной тест в Chrome
         # второй запуск — только чтобы случайная задержка на сервере не блокировала публикацию;
         # результат первого запуска остаётся в журнале
@@ -44,10 +53,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Собрать сайт (без тестов и инструментов)
+      - name: Собрать сайт (без тестов, инструментов и кода сервера)
         run: |
           mkdir _site
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude '_site' ./ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'server' --exclude '_site' ./ _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

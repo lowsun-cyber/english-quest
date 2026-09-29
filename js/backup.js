@@ -8,6 +8,7 @@ import { renderMistakes } from './mistakes.js';
 import { activeProfile, freshState, getLS, realState, saveState, setRealState, setState, state, stateKey } from './state.js';
 import { openTutorPanel } from './tutor.js';
 import { createProfile } from './profiles.js';
+import { cloudLink } from './cloud.js';
 import { toast } from './ui.js';
 import { DAY, copyText, dayKey, escapeHtml, fmtDay, startOfDay } from './util.js';
 
@@ -96,7 +97,7 @@ export function backupSectionHtml(){
   const hasUndo = (() => { try { return !!getLS()?.getItem(undoKey()); } catch (e) { return false; } })();
   const canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [new File(['{}'], 'x.json', { type: 'application/json' })] }));
   return `
-    <p class="t-muted">Прогресс хранится только в этом браузере. Сохраните копию, чтобы не потерять его, перенести на другое устройство или отправить репетитору.</p>
+    <p class="t-muted">${cloudLink() ? 'Прогресс сохраняется на сервере учителя. Копия в файл — дополнительная страховка.' : 'Прогресс хранится только в этом браузере. Сохраните копию, чтобы не потерять его, перенести на другое устройство или отправить репетитору.'}</p>
     <p class="t-muted">Последняя копия: <b>${last ? daysAgo(last) : 'ещё не делали'}</b></p>
     <div class="controls">
       <button class="btn" id="t-bk-file">💾 Сохранить в файл</button>

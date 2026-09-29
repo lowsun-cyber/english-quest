@@ -18,6 +18,7 @@ import './util.js';
 import './worksheet.js';
 import './lock.js';
 import './profiles.js';
+import './cloud.js';
 import { applyFreezes, openFreezeInfo, renderGoal } from './activity.js';
 import { CHARACTERS, HARLOW_LINES } from './eq.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';
@@ -26,6 +27,7 @@ import { currentNode, mapGrade, openNode, renderMap } from './map.js';
 import { renderMistakes } from './mistakes.js';
 import { loadProfiles, loadState, saveState, setProfiles, setState, state, takeDeviceSettings } from './state.js';
 import { multi, openProfileChooser, renderProfileChip } from './profiles.js';
+import { initCloud, linkFromHash, syncNow, viewFromHash } from './cloud.js';
 import { showGuide, toast } from './ui.js';
 import { pick } from './util.js';
 
@@ -49,6 +51,7 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
 
 // ---------- INIT ----------
 (async function init(){
+  initCloud();
   setProfiles(await loadProfiles());
   setState(takeDeviceSettings(await loadState()));
   saveState(); // PIN из старого места уже перенесён в индекс устройства — пересохраняем без него
@@ -68,9 +71,12 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
     if (multi()) openProfileChooser({ note: hw ? '📬 Пришло домашнее задание — для кого оно?' : '', onPick: () => applyHomeworkFromHash() });
     else applyHomeworkFromHash();
   };
-  chooseThenHomework();
+  // ссылки из кабинета учителя: подключить устройство (#link=…) или посмотреть прогресс (#view=…)
+  const fromTeacher = () => linkFromHash() || viewFromHash();
+  if (!(await fromTeacher())) chooseThenHomework();
   // ссылка на задание, открытая во вкладке, где приложение уже запущено
-  window.addEventListener('hashchange', () => { if (location.hash.startsWith('#hw')) chooseThenHomework(); });
+  window.addEventListener('hashchange', () => { if (location.hash.startsWith('#hw')) chooseThenHomework(); else fromTeacher(); });
+  syncNow();   // подключённый к серверу профиль — сразу забрать новое с других устройств
   document.getElementById('btn-profile').onclick = () => openProfileChooser();
   document.getElementById('stat-freeze').onclick = openFreezeInfo;
   try { document.getElementById('howto-new').hidden = !!localStorage.getItem('eq_howto_seen'); } catch (e) {}

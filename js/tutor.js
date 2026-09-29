@@ -12,6 +12,7 @@ import { closeModal, openModal, toast } from './ui.js';
 import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
 import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
+import { cloudOn, cloudSectionHtml, wireCloudSection } from './cloud.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, parseDay, plural, shiftDay } from './util.js';
 
 // ---------- РЕЖИМ РЕПЕТИТОРА ----------
@@ -108,7 +109,9 @@ export function openTutorPanel(){
     <a class="t-guide-link" href="how-to.html#parents" target="_blank" rel="noopener">📖 Гайд для родителей и репетиторов</a>
     ${realState ? `
       <div class="t-view-banner" role="status">
-        <b>👀 Просмотр копии.</b> ${escapeHtml(summaryText(state._viewMeta.summary, state._viewMeta.exportedAt))}
+        ${state._viewMeta.source === 'server'
+          ? `<b>👀 ${escapeHtml(state._viewMeta.profile.avatar)} ${escapeHtml(state._viewMeta.profile.name)} — прогресс с сервера.</b> ${state._viewMeta.exportedAt ? `Обновлён ${new Date(state._viewMeta.exportedAt).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.` : 'Ученик ещё не занимался.'}`
+          : `<b>👀 Просмотр копии.</b> ${escapeHtml(summaryText(state._viewMeta.summary, state._viewMeta.exportedAt))}`}
         Здесь ничего не сохраняется, прогресс на этом устройстве не меняется.
         <button class="btn secondary" id="t-view-close">Вернуться к своему прогрессу</button>
       </div>` : `<div class="lead">${multi() ? `Прогресс ученика: <b>${activeProfile().avatar} ${escapeHtml(activeProfile().name)}</b>. Переключить — в разделе «Ученики» ниже.` : 'Прогресс ученика на этом устройстве.'}</div>`}
@@ -197,6 +200,9 @@ export function openTutorPanel(){
     ${worksheetSectionHtml()}
 
     ${realState ? '' : `
+    ${cloudOn() ? `<h3 class="t-h">Сервер учителя</h3>
+    ${cloudSectionHtml()}` : ''}
+
     <h3 class="t-h">Перенос и резервная копия</h3>
     ${backupSectionHtml()}
 
@@ -248,6 +254,7 @@ export function openTutorPanel(){
   wireWorksheet();
   if (!realState){
     wireOfflineSection(); wireBackupSection(); wireResetSection();
+    if (cloudOn()) wireCloudSection(openTutorPanel);
     wireLockSection(openTutorPanel, closeModal);
     wireProfilesSection(openTutorPanel);
   }

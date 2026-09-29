@@ -9,6 +9,7 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
+import { startApi, call } from './api.mjs';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const PORT = 8765, APP = `http://127.0.0.1:${PORT}/`;
@@ -474,6 +475,82 @@ try {
     await load();
     await js(`if (__shown(document.getElementById('howto-new'))) throw new Error('метка «новое» не исчезла после открытия гайда'); return true;`);
     return info + '; метка снимается после посещения';
+  });
+
+  // Сервер учителя: подключение по ссылке, объединение с другим устройством, кабинет, просмотр, отключение.
+  await test('сервер учителя: синхронизация и кабинет', async () => {
+    const srv = await startApi();
+    try {
+      const owner = (await call('/login', { body: { code: srv.ownerCode } })).data.token;
+      const stu = (await call('/students', { token: owner, body: { name: 'Ваня', avatar: '🐯' } })).data.student;
+      const codeA = (await call(`/students/${stu.id}/code`, { token: owner, body: {} })).data.code;
+      await js(`localStorage.setItem('eq_api', '${srv.api}'); return true;`);
+      await load(APP + '?device=a#link=' + codeA);   // ?… — чтобы страница перезагрузилась, а не только сменился #
+      const xpBefore = await js(`
+        const f = id => document.getElementById(id);
+        if (!f('cl-go')) throw new Error('ссылка #link не предложила подключиться');
+        if (location.hash) throw new Error('код остался в адресе');
+        const xp = __ls().xp;
+        f('cl-go').click();
+        for (let i = 0; i < 30 && !f('cl-this'); i++) await __sleep(100);
+        if (!f('cl-this')) throw new Error('не спросили, чей прогресс на устройстве');
+        f('cl-this').click();
+        for (let i = 0; i < 40 && !__toasts.some(t => /сохранён на сервере/.test(t)); i++) await __sleep(100);
+        if (!__toasts.some(t => /сохранён на сервере/.test(t))) throw new Error('нет подтверждения: ' + __toasts.join(' / '));
+        const idx = JSON.parse(localStorage.getItem('english_quest_profiles'));
+        if (idx.list[0].cloud?.studentId !== '${stu.id}' || idx.list[0].name !== 'Ваня') throw new Error('профиль не привязан');
+        return xp;`);
+      let r = await call(`/students/${stu.id}/progress`, { token: owner });
+      assert(r.data.state?.xp === xpBefore && r.data.version === 1, `на сервере не тот прогресс: xp ${r.data.state?.xp} vs ${xpBefore}`);
+
+      // «второе устройство» добавляет 50 XP и золото, пока это устройство тоже занимается
+      const codeB = (await call(`/students/${stu.id}/code`, { token: owner, body: {} })).data.code;
+      const devB = (await call('/claim', { body: { code: codeB, label: 'Телефон' } })).data.token;
+      const remote = (await call('/progress', { token: devB })).data;
+      await call('/progress', { token: devB, body: { base: remote.version, state: { ...remote.state, xp: remote.state.xp + 50, gold: remote.state.gold + 7 } } });
+      const local = await js(`const s = __ls(); s.xp += 5; localStorage.setItem('english_quest_v2', JSON.stringify(s)); return s;`);
+      await load();
+      await js(`for (let i = 0; i < 40 && __ls().xp !== ${local.xp + 50}; i++) await __sleep(100); if (__ls().xp !== ${local.xp + 50}) throw new Error('XP после объединения: ' + __ls().xp + ', ждали ${local.xp + 50}'); if (__ls().gold !== ${local.gold + 7}) throw new Error('золото: ' + __ls().gold); return true;`);
+      for (let i = 0; i < 30; i++){ r = await call(`/students/${stu.id}/progress`, { token: owner }); if (r.data.state?.xp === local.xp + 50) break; await sleep(100); }
+      assert(r.data.state?.xp === local.xp + 50, 'объединённый прогресс не ушёл на сервер: ' + r.data.state?.xp);
+
+      // кабинет учителя
+      await js(`localStorage.setItem('eq_teacher', '${owner}'); return true;`);
+      await send('Page.navigate', { url: APP + 'teacher.html' });
+      let cab = null;
+      for (let i = 0; i < 30 && !cab; i++){ await sleep(200); cab = await js(`const row = document.querySelector('tr[data-id="${stu.id}"]'); return row ? row.innerText : null;`).catch(() => null); }
+      assert(cab && /Ваня/.test(cab), 'в кабинете нет ученика');
+      await js(`
+        const row = document.querySelector('tr[data-id="${stu.id}"]');
+        if (!/\\t2\\t|\\b2\\b/.test(row.children[6].textContent)) throw new Error('устройств: ' + row.children[6].textContent);
+        row.querySelector('[data-act=code]').click();
+        for (let i = 0; i < 30 && !document.querySelector('.tc-code'); i++) await new Promise(r => setTimeout(r, 100));
+        const link = document.querySelector('.tc-code-box .t-link')?.value || '';
+        if (!/#link=[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(link)) throw new Error('нет ссылки подключения: ' + link);
+        if (document.documentElement.scrollWidth > innerWidth + 1) throw new Error('горизонтальная прокрутка');
+        return true;`);
+
+      // просмотр прогресса ученика из кабинета
+      await load(APP + '?view=1#view=' + stu.id);
+      await js(`for (let i = 0; i < 30 && !document.querySelector('.t-view-banner'); i++) await __sleep(100);
+        const b = document.querySelector('.t-view-banner');
+        if (!b || !/Ваня — прогресс с сервера/.test(b.textContent)) throw new Error('нет просмотра с сервера: ' + (b?.textContent || ''));
+        __close(); return true;`);
+
+      // учитель отключил устройство — приложение продолжает работать без сервера
+      const devs = (await call(`/students/${stu.id}/devices`, { token: owner })).data.devices;
+      await call(`/devices/${devs[0].id}/delete`, { token: owner, body: {} });
+      await load();
+      await js(`for (let i = 0; i < 30 && JSON.parse(localStorage.getItem('english_quest_profiles')).list[0].cloud; i++) await __sleep(100);
+        if (JSON.parse(localStorage.getItem('english_quest_profiles')).list[0].cloud) throw new Error('профиль не отвязался');
+        const seen = [...__toasts, ...[...document.querySelectorAll('.toast')].map(t => t.textContent)];   // могло появиться ещё до заглушек теста
+        if (!seen.some(t => /отключено от сервера/.test(t))) throw new Error('нет сообщения об отключении');
+        return true;`);
+      return 'подключение по ссылке, объединение +50 XP, кабинет, просмотр, отключение';
+    } finally {
+      await js(`localStorage.removeItem('eq_api'); localStorage.removeItem('eq_teacher'); return true;`).catch(() => {});
+      srv.stop();
+    }
   });
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });

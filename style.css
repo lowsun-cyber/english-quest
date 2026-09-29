@@ -1284,3 +1284,29 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- Сервер учителя: раздел в панели и кабинет учителя ---------- */
+.cl-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 10px; }
+.cl-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 14px; }
+.cl-form input { font: inherit; font-size: 18px; letter-spacing: 1px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); min-width: 12ch; }
+.cl-form .btn { font-size: 12px; padding: 10px 14px; }
+.cl-choice { flex-direction: column; align-items: stretch; }
+.tc-page main { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+.tc-h { font-family: var(--font-body); font-weight: 800; font-size: 22px; letter-spacing: 0; margin-bottom: 10px; }
+.tc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.tc-login { max-width: 520px; }
+.tc-av { font-size: 22px; vertical-align: middle; }
+.tc-table td { vertical-align: middle; }
+.tc-acts { display: flex; flex-wrap: wrap; gap: 6px; white-space: normal !important; min-width: 260px; }
+.tc-acts a.icon-btn { text-decoration: none; }
+.tc-detail td { background: var(--bg); white-space: normal !important; }
+[data-theme="dark"] .tc-detail td { background: #1a2635; }
+.tc-code-box { padding: 6px 0; }
+.tc-code { font-family: var(--font-pixel); font-size: 20px; letter-spacing: 3px; margin: 8px 0; }
+.tc-devices, .tc-users { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.tc-devices li, .tc-users li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tc-add { margin-top: 18px; }
+@media (max-width: 560px){
+  .tc-code { font-size: 16px; }
+  .cl-form { align-items: stretch; flex-direction: column; }
+}

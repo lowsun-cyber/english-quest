@@ -114,6 +114,20 @@ export async function deleteStoredState(id){
   delete memory[id];
   try { getLS()?.removeItem(stateKey(id)); getLS()?.removeItem(stateKey(id) + '_before_restore'); } catch (e) {}
   try { await idbPut(idbKey(id), undefined); } catch (e) {}
+  await writeSyncBase(id, null);
+}
+// Последний прогресс, согласованный с сервером (основа для объединения, см. merge.js и cloud.js).
+// Хранится так же надёжно, как сам прогресс: без неё изменения с двух устройств не сложить правильно.
+const syncKey = id => stateKey(id) + '_synced';
+export async function readSyncBase(id){
+  try { const raw = getLS()?.getItem(syncKey(id)); if (raw) return JSON.parse(raw); } catch (e) {}
+  try { const v = await idbGet(syncKey(id)); if (v) return v; } catch (e) {}
+  return memory[syncKey(id)] || null;
+}
+export async function writeSyncBase(id, base){
+  if (base) memory[syncKey(id)] = JSON.parse(JSON.stringify(base)); else delete memory[syncKey(id)];
+  try { base ? getLS()?.setItem(syncKey(id), JSON.stringify(base)) : getLS()?.removeItem(syncKey(id)); } catch (e) {}
+  try { await idbPut(syncKey(id), base || undefined); } catch (e) {}
 }
 export async function writeStoredState(id, st){
   memory[id] = JSON.parse(JSON.stringify(st));
@@ -137,7 +151,10 @@ export async function loadState(id = activeId()){
   return freshState();
 }
 
+let onSaved = null;   // синхронизация с сервером подписывается сюда (cloud.js)
+export function setOnSaved(fn){ onSaved = fn; }
 export async function saveState(){
   if (realState) return; // репетитор смотрит копию чужого прогресса — ничего не пишем
   await writeStoredState(activeId(), state);
+  onSaved?.();
 }
