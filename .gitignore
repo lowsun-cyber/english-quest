@@ -10,3 +10,4 @@
 # настройки сервера с паролями и локальная база
 server/config.php
 server/data/
+server/tmp/

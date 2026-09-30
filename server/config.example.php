@@ -4,9 +4,9 @@
 return [
   'db' => [
     // MySQL на хостинге:
-    'dsn' => 'mysql:host=localhost;dbname=f1185464_123;charset=utf8mb4',
-    'user' => 'Пf1185464_123',
-    'password' => '3vr-SdH-RHK-RaN',
+    'dsn' => 'mysql:host=localhost;dbname=ИМЯ_БАЗЫ;charset=utf8mb4',
+    'user' => 'ПОЛЬЗОВАТЕЛЬ_БАЗЫ',
+    'password' => 'ПАРОЛЬ_БАЗЫ',
     // PostgreSQL: 'dsn' => 'pgsql:host=localhost;dbname=ИМЯ_БАЗЫ'
     // SQLite (только для проверки): 'dsn' => 'sqlite:' . __DIR__ . '/data/eq.sqlite'
   ],
