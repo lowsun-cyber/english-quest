@@ -68,3 +68,48 @@ jobs:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Та же сборка — на хостинг (Спринтхост): https://quest.logiqa.ru/
+  # Нужны: секрет SPRINTHOST_SSH_KEY (закрытый ключ только для выкладки) и переменные репозитория
+  # SPRINTHOST_HOST, SPRINTHOST_USER, SPRINTHOST_PATH, SPRINTHOST_KNOWN_HOSTS (см. server/README.md).
+  # Пока переменных нет — шаг пропускается. Папку api/ (сервер) выкладка не трогает.
+  deploy-hosting:
+    name: Публикация на quest.logiqa.ru
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.SPRINTHOST_HOST != ''
+    runs-on: ubuntu-latest
+    concurrency:
+      group: hosting
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Собрать сайт (без тестов, инструментов и кода сервера)
+        run: |
+          mkdir _site
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'server' --exclude '_site' \
+            --exclude 'README.md' --exclude 'DESIGN.md' --exclude 'phrases.json' --exclude '.gitignore' ./ _site/
+      - name: Ключ SSH
+        env:
+          KEY: ${{ secrets.SPRINTHOST_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.SPRINTHOST_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Выложить файлы
+        env:
+          HOST: ${{ vars.SPRINTHOST_HOST }}
+          USER_NAME: ${{ vars.SPRINTHOST_USER }}
+          DEST: ${{ vars.SPRINTHOST_PATH }}
+          PORT: ${{ vars.SPRINTHOST_PORT || '22' }}
+        # --delete убирает устаревшие файлы (и заглушку хостинга), но api/ и .well-known/ защищены
+        run: |
+          rsync -rlz --delete --delay-updates --chmod=D755,F644 \
+            --filter='protect /api/' --filter='protect /.well-known/' --filter='protect /.htaccess' \
+            -e "ssh -i ~/.ssh/deploy -p $PORT -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+            _site/ "$USER_NAME@$HOST:$DEST/"
+      - name: Проверить сайт и сервер
+        run: |
+          curl -fsS https://quest.logiqa.ru/ | grep -q 'English Quest'
+          curl -fsS https://quest.logiqa.ru/api/ | grep -q '"ok":true'
+          echo "Сайт и сервер отвечают"

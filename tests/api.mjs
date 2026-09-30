@@ -3,7 +3,7 @@
 // Поднимает встроенный сервер PHP с временной базой SQLite.
 //   node tests/api.mjs
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 
@@ -13,27 +13,33 @@ const API = `http://127.0.0.1:${API_PORT}`;
 const ORIGIN = 'http://127.0.0.1:8765';
 
 // Временная база и настройки; возвращает { api, ownerCode, stop }
-export async function startApi(){
+// serverDir — папка с кодом сервера (для проверки обновления базы со старой версии), sqlite — готовый файл базы
+export async function startApi({ init = true, setupKey = '', serverDir = join(ROOT, 'server'), sqlite = null, freshDb = true } = {}){
   const dir = mkdtempSync(join(tmpdir(), 'eq-api-'));
+  const mailLog = join(dir, 'mail.log');
   const cfg = join(dir, 'config.php');
   // по умолчанию — временная SQLite; EQ_TEST_MYSQL=1 — настоящая MySQL (как на хостинге), база пересоздаётся
   const my = process.env.EQ_TEST_MYSQL ? { host: process.env.MYSQL_HOST || '127.0.0.1', port: process.env.MYSQL_PORT || '3306', user: process.env.MYSQL_USER || 'root', pass: process.env.MYSQL_PASSWORD || 'root', db: 'eq_test' } : null;
-  if (my) execFileSync('mysql', ['-h', my.host, '-P', my.port, '-u', my.user, `-p${my.pass}`, '-e', `DROP DATABASE IF EXISTS ${my.db}; CREATE DATABASE ${my.db} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`]);
+  if (my && freshDb) execFileSync('mysql', ['-h', my.host, '-P', my.port, '-u', my.user, `-p${my.pass}`, '-e', `DROP DATABASE IF EXISTS ${my.db}; CREATE DATABASE ${my.db} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`]);
   const db = my
     ? `['dsn' => 'mysql:host=${my.host};port=${my.port};dbname=${my.db};charset=utf8mb4', 'user' => '${my.user}', 'password' => '${my.pass}']`
-    : `['dsn' => 'sqlite:${join(dir, 'eq.sqlite')}']`;
-  writeFileSync(cfg, `<?php return ['db' => ${db}, 'origins' => ['${ORIGIN}'], 'secret' => 'test', 'debug' => true];`);
+    : `['dsn' => 'sqlite:${sqlite || join(dir, 'eq.sqlite')}']`;
+  // письма не отправляются, а пишутся в файл — тест читает из него ссылки
+  writeFileSync(cfg, `<?php return ['db' => ${db}, 'origins' => ['${ORIGIN}'], 'secret' => 'test', 'setup_key' => '${setupKey}', 'debug' => true,
+    'app_url' => 'https://quest.example/', 'mail' => ['transport' => 'log', 'log_file' => '${mailLog}', 'from' => 'noreply@example.org']];`);
   const env = { ...process.env, EQ_CONFIG: cfg };
-  const out = execFileSync('php', [join(ROOT, 'server/bin/setup.php'), 'init', 'Тестовая школа', 'Владелец'], { env, encoding: 'utf8' });
-  const ownerCode = /Код входа: (\S+)/.exec(out)[1];
-  const proc = spawn('php', ['-S', `127.0.0.1:${API_PORT}`, '-t', join(ROOT, 'server/public'), join(ROOT, 'server/public/index.php')], { env, stdio: ['ignore', 'ignore', 'pipe'] });
+  const out = init ? execFileSync('php', [join(serverDir, 'bin/setup.php'), 'init', 'Тестовая школа', 'Владелец'], { env, encoding: 'utf8' }) : '';
+  const ownerCode = init ? /Код входа: (\S+)/.exec(out)[1] : null;
+  const proc = spawn('php', ['-S', `127.0.0.1:${API_PORT}`, '-t', join(serverDir, 'public'), join(serverDir, 'public/index.php')], { env, stdio: ['ignore', 'ignore', 'pipe'] });
   let log = ''; proc.stderr.on('data', d => { log += d; });
   for (let i = 0; i < 50; i++){
     try { if ((await fetch(API + '/')).ok) break; } catch (e) {}
     await new Promise(r => setTimeout(r, 100));
     if (i === 49) throw new Error('Сервер PHP не запустился:\n' + log);
   }
-  return { api: API, ownerCode, env, stop(){ proc.kill(); rmSync(dir, { recursive: true, force: true }); } };
+  const mails = () => existsSync(mailLog) ? readFileSync(mailLog, 'utf8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l)) : [];
+  const stop = () => new Promise(r => { proc.once('exit', r); proc.kill(); }).then(() => rmSync(dir, { recursive: true, force: true }));
+  return { api: API, ownerCode, env, mails, stop };
 }
 
 export async function call(path, { token, body, method } = {}){
@@ -60,6 +66,24 @@ if (import.meta.url === `file://${process.argv[1]}`){
     check('/me — владелец и организация', r.data.user?.role === 'owner' && r.data.org?.name === 'Тестовая школа', r.data);
     check('CORS для приложения', r.headers.get('access-control-allow-origin') === ORIGIN);
     check('без ключа — 401', (await call('/students')).status === 401);
+    r = await call('/me/code', { token: owner, body: {} });
+    check('код для входа на другом устройстве', /^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(r.data.code || ''), r.data);
+    r = await call('/login', { body: { code: r.data.code } });
+    check('…по нему входит тот же человек', r.status === 200 && r.data.user.role === 'owner' && r.data.token !== owner);
+    check('код для себя без входа не выдаётся', (await call('/me/code', { body: {} })).status === 401);
+    const second = r.data.token;   // вход «на другом устройстве» из проверки выше
+    await call('/me/code', { token: owner, body: {} });
+    r = await call('/me/sessions', { token: owner });
+    check('мои входы: оба устройства, текущее отмечено', r.data.sessions.length === 2 && r.data.sessions.filter(x => x.current).length === 1 && r.data.codes.count === 1, r.data);
+    check('чужой вход не отключить', (await call('/me/sessions/t0000000000000000/delete', { token: owner, body: {} })).status === 404);
+    r = await call('/me/codes/delete', { token: owner, body: {} });
+    check('неиспользованные коды отменены', r.data.deleted === 1 && (await call('/me/sessions', { token: owner })).data.codes.count === 0);
+    r = await call('/me/sessions/others/delete', { token: owner, body: {} });
+    check('выйти на других устройствах', r.data.deleted === 1 && (await call('/me', { token: second })).status === 401 && (await call('/me', { token: owner })).status === 200);
+    const third = (await call('/login', { body: { code: (await call('/me/code', { token: owner, body: {} })).data.code } })).data.token;
+    const thirdId = (await call('/me/sessions', { token: owner })).data.sessions.find(x => !x.current).id;
+    await call(`/me/sessions/${thirdId}/delete`, { token: owner, body: {} });
+    check('отключить одно устройство', (await call('/me', { token: third })).status === 401);
 
     // ученики
     r = await call('/students', { token: owner, body: { name: '  Маша   Иванова  ', avatar: '🐼' } });
@@ -177,7 +201,140 @@ if (import.meta.url === `file://${process.argv[1]}`){
     await call('/logout', { token: owner, body: {} });
     check('выход — ключ больше не работает', (await call('/me', { token: owner })).status === 401);
     check('неизвестный адрес — 404', (await call('/nope')).status === 404);
-  } finally { srv.stop(); }
+  } finally { await srv.stop(); }
+
+  // первый запуск из админ-панели (сервер без владельца)
+  for (const [key, label] of [['', 'без ключа в config.php'], ['секретный-ключ-установки', 'с ключом']]){
+    const s2 = await startApi({ init: false, setupKey: key });
+    try {
+      let r = await call('/setup');
+      check(`первый запуск ${label}: сервер просит настройку`, r.data.needed === true && r.data.enabled === !!key, r.data);
+      if (!key){
+        r = await call('/setup', { body: { key: 'что-угодно', org: 'Школа', name: 'Я' } });
+        check('без ключа в config.php — подсказка, что вписать', r.status === 403 && /setup_key/.test(r.data.message), r.data);
+        continue;
+      }
+      check('неверный ключ не принимается', (await call('/setup', { body: { key: 'не тот', org: 'Школа', name: 'Я' } })).status === 403);
+      check('пустое имя не принимается', (await call('/setup', { body: { key, org: 'Школа', name: ' ' } })).status === 400);
+      r = await call('/setup', { body: { key, org: 'Мои ученики', name: 'Эльмар' } });
+      check('верный ключ — владелец создан и сразу вошёл', r.status === 200 && r.data.token?.length === 64 && r.data.user.role === 'owner', r.data);
+      const me = await call('/me', { token: r.data.token });
+      check('…организация создана', me.data.org?.name === 'Мои ученики' && me.data.user.name === 'Эльмар');
+      check('повторный запуск невозможен', (await call('/setup', { body: { key, org: 'Чужая', name: 'Захватчик' } })).status === 409);
+      check('сервер больше не просит настройку', (await call('/setup')).data.needed === false);
+      check('восстановление: неверный ключ не принимается', (await call('/setup/recover', { body: { key: 'не тот' } })).status === 403);
+      r = await call('/setup/recover', { body: { key } });
+      check('восстановление по ключу — вход владельцем', r.status === 200 && r.data.user.role === 'owner' && (await call('/me', { token: r.data.token })).data.user.name === 'Эльмар', r.data);
+    } finally { await s2.stop(); }
+  }
+
+  // пароли, приглашения и восстановление по почте
+  {
+    const s3 = await startApi();
+    const linkOf = m => /#reset=([0-9a-f]{64})/.exec(m.text)?.[1];
+    try {
+      const owner = (await call('/login', { body: { code: s3.ownerCode } })).data.token;
+      // взрослый: приглашение на почту → задаёт пароль → входит по почте
+      let r = await call('/users', { token: owner, body: { name: 'Ольга', email: ' Olga@Example.org ', access: 'invite' } });
+      check('приглашение репетитору ушло на почту', r.status === 200 && r.data.mailed === 'olga@example.org' && r.data.user.email === 'olga@example.org', r.data);
+      const olgaId = r.data.user.id;
+      let mail = s3.mails().at(-1);
+      check('в письме — ссылка «задать пароль»', mail?.to === 'olga@example.org' && /https:\/\/quest\.example\/admin\/#reset=/.test(mail.text) && /7 дней/.test(mail.text), mail);
+      const invite = linkOf(mail);
+      r = await call(`/password/reset/${invite}`);
+      check('ссылка знает, для кого она', r.data.kind === 'user' && r.data.name === 'Ольга' && r.data.purpose === 'invite', r.data);
+      check('короткий пароль не принимается', (await call('/password/reset', { body: { token: invite, password: '123' } })).status === 400);
+      r = await call('/password/reset', { body: { token: invite, password: 'olga-secret-1' } });
+      check('пароль задан — сразу вход', r.status === 200 && r.data.token?.length === 64 && r.data.user.hasPassword === true, r.data);
+      check('ссылка одноразовая', (await call('/password/reset', { body: { token: invite, password: 'another-pass' } })).status === 400);
+      r = await call('/login', { body: { email: 'OLGA@example.org', password: 'olga-secret-1' } });
+      check('вход по почте и паролю (регистр почты не важен)', r.status === 200 && r.data.user.name === 'Ольга', r.data);
+      check('неверный пароль не подходит', (await call('/login', { body: { email: 'olga@example.org', password: 'wrong-pass' } })).status === 400);
+      check('несуществующая почта — тот же ответ', (await call('/login', { body: { email: 'nobody@example.org', password: 'wrong-pass' } })).data.message === 'Почта или пароль не подошли.');
+      check('почту нельзя занять второй раз', (await call('/users', { token: owner, body: { name: 'Двойник', email: 'olga@example.org' } })).status === 400);
+
+      // временный пароль: администратор выдаёт, взрослый меняет при первом входе
+      r = await call(`/users/${olgaId}/password`, { token: owner, body: { mode: 'temp' } });
+      check('временный пароль выдан', /^[a-z2-9]{4}-[a-z2-9]{4}$/.test(r.data.tempPassword || ''), r.data);
+      r = await call('/login', { body: { email: 'olga@example.org', password: r.data.tempPassword } });
+      check('вход по временному паролю — просит сменить', r.status === 200 && r.data.user.mustChange === true, r.data);
+      const olga = r.data.token;
+      r = await call('/me/password', { token: olga, body: { password: 'olga-new-pass' } });
+      check('смена временного пароля без старого', r.status === 200 && (await call('/me', { token: olga })).data.user.mustChange === false, r.data);
+      check('дальше смена — только со старым паролем', (await call('/me/password', { token: olga, body: { current: 'не тот', password: 'olga-pass-3' } })).status === 400);
+      check('…и со старым — можно', (await call('/me/password', { token: olga, body: { current: 'olga-new-pass', password: 'olga-pass-3' } })).status === 200);
+
+      // «Забыли пароль?»
+      const before = s3.mails().length;
+      r = await call('/password/forgot', { body: { email: 'unknown@example.org' } });
+      check('чужая почта — обычный ответ, письма нет', r.status === 200 && s3.mails().length === before, r.data);
+      r = await call('/password/forgot', { body: { email: 'olga@example.org' } });
+      mail = s3.mails().at(-1);
+      check('восстановление — письмо со ссылкой на 1 час', r.status === 200 && mail.to === 'olga@example.org' && /1 час/.test(mail.text), mail);
+      r = await call('/password/reset', { body: { token: linkOf(mail), password: 'olga-restored' } });
+      check('новый пароль по ссылке работает', r.status === 200 && (await call('/login', { body: { email: 'olga@example.org', password: 'olga-restored' } })).status === 200);
+      const sent = () => s3.mails().filter(m => m.to === 'olga@example.org' && /1 час/.test(m.text)).length;
+      const was = sent();
+      for (let i = 0; i < 4; i++) await call('/password/forgot', { body: { email: 'olga@example.org' } });
+      check('не больше 3 писем восстановления в час', sent() - was === 3, sent() - was);
+
+      // своя почта и пароль (владелец, созданный без них)
+      r = await call('/me/email', { token: owner, body: { email: 'owner@example.org' } });
+      check('владелец добавил себе почту', r.data.user?.email === 'owner@example.org', r.data);
+      r = await call('/me/password', { token: owner, body: { password: 'owner-pass-1' } });
+      check('…и пароль', r.status === 200 && (await call('/login', { body: { email: 'owner@example.org', password: 'owner-pass-1' } })).status === 200);
+      check('теперь сменить почту — только с паролем', (await call('/me/email', { token: owner, body: { email: 'x@example.org' } })).status === 400);
+
+      // ученики: логин, почта родителя, согласие, вход по логину
+      check('кривой логин не принимается', (await call('/students', { token: owner, body: { name: 'Петя', login: 'Петя!' } })).status === 400);
+      r = await call('/students', { token: owner, body: { name: 'Маша', login: 'Masha.K', email: 'parent@example.org', access: 'invite' } });
+      check('ученик с логином и приглашением родителю', r.status === 200 && r.data.student.login === 'masha.k' && r.data.mailed === 'parent@example.org', r.data);
+      const masha = r.data.student.id;
+      mail = s3.mails().at(-1);
+      check('родителю — логин ребёнка и ссылка', mail.to === 'parent@example.org' && /Логин: masha\.k/.test(mail.text), mail);
+      const kidLink = linkOf(mail);
+      r = await call(`/password/reset/${kidLink}`);
+      check('ссылка ученика просит согласие родителя', r.data.kind === 'student' && r.data.needsConsent === true && r.data.login === 'masha.k', r.data);
+      check('без согласия пароль не задать', (await call('/password/reset', { body: { token: kidLink, password: 'kitty7' } })).status === 400);
+      r = await call('/password/reset', { body: { token: kidLink, password: 'kitty7', consent: true } });
+      check('с согласием — пароль ученика задан', r.status === 200 && r.data.login === 'masha.k', r.data);
+      check('согласие записано', (await call('/students', { token: owner })).data.students.find(x => x.id === masha).consentAt > 0);
+      check('логин не повторяется', (await call('/students', { token: owner, body: { name: 'Маша 2', login: 'masha.k' } })).status === 400);
+      r = await call('/student/login', { body: { login: 'MASHA.K', password: 'kitty7', label: 'Школьный компьютер' } });
+      check('ученик входит по логину — получает устройство', r.status === 200 && r.data.student.name === 'Маша' && !('email' in r.data.student), r.data);
+      check('…и может сохранять прогресс', (await call('/progress', { token: r.data.token, body: { base: 0, state: { xp: 5 } } })).status === 200);
+      check('неверный пароль ученика', (await call('/student/login', { body: { login: 'masha.k', password: 'nope' } })).status === 400);
+      r = await call(`/students/${masha}/password`, { token: owner, body: { mode: 'temp' } });
+      check('временный пароль ученику', (await call('/student/login', { body: { login: 'masha.k', password: r.data.tempPassword } })).status === 200);
+      // брат с той же почтой родителя — одно письмо на двоих
+      await call('/students', { token: owner, body: { name: 'Петя', login: 'petya', email: 'parent@example.org', access: 'temp' } });
+      const n0 = s3.mails().length;
+      await call('/password/forgot', { body: { email: 'parent@example.org' } });
+      mail = s3.mails().at(-1);
+      check('братья и сёстры — одно письмо с двумя ссылками', s3.mails().length === n0 + 1 && (mail.text.match(/#reset=/g) || []).length === 2 && /petya/.test(mail.text), mail);
+      check('ученику без логина нельзя выдать пароль', (await call(`/students/${(await call('/students', { token: owner, body: { name: 'Без логина' } })).data.student.id}/password`, { token: owner, body: { mode: 'temp' } })).status === 400);
+    } finally { await s3.stop(); }
+  }
+
+  // обновление базы со старой версии сервера (как на хостинге): данные сохраняются, пароли добавляются
+  {
+    const old = mkdtempSync(join(tmpdir(), 'eq-old-'));
+    try {
+      execFileSync('sh', ['-c', `git -C '${ROOT}' archive 1e3a7f6 server | tar -x -C '${old}'`]);
+      const file = join(old, 'eq.sqlite');
+      const v1 = await startApi({ serverDir: join(old, 'server'), sqlite: file });
+      const oldOwner = (await call('/login', { body: { code: v1.ownerCode } })).data.token;
+      await call('/students', { token: oldOwner, body: { name: 'Старый ученик' } });
+      await v1.stop();
+      const v2 = await startApi({ init: false, sqlite: file, freshDb: false });
+      try {
+        let r = await call('/students', { token: oldOwner });
+        check('после обновления базы: вход и ученики на месте', r.status === 200 && r.data.students[0]?.name === 'Старый ученик', r.data);
+        r = await call('/me/password', { token: oldOwner, body: { password: 'после-обновления' } });
+        check('…и можно задать пароль', r.status === 200, r.data);
+      } finally { await v2.stop(); }
+    } finally { rmSync(old, { recursive: true, force: true }); }
+  }
   console.log(`\n${total - fail} из ${total} проверок сервера прошли (база: ${process.env.EQ_TEST_MYSQL ? 'MySQL' : 'SQLite'})`);
   process.exit(fail ? 1 : 0);
 }

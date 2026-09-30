@@ -9,7 +9,9 @@ namespace EQ;
 use PDO;
 use Throwable;
 
-const SCHEMA_VERSION = 1;
+require_once __DIR__ . '/auth.php';   // пароли, почта, восстановление доступа
+
+const SCHEMA_VERSION = 2;
 const MAX_STATE_BYTES = 512 * 1024;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // без 0/O и 1/I — легко продиктовать
 const CODE_TTL = 7 * 86400 * 1000;                          // код подключения живёт неделю
@@ -27,7 +29,12 @@ function config(): array {
   if ($cfg === null){
     $file = getenv('EQ_CONFIG') ?: dirname(__DIR__) . '/config.php';
     if (!is_file($file)) throw new HttpError(500, 'no_config', 'Сервер не настроен: нет config.php');
-    $cfg = require $file;
+    try { $cfg = require $file; }
+    catch (\ParseError $e){
+      // только номер строки и суть ошибки — содержимое файла (пароли) не показываем
+      throw new HttpError(500, 'config_error', 'Ошибка в config.php около строки ' . $e->getLine() . ' (или строкой выше): проверьте запятые в конце строк и прямые кавычки \' вместо «» и ‘’.');
+    }
+    if (!is_array($cfg)) throw new HttpError(500, 'config_error', 'config.php должен начинаться с <?php и возвращать настройки: return [ ... ];');
     date_default_timezone_set($cfg['timezone'] ?? 'Europe/Moscow');
   }
   return $cfg;
@@ -64,6 +71,18 @@ function migrate(PDO $pdo): void {
   $pdo->exec("CREATE TABLE IF NOT EXISTS meta (k VARCHAR(32) PRIMARY KEY, v VARCHAR(255) NOT NULL)$tail");
   $cur = (int)($pdo->query("SELECT v FROM meta WHERE k = 'schema'")->fetchColumn() ?: 0);
   if ($cur >= SCHEMA_VERSION) return;
+  if ($cur < 1) migrate_v1($pdo, $big, $tail);
+  if ($cur < 2) migrate_v2($pdo, $tail);
+  $pdo->prepare("DELETE FROM meta WHERE k = 'schema'")->execute();
+  $pdo->prepare("INSERT INTO meta (k, v) VALUES ('schema', ?)")->execute([(string)SCHEMA_VERSION]);
+}
+// Команды схемы можно безопасно повторить: «уже есть» пропускаем (установка могла прерваться на середине)
+function try_exec(PDO $pdo, string $sql): void {
+  try { $pdo->exec($sql); } catch (\PDOException $e){ /* столбец или индекс уже есть */ }
+}
+
+// Схема 1: организации, взрослые, ученики, прогресс, ключи, коды
+function migrate_v1(PDO $pdo, string $big, string $tail): void {
   $tables = [
     // организация: сейчас одна (ваши ученики), потом — школа, языковой центр, заказчик
     "CREATE TABLE orgs (id VARCHAR(24) PRIMARY KEY, name VARCHAR(100) NOT NULL, created BIGINT NOT NULL)",
@@ -88,11 +107,30 @@ function migrate(PDO $pdo): void {
     'CREATE INDEX tokens_subject ON tokens (subject)',
     'CREATE INDEX codes_subject ON codes (subject)',
     'CREATE INDEX fails_ip ON fails (ip)',
-  ] as $sql){
-    try { $pdo->exec($sql); } catch (\PDOException $e){ /* индекс уже есть */ }
-  }
-  $pdo->prepare("DELETE FROM meta WHERE k = 'schema'")->execute();
-  $pdo->prepare("INSERT INTO meta (k, v) VALUES ('schema', ?)")->execute([(string)SCHEMA_VERSION]);
+  ] as $sql) try_exec($pdo, $sql);
+}
+
+// Схема 2: пароли и почта. У взрослого — почта (вход и восстановление); у ученика — логин,
+// почта родителя (только для восстановления) и отметка о согласии родителя на обработку данных.
+// В базе — только отпечатки паролей (password_hash) и одноразовых ссылок.
+function migrate_v2(PDO $pdo, string $tail): void {
+  foreach ([
+    'ALTER TABLE users ADD COLUMN email VARCHAR(190)',
+    'ALTER TABLE users ADD COLUMN pass_hash VARCHAR(255)',
+    'ALTER TABLE users ADD COLUMN must_change INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE students ADD COLUMN login VARCHAR(40)',
+    'ALTER TABLE students ADD COLUMN email VARCHAR(190)',
+    'ALTER TABLE students ADD COLUMN pass_hash VARCHAR(255)',
+    'ALTER TABLE students ADD COLUMN consent_at BIGINT',
+  ] as $sql) try_exec($pdo, $sql);
+  // одноразовые ссылки: purpose = invite (задать пароль, 7 дней) или reset (сменить, 1 час)
+  $pdo->exec("CREATE TABLE IF NOT EXISTS resets (hash CHAR(64) PRIMARY KEY, kind VARCHAR(8) NOT NULL, subject VARCHAR(24) NOT NULL, purpose VARCHAR(8) NOT NULL, expires BIGINT NOT NULL, created BIGINT NOT NULL)$tail");
+  foreach ([
+    'CREATE UNIQUE INDEX users_email ON users (email)',
+    'CREATE UNIQUE INDEX students_login ON students (login)',
+    'CREATE INDEX students_email ON students (email)',
+    'CREATE INDEX resets_subject ON resets (subject)',
+  ] as $sql) try_exec($pdo, $sql);
 }
 
 // ---------- мелочи ----------
@@ -119,12 +157,29 @@ function issue_code(string $kind, string $subject): array {
   return ['code' => $code, 'expires' => $expires];
 }
 
-// Обменивает одноразовый код на постоянный ключ. Неверные попытки считаются по адресу.
-function redeem_code(string $kind, mixed $raw): array {
+// Слишком много неверных кодов (и ключей установки) с одного адреса — пауза
+function check_fails(): string {
   $ip = client_ip();
   q('DELETE FROM fails WHERE at < ?', [now() - FAIL_WINDOW]);
   $n = (int)one('SELECT COUNT(*) AS n FROM fails WHERE ip = ?', [$ip])['n'];
   if ($n >= FAIL_LIMIT) throw new HttpError(429, 'too_many', 'Слишком много неверных кодов. Попробуйте через 15 минут.');
+  return $ip;
+}
+
+// Первый запуск: организация и её владелец (из админ-панели или php bin/setup.php init)
+function owner_exists(): bool { return (bool)one("SELECT id FROM users WHERE role = 'owner'"); }
+function create_owner(string $orgName, string $name): array {
+  $org = new_id('o'); $user = new_id('u');
+  q('INSERT INTO orgs (id, name, created) VALUES (?, ?, ?)', [$org, $orgName, now()]);
+  q('INSERT INTO users (id, org_id, role, name, created) VALUES (?, ?, ?, ?, ?)', [$user, $org, 'owner', $name, now()]);
+  return one('SELECT * FROM users WHERE id = ?', [$user]);
+}
+// Ключ установки из config.php (setup_key): не короче 12 символов, иначе первый запуск через панель выключен
+function setup_key(): string { $k = (string)(config()['setup_key'] ?? ''); return strlen($k) >= 12 ? $k : ''; }
+
+// Обменивает одноразовый код на постоянный ключ. Неверные попытки считаются по адресу.
+function redeem_code(string $kind, mixed $raw): array {
+  $ip = check_fails();
   $code = norm_code((string)$raw);
   $row = strlen($code) === 8 ? one('SELECT * FROM codes WHERE hash = ? AND kind = ?', [sha($code), $kind]) : null;
   if (!$row || $row['expires'] < now()){
@@ -227,7 +282,8 @@ function summary(?array $st): array {
     'homework' => is_array($st['homework'] ?? null) ? ['lessonId' => $st['homework']['lessonId'] ?? null, 'doneAt' => $st['homework']['doneAt'] ?? null] : null];
 }
 function student_out(array $s, bool $withSummary = true): array {
-  $out = ['id' => $s['id'], 'name' => $s['name'], 'avatar' => $s['avatar'], 'teacherId' => $s['teacher_id'], 'created' => (int)$s['created']];
+  $out = ['id' => $s['id'], 'name' => $s['name'], 'avatar' => $s['avatar'], 'teacherId' => $s['teacher_id'], 'created' => (int)$s['created'],
+    'login' => $s['login'] ?? null, 'email' => $s['email'] ?? null, 'hasPassword' => !empty($s['pass_hash']), 'consentAt' => isset($s['consent_at']) ? (int)$s['consent_at'] : null];
   if ($withSummary){
     $p = one('SELECT state, version, updated FROM progress WHERE student_id = ?', [$s['id']]);
     $out['version'] = $p ? (int)$p['version'] : 0;
@@ -237,7 +293,12 @@ function student_out(array $s, bool $withSummary = true): array {
   }
   return $out;
 }
-function user_out(array $u): array { return ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role'], 'orgId' => $u['org_id']]; }
+// Устройству ученика — только имя и аватар (почта родителя и логин ему не нужны)
+function student_public(array $s): array { return ['id' => $s['id'], 'name' => $s['name'], 'avatar' => $s['avatar']]; }
+function user_out(array $u): array {
+  return ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role'], 'orgId' => $u['org_id'],
+    'email' => $u['email'] ?? null, 'hasPassword' => !empty($u['pass_hash']), 'mustChange' => !empty($u['must_change'])];
+}
 
 // ---------- ввод и вывод ----------
 function raw_body(): string {
@@ -276,14 +337,69 @@ function cors(): void {
 // ---------- маршруты ----------
 // Только GET и POST: на виртуальных хостингах PUT/DELETE иногда режутся защитой.
 function routes(): array {
+  return [...auth_routes(), ...base_routes()];
+}
+function base_routes(): array {
   return [
     ['GET', '#^/$#', fn() => ['app' => 'english-quest', 'ok' => true]],
 
+    // первый запуск из админ-панели: пока владельца нет, его можно создать по ключу установки
+    ['GET', '#^/setup$#', fn() => ['needed' => !owner_exists(), 'enabled' => setup_key() !== '']],
+    ['POST', '#^/setup$#', function(){
+      if (owner_exists()) throw new HttpError(409, 'already', 'Сервер уже настроен — войдите по коду входа.');
+      $key = setup_key();
+      if ($key === '') throw new HttpError(403, 'setup_off', "Впишите в config.php строку 'setup_key' => '…' (не короче 12 символов) и повторите.");
+      $ip = check_fails();
+      if (!hash_equals($key, (string)(body()['key'] ?? ''))){
+        q('INSERT INTO fails (ip, at) VALUES (?, ?)', [$ip, now()]);
+        throw new HttpError(403, 'bad_key', 'Ключ установки не подошёл. Сверьте его с config.php.');
+      }
+      $orgName = clean_name(body()['org'] ?? '', 100);
+      $name = clean_name(body()['name'] ?? '', 60);
+      if ($orgName === '' || $name === '') throw new HttpError(400, 'name', 'Введите название и ваше имя.');
+      $email = norm_email(body()['email'] ?? '', false);
+      $pass = isset(body()['password']) && body()['password'] !== '' ? check_password(body()['password'], MIN_PASSWORD_ADULT) : null;
+      $u = create_owner($orgName, $name);
+      if ($email || $pass){
+        q('UPDATE users SET email = ?, pass_hash = ? WHERE id = ?', [$email, $pass ? hash_password($pass) : null, $u['id']]);
+        $u = one('SELECT * FROM users WHERE id = ?', [$u['id']]);
+      }
+      $t = issue_token('user', $u['id'], clean_name(body()['label'] ?? '', 60));
+      return ['token' => $t['token'], 'user' => user_out($u)];
+    }],
+
+    // Восстановление доступа владельца по тому же ключу установки (когда нет SSH для php bin/setup.php code).
+    // Работает, только пока в config.php есть setup_key — после входа строку можно снова удалить.
+    ['POST', '#^/setup/recover$#', function(){
+      $key = setup_key();
+      if ($key === '') throw new HttpError(403, 'setup_off', "Впишите в config.php строку 'setup_key' => '…' (не короче 12 символов) и повторите.");
+      $ip = check_fails();
+      if (!hash_equals($key, (string)(body()['key'] ?? ''))){
+        q('INSERT INTO fails (ip, at) VALUES (?, ?)', [$ip, now()]);
+        throw new HttpError(403, 'bad_key', 'Ключ установки не подошёл. Сверьте его с config.php.');
+      }
+      $u = one("SELECT * FROM users WHERE role = 'owner' ORDER BY created");
+      if (!$u) throw new HttpError(409, 'no_owner', 'Владельца ещё нет — пройдите первый запуск.');
+      $t = issue_token('user', $u['id'], clean_name(body()['label'] ?? '', 60));
+      return ['token' => $t['token'], 'user' => user_out($u)];
+    }],
+
     // вход взрослого по одноразовому коду (коды выдаёт администратор)
     ['POST', '#^/login$#', function(){
-      $c = redeem_code('login', body()['code'] ?? '');
-      $u = one('SELECT * FROM users WHERE id = ?', [$c['subject']]);
-      if (!$u) throw new HttpError(400, 'bad_code', 'Код не подошёл.');
+      if (isset(body()['email'])){
+        // вход по почте и паролю
+        $ip = check_fails();
+        $email = mb_strtolower(trim((string)body()['email']));
+        $u = $email !== '' ? one('SELECT * FROM users WHERE email = ?', [$email]) : null;
+        if (!verify_password($u['pass_hash'] ?? null, (string)(body()['password'] ?? ''))){
+          q('INSERT INTO fails (ip, at) VALUES (?, ?)', [$ip, now()]);
+          throw new HttpError(400, 'bad_login', 'Почта или пароль не подошли.');
+        }
+      } else {
+        $c = redeem_code('login', body()['code'] ?? '');
+        $u = one('SELECT * FROM users WHERE id = ?', [$c['subject']]);
+        if (!$u) throw new HttpError(400, 'bad_code', 'Код не подошёл.');
+      }
       $t = issue_token('user', $u['id'], clean_name(body()['label'] ?? '', 60));
       return ['token' => $t['token'], 'user' => user_out($u)];
     }],
@@ -291,6 +407,39 @@ function routes(): array {
       $w = auth();
       if ($w) q('DELETE FROM tokens WHERE id = ?', [$w['token']['id']]);
       return ['ok' => true];
+    }],
+    // код входа для себя — чтобы войти на другом устройстве (телефон, второй компьютер)
+    ['POST', '#^/me/code$#', function(){
+      $u = need_user();
+      return issue_code('login', $u['id']);
+    }],
+    // «Мои входы»: устройства, где этот взрослый вошёл, и неиспользованные коды входа.
+    // Сами коды не показываем (в базе только их отпечатки) — только сколько их и до какого числа они действуют.
+    ['GET', '#^/me/sessions$#', function(){
+      $u = need_user();
+      $cur = auth()['token']['id'];
+      $rows = all("SELECT id, label, created, last_used FROM tokens WHERE kind = 'user' AND subject = ? ORDER BY last_used DESC", [$u['id']]);
+      $codes = all("SELECT expires FROM codes WHERE kind = 'login' AND subject = ? AND expires > ? ORDER BY expires", [$u['id'], now()]);
+      return [
+        'sessions' => array_map(fn($r) => ['id' => $r['id'], 'label' => $r['label'], 'created' => (int)$r['created'], 'lastUsed' => (int)$r['last_used'], 'current' => $r['id'] === $cur], $rows),
+        'codes' => ['count' => count($codes), 'until' => $codes ? (int)end($codes)['expires'] : null],
+      ];
+    }],
+    ['POST', '#^/me/sessions/(t[0-9a-f]{16})/delete$#', function($id){
+      $u = need_user();
+      $n = q("DELETE FROM tokens WHERE id = ? AND kind = 'user' AND subject = ?", [$id, $u['id']])->rowCount();
+      if (!$n) throw new HttpError(404, 'not_found', 'Такого входа нет.');
+      return ['ok' => true];
+    }],
+    ['POST', '#^/me/sessions/others/delete$#', function(){
+      $u = need_user();
+      $n = q("DELETE FROM tokens WHERE kind = 'user' AND subject = ? AND id <> ?", [$u['id'], auth()['token']['id']])->rowCount();
+      return ['deleted' => $n];
+    }],
+    ['POST', '#^/me/codes/delete$#', function(){
+      $u = need_user();
+      $n = q("DELETE FROM codes WHERE kind = 'login' AND subject = ?", [$u['id']])->rowCount();
+      return ['deleted' => $n];
     }],
     ['GET', '#^/me$#', function(){
       $u = need_user();
@@ -313,9 +462,13 @@ function routes(): array {
       $avatar = in_array(body()['avatar'] ?? '', AVATARS, true) ? body()['avatar'] : AVATARS[0];
       $teacher = $u['role'] === 'teacher' ? $u['id'] : (body()['teacherId'] ?? $u['id']);
       if (!one('SELECT id FROM users WHERE id = ? AND org_id = ?', [$teacher, $u['org_id']])) throw new HttpError(400, 'teacher', 'Учитель не найден.');
+      $login = norm_login(body()['login'] ?? '');
+      if ($login && login_taken($login)) throw new HttpError(400, 'login', 'Такой логин уже занят — придумайте другой.');
+      $email = norm_email(body()['email'] ?? '', false);
       $id = new_id('s');
-      q('INSERT INTO students (id, org_id, teacher_id, name, avatar, created) VALUES (?, ?, ?, ?, ?, ?)', [$id, $u['org_id'], $teacher, $name, $avatar, now()]);
-      return ['student' => student_out(one('SELECT * FROM students WHERE id = ?', [$id]))];
+      q('INSERT INTO students (id, org_id, teacher_id, name, avatar, created, login, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [$id, $u['org_id'], $teacher, $name, $avatar, now(), $login, $email]);
+      $access = grant_student_access(one('SELECT * FROM students WHERE id = ?', [$id]), (string)(body()['access'] ?? 'none'));
+      return ['student' => student_out(one('SELECT * FROM students WHERE id = ?', [$id]))] + $access;
     }],
     ['POST', '#^/students/(s[0-9a-f]{16})$#', function($id){
       $u = need_user();
@@ -329,7 +482,13 @@ function routes(): array {
         if (!one('SELECT id FROM users WHERE id = ? AND org_id = ?', [(string)body()['teacherId'], $u['org_id']])) throw new HttpError(400, 'teacher', 'Репетитор не найден.');
         $teacher = (string)body()['teacherId'];
       }
-      q('UPDATE students SET name = ?, avatar = ?, teacher_id = ? WHERE id = ?', [$name, $avatar, $teacher, $id]);
+      $login = $s['login'];
+      if (array_key_exists('login', body())){
+        $login = norm_login(body()['login']);
+        if ($login && login_taken($login, $id)) throw new HttpError(400, 'login', 'Такой логин уже занят — придумайте другой.');
+      }
+      $email = array_key_exists('email', body()) ? norm_email(body()['email'], false) : $s['email'];
+      q('UPDATE students SET name = ?, avatar = ?, teacher_id = ?, login = ?, email = ? WHERE id = ?', [$name, $avatar, $teacher, $login, $email, $id]);
       return ['student' => student_out(one('SELECT * FROM students WHERE id = ?', [$id]))];
     }],
     // удаление — полностью: прогресс, ключи устройств и неиспользованные коды
@@ -340,6 +499,7 @@ function routes(): array {
       q('DELETE FROM progress WHERE student_id = ?', [$id]);
       q("DELETE FROM tokens WHERE kind = 'device' AND subject = ?", [$id]);
       q("DELETE FROM codes WHERE kind = 'device' AND subject = ?", [$id]);
+      q('DELETE FROM resets WHERE subject = ?', [$id]);
       q('DELETE FROM students WHERE id = ?', [$id]);
       db()->commit();
       return ['ok' => true];
@@ -393,12 +553,12 @@ function routes(): array {
       $s = one('SELECT * FROM students WHERE id = ?', [$c['subject']]);
       if (!$s) throw new HttpError(400, 'bad_code', 'Код не подошёл.');
       $t = issue_token('device', $s['id'], clean_name(body()['label'] ?? '', 60));
-      return ['token' => $t['token'], 'deviceId' => $t['id'], 'student' => student_out($s, false)];
+      return ['token' => $t['token'], 'deviceId' => $t['id'], 'student' => student_public($s)];
     }],
     ['GET', '#^/progress$#', function(){
       $w = need_device();
       $p = one('SELECT * FROM progress WHERE student_id = ?', [$w['student']['id']]);
-      return ['student' => student_out($w['student'], false), 'state' => $p ? state_out($p['state']) : null, 'version' => $p ? (int)$p['version'] : 0, 'updated' => $p ? (int)$p['updated'] : null];
+      return ['student' => student_public($w['student']), 'state' => $p ? state_out($p['state']) : null, 'version' => $p ? (int)$p['version'] : 0, 'updated' => $p ? (int)$p['updated'] : null];
     }],
     // Запись с проверкой версии: base — версия, от которой устройство считало изменения.
     // Если кто-то успел записать раньше — 409 и свежий прогресс; устройство объединит и пришлёт снова.
@@ -444,9 +604,15 @@ function routes(): array {
       $name = clean_name(body()['name'] ?? '', 60);
       if ($name === '') throw new HttpError(400, 'name', 'Введите имя.');
       $role = role_for_change($u, body()['role'] ?? 'teacher');
+      $email = norm_email(body()['email'] ?? '', false);
+      if ($email && email_taken($email)) throw new HttpError(400, 'email', 'Эта почта уже занята.');
+      $mode = (string)(body()['access'] ?? 'code');
+      if ($mode === 'invite' && !$email) throw new HttpError(400, 'email', 'Для приглашения нужна почта.');
       $id = new_id('u');
-      q('INSERT INTO users (id, org_id, role, name, created) VALUES (?, ?, ?, ?, ?)', [$id, $u['org_id'], $role, $name, now()]);
-      return ['user' => user_out(one('SELECT * FROM users WHERE id = ?', [$id])), 'login' => issue_code('login', $id)];
+      q('INSERT INTO users (id, org_id, role, name, created, email) VALUES (?, ?, ?, ?, ?, ?)', [$id, $u['org_id'], $role, $name, now(), $email]);
+      $new = one('SELECT * FROM users WHERE id = ?', [$id]);
+      $access = grant_user_access($new, $mode);
+      return ['user' => user_out(one('SELECT * FROM users WHERE id = ?', [$id]))] + $access;
     }],
     ['POST', '#^/users/(u[0-9a-f]{16})$#', function($id){
       $u = need_owner();
@@ -458,7 +624,12 @@ function routes(): array {
         if ($t['role'] === 'owner' || $t['id'] === $u['id']) throw new HttpError(403, 'forbidden', 'Свою роль и роль владельца поменять нельзя.');
         $role = role_for_change($u, body()['role']);
       }
-      q('UPDATE users SET name = ?, role = ? WHERE id = ?', [$name, $role, $id]);
+      $email = $t['email'];
+      if (array_key_exists('email', body())){
+        $email = norm_email(body()['email'], false);
+        if ($email && email_taken($email, $id)) throw new HttpError(400, 'email', 'Эта почта уже занята.');
+      }
+      q('UPDATE users SET name = ?, role = ?, email = ? WHERE id = ?', [$name, $role, $email, $id]);
       return ['user' => user_out(one('SELECT * FROM users WHERE id = ?', [$id]))];
     }],
     // удаление взрослого: его ученики переходят другому (transferTo) или тому, кто удаляет
@@ -472,6 +643,7 @@ function routes(): array {
       q('UPDATE students SET teacher_id = ? WHERE teacher_id = ?', [$to, $id]);
       q("DELETE FROM tokens WHERE kind = 'user' AND subject = ?", [$id]);
       q("DELETE FROM codes WHERE kind = 'login' AND subject = ?", [$id]);
+      q('DELETE FROM resets WHERE subject = ?', [$id]);
       q('DELETE FROM users WHERE id = ?', [$id]);
       db()->commit();
       return ['ok' => true];

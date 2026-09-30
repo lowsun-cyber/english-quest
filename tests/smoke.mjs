@@ -542,10 +542,14 @@ try {
         if (window.eqAdmin.lastPdf.size < 20000) throw new Error('PDF подозрительно маленький: ' + window.eqAdmin.lastPdf.size);
         location.hash = '#users';
         if (!await wait(() => document.getElementById('adm-user-add'))) throw new Error('раздел «Репетиторы» не открылся');
-        document.getElementById('adm-user-name').value = 'Ольга Николаевна';
+        document.getElementById('adm-user-name').value = 'Ольга Николаевна'; document.getElementById('adm-user-access').value = 'code';
         document.getElementById('adm-user-add').requestSubmit();
         if (!await wait(() => /admin\\/#login=/.test(document.querySelector('#adm-user-code .t-link')?.value || ''))) throw new Error('нет кода входа для репетитора');
         if (!/Ольга Николаевна/.test(document.querySelector('.adm-table').textContent)) throw new Error('репетитор не в списке');
+        location.hash = '#me';
+        if (!await wait(() => document.querySelector('.adm-badge'))) throw new Error('раздел «Мои входы» не открылся');
+        document.getElementById('adm-me-code').click();
+        if (!await wait(() => /admin\\/#login=/.test(document.querySelector('.tc-code-box .t-link')?.value || ''))) throw new Error('нет кода для другого устройства');
         return true;`);
       r = await call(`/students/${stu.id}/progress`, { token: owner });
       assert(r.data.state?.homework?.note === 'Задание из админки', 'домашка не сохранилась на сервере');
@@ -566,10 +570,50 @@ try {
         const seen = [...__toasts, ...[...document.querySelectorAll('.toast')].map(t => t.textContent)];   // могло появиться ещё до заглушек теста
         if (!seen.some(t => /отключено от сервера/.test(t))) throw new Error('нет сообщения об отключении');
         return true;`);
-      return 'подключение по ссылке, объединение +50 XP, админ-панель (домашка, PDF, репетитор), просмотр, отключение';
+      // ученик входит в приложении по логину и паролю (выданным в админке)
+      await call(`/students/${stu.id}`, { token: owner, body: { login: 'vanya' } });
+      const temp = (await call(`/students/${stu.id}/password`, { token: owner, body: { mode: 'temp' } })).data.tempPassword;
+      await js(`await __gate('1357');   // PIN панели остался с шага «PIN-код и сброс»
+        const f = id => document.getElementById(id);
+        for (let i = 0; i < 20 && !f('cl-login-form'); i++) await __sleep(100);
+        if (!f('cl-login-form')) throw new Error('в панели нет входа по логину: ' + (document.getElementById('modal-body')?.innerText || '').slice(0, 200).replace(/\\s+/g, ' '));
+        f('cl-login').value = 'Vanya'; f('cl-password').value = '${temp}';
+        f('cl-login-form').requestSubmit();
+        const linked = () => JSON.parse(localStorage.getItem('english_quest_profiles')).list.some(p => p.cloud?.studentId === '${stu.id}');
+        for (let i = 0; i < 40 && !linked(); i++){ if (f('cl-this')) f('cl-this').click(); await __sleep(100); }
+        if (!linked()) throw new Error('ученик не вошёл по логину');
+        return true;`);
+
+      // админка: вход по почте и паролю, приглашение по ссылке из письма
+      await call('/me/email', { token: owner, body: { email: 'owner@example.org' } });
+      await call('/me/password', { token: owner, body: { password: 'owner-pass-1' } });
+      await js(`localStorage.removeItem('eq_teacher'); return true;`);
+      await send('Page.navigate', { url: APP + 'admin/?p=1' });
+      let ok = null;
+      for (let i = 0; i < 30 && !ok; i++){ await sleep(200); ok = await js(`return !!document.getElementById('adm-login-form');`).catch(() => false); }
+      assert(ok, 'в админке нет формы входа по почте');
+      await js(`document.getElementById('adm-email').value = 'owner@example.org'; document.getElementById('adm-password').value = 'owner-pass-1';
+        document.getElementById('adm-login-form').requestSubmit();
+        for (let i = 0; i < 30 && !/Владелец/.test(document.getElementById('adm-who').textContent); i++) await new Promise(r => setTimeout(r, 150));
+        if (!/Владелец/.test(document.getElementById('adm-who').textContent)) throw new Error('не вошли по почте и паролю: ' + document.querySelector('.gate-err')?.textContent);
+        return true;`);
+      await call('/users', { token: owner, body: { name: 'Нина', email: 'nina@example.org', access: 'invite' } });
+      const inviteLink = /#reset=([0-9a-f]{64})/.exec(srv.mails().at(-1)?.text || '')?.[1];
+      assert(inviteLink, 'нет письма с приглашением');
+      await js(`localStorage.removeItem('eq_teacher'); return true;`);
+      await send('Page.navigate', { url: APP + 'admin/?r=1#reset=' + inviteLink });
+      ok = null;
+      for (let i = 0; i < 30 && !ok; i++){ await sleep(200); ok = await js(`return !!document.getElementById('adm-reset-form');`).catch(() => false); }
+      assert(ok, 'ссылка из письма не открыла «Задайте пароль»');
+      await js(`document.getElementById('adm-reset-p1').value = 'nina-pass-1'; document.getElementById('adm-reset-p2').value = 'nina-pass-1';
+        document.getElementById('adm-reset-form').requestSubmit();
+        for (let i = 0; i < 30 && !/Нина/.test(document.getElementById('adm-who').textContent); i++) await new Promise(r => setTimeout(r, 150));
+        if (!/Нина · Репетитор/.test(document.getElementById('adm-who').textContent)) throw new Error('после пароля не вошли: ' + document.getElementById('adm-who').textContent);
+        return true;`);
+      return 'подключение по ссылке, объединение +50 XP, админ-панель (домашка, PDF, репетитор), просмотр, отключение, вход по логину и паролю, приглашение по почте';
     } finally {
       await js(`localStorage.removeItem('eq_api'); localStorage.removeItem('eq_teacher'); return true;`).catch(() => {});
-      srv.stop();
+      await srv.stop();
     }
   });
 

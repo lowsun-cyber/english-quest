@@ -1291,6 +1291,9 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
 .cl-form input { font: inherit; font-size: 18px; letter-spacing: 1px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); min-width: 12ch; }
 .cl-form .btn { font-size: 12px; padding: 10px 14px; }
 .cl-choice { flex-direction: column; align-items: stretch; }
+.cl-more { margin-top: 12px; }
+.cl-more summary { cursor: pointer; font-weight: 700; color: var(--ink-2); }
+.cl-more p { margin-top: 6px; }
 .tc-page main { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
 .tc-h { font-family: var(--font-body); font-weight: 800; font-size: 22px; letter-spacing: 0; margin-bottom: 10px; }
 .tc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -1329,6 +1332,13 @@ body.adm-body::before { display: none; }
 .adm-main { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; outline: none; }
 .adm-card { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: 3px 3px 0 var(--line); }
 .adm-login { max-width: 480px; }
+.adm-recover { margin-top: 18px; }
+.adm-ok { margin: 8px 0; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: #dff5e1; color: var(--on-color); }
+[data-theme="dark"] .adm-ok { background: #1f3a26; color: var(--ink); }
+#adm-me-pass-form { margin-top: 14px; }
+.adm-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 2px solid var(--line); border-radius: 8px; background: var(--grass-3); color: var(--on-color); font-size: 12px; font-weight: 800; }
+.adm-recover summary { cursor: pointer; font-weight: 700; color: var(--ink-2); }
+.adm-recover p { margin-top: 6px; font-size: 14px; }
 .adm-h1 { font-family: var(--font-body); font-weight: 800; font-size: 22px; letter-spacing: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .adm-h2 { font-family: var(--font-body); font-weight: 800; font-size: 17px; letter-spacing: 0; margin-bottom: 8px; }
 .adm-h1 .t-muted, .adm-h2 .t-muted { font-weight: 700; font-size: 0.8em; }

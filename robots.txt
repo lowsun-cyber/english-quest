@@ -1,0 +1,8 @@
+# English Quest — https://quest.logiqa.ru/
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /teacher.html
+
+Sitemap: https://quest.logiqa.ru/sitemap.xml

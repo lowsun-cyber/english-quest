@@ -112,7 +112,13 @@ const pristine = st => !st.xp && !Object.keys(st.activity || {}).length && !Obje
 
 // Код от учителя → ключ устройства. Потом решаем, к какому профилю на устройстве его привязать.
 export async function claimCode(code){
-  const r = await api('/claim', { body: { code, label: deviceLabel() } });
+  return linkWith(await api('/claim', { body: { code, label: deviceLabel() } }));
+}
+// Вход ученика по логину и паролю — то же подключение устройства, только без кода
+export async function claimLogin(login, password){
+  return linkWith(await api('/student/login', { body: { login, password, label: deviceLabel() } }));
+}
+async function linkWith(r){
   const cloud = { studentId: r.student.id, token: r.token, deviceId: r.deviceId, name: r.student.name, first: true };
   const existing = profiles.list.find(p => p.cloud?.studentId === r.student.id);
   if (existing){
@@ -215,12 +221,30 @@ export function cloudSectionHtml(){
       <button class="icon-btn" id="cl-unlink">Отключить это устройство</button>
     </div>`;
   return `
-    <p class="t-muted">Если ученик занимается у учителя с сервером English Quest, подключите устройство: прогресс не потеряется, его можно продолжить на другом устройстве, а учитель увидит, что сделано. Код подключения даёт учитель.</p>
-    <form class="cl-form" id="cl-form">
-      <label>Код подключения <input id="cl-code" autocomplete="off" autocapitalize="characters" placeholder="ABCD-EFGH" maxlength="12" /></label>
-      <button class="btn" type="submit">☁️ Подключить</button>
+    <p class="t-muted">Если ученик занимается у учителя с сервером English Quest, войдите под ним: прогресс не потеряется, его можно продолжить на другом устройстве, а учитель увидит, что сделано. Логин и пароль (или код подключения) даёт учитель.</p>
+    <h4 class="t-h4">Вход по логину</h4>
+    <form class="cl-form" id="cl-login-form">
+      <label>Логин <input id="cl-login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" /></label>
+      <label>Пароль <input id="cl-password" type="password" autocomplete="current-password" /></label>
+      <button class="btn" type="submit">☁️ Войти</button>
     </form>
-    <p class="gate-err" id="cl-err" role="alert" hidden></p>`;
+    <p class="gate-err" id="cl-err" role="alert" hidden></p>
+    <details class="cl-more">
+      <summary>Забыли пароль?</summary>
+      <p class="t-muted">Укажите почту родителя, которую знает учитель, — придёт ссылка, чтобы задать новый пароль.</p>
+      <form class="cl-form" id="cl-forgot-form">
+        <label>Почта родителя <input id="cl-forgot-email" type="email" autocomplete="email" /></label>
+        <button class="btn secondary" type="submit">Прислать ссылку</button>
+      </form>
+      <p class="t-muted" id="cl-forgot-msg" role="status" hidden></p>
+    </details>
+    <details class="cl-more">
+      <summary>Есть код подключения</summary>
+      <form class="cl-form" id="cl-form">
+        <label>Код подключения <input id="cl-code" autocomplete="off" autocapitalize="characters" placeholder="ABCD-EFGH" maxlength="12" /></label>
+        <button class="btn secondary" type="submit">☁️ Подключить</button>
+      </form>
+    </details>`;
 }
 export function wireCloudSection(reopen){
   const syncBtn = document.getElementById('cl-sync');
@@ -238,6 +262,24 @@ export function wireCloudSection(reopen){
     await unlinkLocal(activeId());
     toast('Устройство отключено от сервера');
     reopen();
+  };
+  const showErr = (msg) => { const err = document.getElementById('cl-err'); if (err){ err.textContent = msg; err.hidden = false; } };
+  const loginForm = document.getElementById('cl-login-form');
+  if (loginForm) loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const login = document.getElementById('cl-login').value.trim(), password = document.getElementById('cl-password').value;
+    if (!login || !password){ document.getElementById(login ? 'cl-password' : 'cl-login').focus(); return; }
+    loginForm.querySelector('button').disabled = true;
+    try { closeModal(); await claimLogin(login, password); }
+    catch (ex){ reopen(); showErr(ex.message); }
+  };
+  const forgot = document.getElementById('cl-forgot-form');
+  if (forgot) forgot.onsubmit = async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('cl-forgot-msg');
+    try { const r = await api('/password/forgot', { body: { email: document.getElementById('cl-forgot-email').value } }); msg.textContent = r.message; }
+    catch (ex){ msg.textContent = ex.message; }
+    msg.hidden = false;
   };
   const form = document.getElementById('cl-form');
   if (form) form.onsubmit = async (e) => {

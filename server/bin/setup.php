@@ -6,7 +6,7 @@
 declare(strict_types=1);
 require dirname(__DIR__) . '/src/app.php';
 
-use function EQ\{db, migrate, one, all, q, new_id, now, issue_code, clean_name};
+use function EQ\{db, migrate, one, all, q, issue_code, clean_name, owner_exists, create_owner};
 
 if (PHP_SAPI !== 'cli') exit("Только из командной строки\n");
 $cmd = $argv[1] ?? '';
@@ -19,14 +19,12 @@ $printCode = function(array $c){
 };
 
 if ($cmd === 'init'){
-  if (one("SELECT id FROM users WHERE role = 'owner'")) exit("Владелец уже создан. Новый код входа: php bin/setup.php code\n");
+  if (owner_exists()) exit("Владелец уже создан. Новый код входа: php bin/setup.php code\n");
   $orgName = clean_name($argv[2] ?? 'Мои ученики', 100);
   $name = clean_name($argv[3] ?? 'Владелец', 60);
-  $org = new_id('o'); $user = new_id('u');
-  q('INSERT INTO orgs (id, name, created) VALUES (?, ?, ?)', [$org, $orgName, now()]);
-  q('INSERT INTO users (id, org_id, role, name, created) VALUES (?, ?, ?, ?, ?)', [$user, $org, 'owner', $name, now()]);
+  $owner = create_owner($orgName, $name);
   echo "Готово: организация «{$orgName}», владелец «{$name}».\n";
-  $printCode(issue_code('login', $user));
+  $printCode(issue_code('login', $owner['id']));
 } elseif ($cmd === 'code'){
   $u = one("SELECT * FROM users WHERE role = 'owner' ORDER BY created");
   if (!$u) exit("Сначала: php bin/setup.php init\n");
