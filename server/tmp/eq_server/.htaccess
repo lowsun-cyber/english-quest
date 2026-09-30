@@ -1,0 +1,8 @@
+# Папка сервера (eq-server): код и config.php с паролем базы не должны открываться из браузера,
+# даже если папку по ошибке положили внутрь веб-папки сайта.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Deny from all
+</IfModule>

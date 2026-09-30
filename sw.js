@@ -5,7 +5,7 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v9';
+const SHELL_CACHE = 'eq-shell-v10';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];

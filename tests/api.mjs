@@ -16,7 +16,13 @@ const ORIGIN = 'http://127.0.0.1:8765';
 export async function startApi(){
   const dir = mkdtempSync(join(tmpdir(), 'eq-api-'));
   const cfg = join(dir, 'config.php');
-  writeFileSync(cfg, `<?php return ['db' => ['dsn' => 'sqlite:${join(dir, 'eq.sqlite')}'], 'origins' => ['${ORIGIN}'], 'secret' => 'test', 'debug' => true];`);
+  // по умолчанию — временная SQLite; EQ_TEST_MYSQL=1 — настоящая MySQL (как на хостинге), база пересоздаётся
+  const my = process.env.EQ_TEST_MYSQL ? { host: process.env.MYSQL_HOST || '127.0.0.1', port: process.env.MYSQL_PORT || '3306', user: process.env.MYSQL_USER || 'root', pass: process.env.MYSQL_PASSWORD || 'root', db: 'eq_test' } : null;
+  if (my) execFileSync('mysql', ['-h', my.host, '-P', my.port, '-u', my.user, `-p${my.pass}`, '-e', `DROP DATABASE IF EXISTS ${my.db}; CREATE DATABASE ${my.db} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`]);
+  const db = my
+    ? `['dsn' => 'mysql:host=${my.host};port=${my.port};dbname=${my.db};charset=utf8mb4', 'user' => '${my.user}', 'password' => '${my.pass}']`
+    : `['dsn' => 'sqlite:${join(dir, 'eq.sqlite')}']`;
+  writeFileSync(cfg, `<?php return ['db' => ${db}, 'origins' => ['${ORIGIN}'], 'secret' => 'test', 'debug' => true];`);
   const env = { ...process.env, EQ_CONFIG: cfg };
   const out = execFileSync('php', [join(ROOT, 'server/bin/setup.php'), 'init', 'Тестовая школа', 'Владелец'], { env, encoding: 'utf8' });
   const ownerCode = /Код входа: (\S+)/.exec(out)[1];
@@ -172,6 +178,6 @@ if (import.meta.url === `file://${process.argv[1]}`){
     check('выход — ключ больше не работает', (await call('/me', { token: owner })).status === 401);
     check('неизвестный адрес — 404', (await call('/nope')).status === 404);
   } finally { srv.stop(); }
-  console.log(`\n${total - fail} из ${total} проверок сервера прошли`);
+  console.log(`\n${total - fail} из ${total} проверок сервера прошли (база: ${process.env.EQ_TEST_MYSQL ? 'MySQL' : 'SQLite'})`);
   process.exit(fail ? 1 : 0);
 }
