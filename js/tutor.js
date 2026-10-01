@@ -11,7 +11,7 @@ import { closeModal, openModal, toast } from './ui.js';
 import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
 import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
-import { cloudOn, cloudSectionHtml, wireCloudSection } from './cloud.js';
+import { cloudOn, cloudPanelHtml, wireCloudPanel } from './cloud.js';
 import { lastDaysOf, reportText, studentStats } from './stats.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, plural } from './util.js';
 
@@ -163,7 +163,7 @@ export function openTutorPanel(){
 
     ${realState ? '' : `
     ${cloudOn() ? `<h3 class="t-h">Сервер учителя</h3>
-    ${cloudSectionHtml()}` : ''}
+    ${cloudPanelHtml()}` : ''}
 
     <h3 class="t-h">Перенос и резервная копия</h3>
     ${backupSectionHtml()}
@@ -216,7 +216,7 @@ export function openTutorPanel(){
   wireWorksheet();
   if (!realState){
     wireOfflineSection(); wireBackupSection(); wireResetSection();
-    if (cloudOn()) wireCloudSection(openTutorPanel);
+    if (cloudOn()) wireCloudPanel();
     wireLockSection(openTutorPanel, closeModal);
     wireProfilesSection(openTutorPanel);
   }

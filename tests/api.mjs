@@ -14,7 +14,7 @@ const ORIGIN = 'http://127.0.0.1:8765';
 
 // Временная база и настройки; возвращает { api, ownerCode, stop }
 // serverDir — папка с кодом сервера (для проверки обновления базы со старой версии), sqlite — готовый файл базы
-export async function startApi({ init = true, setupKey = '', serverDir = join(ROOT, 'server'), sqlite = null, freshDb = true } = {}){
+export async function startApi({ init = true, setupKey = '', serverDir = join(ROOT, 'server'), sqlite = null, freshDb = true, mysqlCharset = 'utf8' } = {}){
   const dir = mkdtempSync(join(tmpdir(), 'eq-api-'));
   const mailLog = join(dir, 'mail.log');
   const cfg = join(dir, 'config.php');
@@ -22,7 +22,8 @@ export async function startApi({ init = true, setupKey = '', serverDir = join(RO
   const my = process.env.EQ_TEST_MYSQL ? { host: process.env.MYSQL_HOST || '127.0.0.1', port: process.env.MYSQL_PORT || '3306', user: process.env.MYSQL_USER || 'root', pass: process.env.MYSQL_PASSWORD || 'root', db: 'eq_test' } : null;
   if (my && freshDb) execFileSync('mysql', ['-h', my.host, '-P', my.port, '-u', my.user, `-p${my.pass}`, '-e', `DROP DATABASE IF EXISTS ${my.db}; CREATE DATABASE ${my.db} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`]);
   const db = my
-    ? `['dsn' => 'mysql:host=${my.host};port=${my.port};dbname=${my.db};charset=utf8mb4', 'user' => '${my.user}', 'password' => '${my.pass}']`
+    // charset=utf8 (3 байта) — как бывает на хостинге: сервер сам должен включить utf8mb4, иначе эмодзи-аватары не сохранятся
+    ? `['dsn' => 'mysql:host=${my.host};port=${my.port};dbname=${my.db};charset=${mysqlCharset}', 'user' => '${my.user}', 'password' => '${my.pass}']`
     : `['dsn' => 'sqlite:${sqlite || join(dir, 'eq.sqlite')}']`;
   // письма не отправляются, а пишутся в файл — тест читает из него ссылки
   writeFileSync(cfg, `<?php return ['db' => ${db}, 'origins' => ['${ORIGIN}'], 'secret' => 'test', 'setup_key' => '${setupKey}', 'debug' => true,
@@ -287,6 +288,9 @@ if (import.meta.url === `file://${process.argv[1]}`){
 
       // ученики: логин, почта родителя, согласие, вход по логину
       check('кривой логин не принимается', (await call('/students', { token: owner, body: { name: 'Петя', login: 'Петя!' } })).status === 400);
+      const kidsBefore = (await call("/students", { token: owner })).data.students.length;
+      r = await call('/students', { token: owner, body: { name: 'Петя', login: 'petya', access: 'invite' } });
+      check('приглашение без почты — ошибка, и ученик не создаётся', r.status === 400 && r.data.error === 'email' && (await call('/students', { token: owner })).data.students.length === kidsBefore, r.data);
       r = await call('/students', { token: owner, body: { name: 'Маша', login: 'Masha.K', email: 'parent@example.org', access: 'invite' } });
       check('ученик с логином и приглашением родителю', r.status === 200 && r.data.student.login === 'masha.k' && r.data.mailed === 'parent@example.org', r.data);
       const masha = r.data.student.id;
@@ -322,7 +326,7 @@ if (import.meta.url === `file://${process.argv[1]}`){
     try {
       execFileSync('sh', ['-c', `git -C '${ROOT}' archive 1e3a7f6 server | tar -x -C '${old}'`]);
       const file = join(old, 'eq.sqlite');
-      const v1 = await startApi({ serverDir: join(old, 'server'), sqlite: file });
+      const v1 = await startApi({ serverDir: join(old, 'server'), sqlite: file, mysqlCharset: 'utf8mb4' });   // старая версия сама utf8mb4 не включала
       const oldOwner = (await call('/login', { body: { code: v1.ownerCode } })).data.token;
       await call('/students', { token: oldOwner, body: { name: 'Старый ученик' } });
       await v1.stop();

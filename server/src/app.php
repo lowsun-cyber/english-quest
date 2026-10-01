@@ -50,6 +50,8 @@ function db(): PDO {
       PDO::ATTR_EMULATE_PREPARES => false,
     ]);
     if (driver($pdo) === 'sqlite') $pdo->exec('PRAGMA foreign_keys = ON');
+    // всегда 4-байтовая кодировка: без charset в dsn хостинг может дать utf8mb3, и эмодзи-аватары не сохраняются
+    if (driver($pdo) === 'mysql') $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
   }
   return $pdo;
 }
@@ -465,9 +467,13 @@ function base_routes(): array {
       $login = norm_login(body()['login'] ?? '');
       if ($login && login_taken($login)) throw new HttpError(400, 'login', 'Такой логин уже занят — придумайте другой.');
       $email = norm_email(body()['email'] ?? '', false);
+      // проверяем до записи, чтобы ошибка в способе доступа не оставила ученика «наполовину»
+      $mode = (string)(body()['access'] ?? 'none');
+      if (in_array($mode, ['temp', 'invite'], true) && !$login) throw new HttpError(400, 'login', 'Сначала задайте ученику логин.');
+      if ($mode === 'invite' && !$email) throw new HttpError(400, 'email', 'Сначала укажите почту родителя.');
       $id = new_id('s');
       q('INSERT INTO students (id, org_id, teacher_id, name, avatar, created, login, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [$id, $u['org_id'], $teacher, $name, $avatar, now(), $login, $email]);
-      $access = grant_student_access(one('SELECT * FROM students WHERE id = ?', [$id]), (string)(body()['access'] ?? 'none'));
+      $access = grant_student_access(one('SELECT * FROM students WHERE id = ?', [$id]), $mode);
       return ['student' => student_out(one('SELECT * FROM students WHERE id = ?', [$id]))] + $access;
     }],
     ['POST', '#^/students/(s[0-9a-f]{16})$#', function($id){

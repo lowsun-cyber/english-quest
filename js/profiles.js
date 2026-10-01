@@ -20,6 +20,7 @@ export function renderProfileChip(){
   document.getElementById('pf-avatar').textContent = p.avatar;
   document.getElementById('pf-name').textContent = p.name;
   chip.setAttribute('aria-label', `Сейчас занимается ${p.name}. Сменить ученика`);
+  document.dispatchEvent(new Event('eq:profile'));   // кнопка «Войти» в шапке показывает, кто вошёл
 }
 
 export async function switchProfile(id){

@@ -82,6 +82,8 @@ export async function syncNow(){
     return 'ok';
   } catch (e) {
     if (e instanceof ApiError && e.status === 401){
+      // ключ уже сменили (вышли и вошли заново, пока шёл запрос) — старый ответ ничего не значит
+      if (cloudLink(id)?.token !== link.token){ lastSync = { at: Date.now(), ok: true, message: '' }; again = true; return 'later'; }
       // учитель отключил устройство или удалил ученика
       await unlinkLocal(id);
       toast('☁️ Устройство отключено от сервера учителя. Прогресс остался на устройстве.');
@@ -211,18 +213,28 @@ function ago(t){
   const s = Math.round((Date.now() - t) / 1000);
   return s < 60 ? 'только что' : s < 3600 ? `${Math.round(s / 60)} мин назад` : new Date(t).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 }
-export function cloudSectionHtml(){
+// Панель для взрослых: вход ученика — только кнопкой «Войти» в шапке, здесь лишь подсказка
+export function cloudPanelHtml(){
+  const link = cloudLink();
+  return `
+    <p>${link ? `☁️ Ученик вошёл: <b>${escapeHtml(link.name)}</b>. Прогресс сохраняется на сервере учителя.` : 'Ученик входит по логину и паролю от учителя — кнопкой «🔑 Войти» вверху страницы.'}</p>
+    <div class="controls"><button class="btn secondary" id="cl-open-account">${link ? '☁️ Вход и синхронизация' : '🔑 Войти'}</button></div>`;
+}
+export function wireCloudPanel(){
+  const b = document.getElementById('cl-open-account');
+  if (b) b.onclick = () => { closeModal(); openAccount(); };
+}
+function cloudSectionHtml(){
   const link = cloudLink();
   if (link) return `
     <p>☁️ Подключено к серверу учителя: <b>${escapeHtml(link.name)}</b>. Прогресс сохраняется там автоматически.</p>
     <p class="t-muted" id="cl-status">Синхронизация: ${lastSync.ok ? ago(lastSync.at) : `не удалась — ${escapeHtml(lastSync.message)}. Всё сохранено на устройстве и отправится позже.`}</p>
     <div class="controls">
       <button class="btn secondary" id="cl-sync">🔄 Синхронизировать сейчас</button>
-      <button class="icon-btn" id="cl-unlink">Отключить это устройство</button>
+      <button class="icon-btn" id="cl-unlink">Выйти на этом устройстве</button>
     </div>`;
   return `
-    <p class="t-muted">Если ученик занимается у учителя с сервером English Quest, войдите под ним: прогресс не потеряется, его можно продолжить на другом устройстве, а учитель увидит, что сделано. Логин и пароль (или код подключения) даёт учитель.</p>
-    <h4 class="t-h4">Вход по логину</h4>
+    <p class="t-muted">Логин и пароль даёт учитель. После входа прогресс не потеряется: его можно продолжить на другом устройстве, а учитель увидит, что сделано.</p>
     <form class="cl-form" id="cl-login-form">
       <label>Логин <input id="cl-login" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" /></label>
       <label>Пароль <input id="cl-password" type="password" autocomplete="current-password" /></label>
@@ -246,7 +258,7 @@ export function cloudSectionHtml(){
       </form>
     </details>`;
 }
-export function wireCloudSection(reopen){
+function wireCloudSection(reopen, close){
   const syncBtn = document.getElementById('cl-sync');
   if (syncBtn) syncBtn.onclick = async () => {
     syncBtn.disabled = true;
@@ -256,7 +268,7 @@ export function wireCloudSection(reopen){
   };
   const unlink = document.getElementById('cl-unlink');
   if (unlink) unlink.onclick = async () => {
-    if (!confirm('Отключить это устройство от сервера учителя? Прогресс останется на устройстве, но перестанет сохраняться на сервере.')) return;
+    if (!confirm('Выйти на этом устройстве? Прогресс останется здесь, но перестанет сохраняться на сервере учителя, пока снова не войдёте.')) return;
     const link = cloudLink();
     try { await api('/logout', { token: link.token, body: {} }); } catch (e) {}
     await unlinkLocal(activeId());
@@ -270,8 +282,13 @@ export function wireCloudSection(reopen){
     const login = document.getElementById('cl-login').value.trim(), password = document.getElementById('cl-password').value;
     if (!login || !password){ document.getElementById(login ? 'cl-password' : 'cl-login').focus(); return; }
     loginForm.querySelector('button').disabled = true;
-    try { closeModal(); await claimLogin(login, password); }
-    catch (ex){ reopen(); showErr(ex.message); }
+    try { close(); await claimLogin(login, password); }
+    catch (ex){
+      reopen(); showErr(ex.message);
+      // логин оставляем, пароль — набрать заново
+      const l = document.getElementById('cl-login'), p = document.getElementById('cl-password');
+      if (l){ l.value = login; setTimeout(() => p?.focus(), 60); }
+    }
   };
   const forgot = document.getElementById('cl-forgot-form');
   if (forgot) forgot.onsubmit = async (e) => {
@@ -287,13 +304,76 @@ export function wireCloudSection(reopen){
     const code = document.getElementById('cl-code').value.trim();
     if (!code){ document.getElementById('cl-code').focus(); return; }
     form.querySelector('button').disabled = true;
-    try { closeModal(); await claimCode(code); }
+    try { close(); await claimCode(code); }
     catch (ex){
       reopen();
       const err = document.getElementById('cl-err');
       if (err){ err.textContent = ex.message; err.hidden = false; }
     }
   };
+}
+
+// ---------- кнопка «Войти» в шапке и выезжающая панель ----------
+const drawerBack = () => document.getElementById('drawer-back');
+let drawerOpener = null;
+
+// В шапке видно, кто вошёл: «☁️ Маша» или «🔑 Войти»
+export function renderAccountButton(){
+  const btn = document.getElementById('btn-account');
+  if (!btn || !cloudOn()) return;
+  const link = cloudLink();
+  btn.hidden = false;
+  btn.classList.toggle('on', !!link);
+  document.getElementById('acc-icon').textContent = link ? '☁️' : '🔑';
+  document.getElementById('acc-name').textContent = link ? link.name : 'Войти';
+  btn.setAttribute('aria-label', link ? `Вошли как ${link.name}. Открыть вход` : 'Войти по логину и паролю');
+}
+
+function accountHtml(){
+  const link = cloudLink();
+  const who = link ? `
+    <div class="acc-who">
+      <span class="acc-av" aria-hidden="true">${escapeHtml(activeProfile().avatar)}</span>
+      <div><div class="acc-label">Вы вошли как</div><b class="acc-name">${escapeHtml(link.name)}</b></div>
+    </div>` : '';
+  return `
+    ${who}
+    ${realState ? '<p class="t-muted">Сейчас открыт чужой прогресс для просмотра — закройте его, чтобы войти.</p>' : cloudSectionHtml()}`;
+}
+function renderDrawer(){
+  document.getElementById('drawer-title').textContent = cloudLink() ? '☁️ Мой вход' : '☁️ Вход ученика';
+  document.getElementById('drawer-body').innerHTML = accountHtml();
+  if (!realState) wireCloudSection(openAccount, closeDrawer);   // ошибка входа — панель откроется снова с сообщением
+}
+export function openAccount(){
+  const back = drawerBack();
+  if (!back) return;
+  if (back.hidden) drawerOpener = document.activeElement;
+  renderDrawer();
+  back.hidden = false;
+  requestAnimationFrame(() => back.classList.add('open'));
+  document.body.classList.add('drawer-open');
+  const first = back.querySelector('#cl-login') || back.querySelector('.drawer-close');
+  setTimeout(() => first?.focus(), 50);
+}
+export function closeDrawer(){
+  const back = drawerBack();
+  if (!back || back.hidden) return;
+  back.classList.remove('open');
+  document.body.classList.remove('drawer-open');
+  setTimeout(() => { if (!back.classList.contains('open')) back.hidden = true; }, 250);
+  drawerOpener?.focus?.();
+}
+function initAccount(){
+  const btn = document.getElementById('btn-account'), back = drawerBack();
+  if (!btn || !back) return;
+  btn.onclick = openAccount;
+  back.onclick = (e) => { if (e.target === back) closeDrawer(); };
+  back.querySelector('.drawer-close').onclick = closeDrawer;
+  back.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+  // кто вошёл меняется при входе, выходе и смене ученика на устройстве
+  document.addEventListener('eq:profile', renderAccountButton);
+  renderAccountButton();
 }
 
 // ---------- когда синхронизировать ----------
@@ -303,8 +383,7 @@ export function initCloud(){
   setOnSaved(() => scheduleSync(4000));
   modalClosedHooks.add(() => { if (waitingForModal){ waitingForModal = false; scheduleSync(300); } });
   if (!cloudOn()) return;
-  const cab = document.getElementById('btn-teacher');
-  if (cab) cab.hidden = false;
+  initAccount();
   window.addEventListener('online', () => scheduleSync(500));
   document.addEventListener('visibilitychange', () => scheduleSync(document.hidden ? 0 : 500));
   setInterval(() => { if (!document.hidden) syncNow(); }, 120000);

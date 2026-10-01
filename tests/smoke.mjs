@@ -573,15 +573,41 @@ try {
       // ученик входит в приложении по логину и паролю (выданным в админке)
       await call(`/students/${stu.id}`, { token: owner, body: { login: 'vanya' } });
       const temp = (await call(`/students/${stu.id}/password`, { token: owner, body: { mode: 'temp' } })).data.tempPassword;
-      await js(`await __gate('1357');   // PIN панели остался с шага «PIN-код и сброс»
-        const f = id => document.getElementById(id);
-        for (let i = 0; i < 20 && !f('cl-login-form'); i++) await __sleep(100);
-        if (!f('cl-login-form')) throw new Error('в панели нет входа по логину: ' + (document.getElementById('modal-body')?.innerText || '').slice(0, 200).replace(/\\s+/g, ' '));
+      await js(`const f = id => document.getElementById(id);
+        if ([...document.querySelectorAll('footer a')].some(a => /admin/.test(a.getAttribute('href')))) throw new Error('на главной осталась ссылка в кабинет учителя');
+        await __gate('1357');   // в панели для взрослых — только подсказка и кнопка, ведущая к входу в шапке
+        for (let i = 0; i < 20 && !f('cl-open-account'); i++) await __sleep(100);
+        if (!f('cl-open-account') || f('cl-login-form')) throw new Error('в панели должна быть кнопка «Войти», а не своя форма');
+        f('cl-open-account').click(); await __sleep(350);
+        if (!f('drawer-back').classList.contains('open') || !f('cl-login-form')) throw new Error('кнопка из панели не открыла вход');
+        if (/Кабинет учителя/.test(f('drawer-body').innerText)) throw new Error('в панели входа ссылка в кабинет учителя');
         f('cl-login').value = 'Vanya'; f('cl-password').value = '${temp}';
         f('cl-login-form').requestSubmit();
         const linked = () => JSON.parse(localStorage.getItem('english_quest_profiles')).list.some(p => p.cloud?.studentId === '${stu.id}');
         for (let i = 0; i < 40 && !linked(); i++){ if (f('cl-this')) f('cl-this').click(); await __sleep(100); }
         if (!linked()) throw new Error('ученик не вошёл по логину');
+        return true;`);
+      // кнопка в шапке показывает, кто вошёл; выход и вход — в выезжающей панели
+      await js(`const f = id => document.getElementById(id);
+        const name = () => f('acc-name').textContent;
+        const linked = () => JSON.parse(localStorage.getItem('english_quest_profiles')).list.some(p => p.cloud?.studentId === '${stu.id}');
+        for (let i = 0; i < 20 && name() !== 'Ваня'; i++) await __sleep(100);
+        if (f('btn-account').hidden || name() !== 'Ваня') throw new Error('в шапке не видно, кто вошёл: ' + name());
+        f('btn-account').click(); await __sleep(350);
+        if (!f('drawer-back').classList.contains('open') || !/Вы вошли как\\s*Ваня/.test(f('drawer-body').innerText)) throw new Error('панель входа не показывает ученика');
+        f('cl-unlink').click();
+        for (let i = 0; i < 20 && name() !== 'Войти'; i++) await __sleep(100);
+        if (name() !== 'Войти' || linked()) throw new Error('выход из панели не сработал: ' + name());
+        f('cl-login').value = 'vanya'; f('cl-password').value = 'неверный';
+        f('cl-login-form').requestSubmit();
+        for (let i = 0; i < 30 && f('cl-err')?.hidden !== false; i++) await __sleep(100);
+        if (!f('drawer-back').classList.contains('open') || !/не подошли/.test(f('cl-err')?.textContent || '')) throw new Error('нет ошибки неверного пароля в панели');
+        if (f('cl-login').value !== 'vanya') throw new Error('после ошибки стёрся логин');
+        f('cl-password').value = '${temp}';
+        f('cl-login-form').requestSubmit();
+        for (let i = 0; i < 40 && !linked(); i++){ if (f('cl-this')) f('cl-this').click(); await __sleep(100); }
+        for (let i = 0; i < 20 && name() !== 'Ваня'; i++) await __sleep(100);
+        if (!linked() || name() !== 'Ваня' || f('drawer-back').classList.contains('open')) throw new Error('вход из панели в шапке не сработал: ' + name() + ' | ' + (f('cl-err')?.textContent || ''));
         return true;`);
 
       // админка: вход по почте и паролю, приглашение по ссылке из письма
