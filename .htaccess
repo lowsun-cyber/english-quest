@@ -1,0 +1,18 @@
+# Хостинг (Спринтхост): файлы из папки, где лежит .htaccess, отдаёт Apache — тогда работают правила ниже.
+# Страницы браузер сверяет с сервером при каждом открытии, поэтому после выкладки сразу видна новая версия.
+# Скрипты и стили подключаются с версией в адресе (?v=…, tools/stamp.mjs), поэтому их недельный кэш не мешает.
+DirectoryIndex index.html
+Options -Indexes
+
+# только https (адрес http:// перенаправляется)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP:X-Forwarded-Proto} =http
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "(\.html|\.webmanifest|\.json|^sw\.js)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

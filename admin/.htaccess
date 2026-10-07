@@ -1,0 +1,7 @@
+# Кабинет учителя: страницу браузер сверяет с сервером при каждом открытии (см. .htaccess в корне сайта)
+DirectoryIndex index.html
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

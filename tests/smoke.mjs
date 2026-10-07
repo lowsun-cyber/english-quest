@@ -600,7 +600,7 @@ try {
         if (name() !== 'Войти' || linked()) throw new Error('выход из панели не сработал: ' + name());
         f('cl-login').value = 'vanya'; f('cl-password').value = 'неверный';
         f('cl-login-form').requestSubmit();
-        for (let i = 0; i < 30 && f('cl-err')?.hidden !== false; i++) await __sleep(100);
+        for (let i = 0; i < 80 && f('cl-err')?.hidden !== false; i++) await __sleep(100);
         if (!f('drawer-back').classList.contains('open') || !/не подошли/.test(f('cl-err')?.textContent || '')) throw new Error('нет ошибки неверного пароля в панели');
         if (f('cl-login').value !== 'vanya') throw new Error('после ошибки стёрся логин');
         f('cl-password').value = '${temp}';

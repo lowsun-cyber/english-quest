@@ -64,6 +64,7 @@ jobs:
         run: |
           mkdir _site
           rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'server' --exclude '_site' ./ _site/
+          node tools/stamp.mjs _site   # версия в адресах скриптов и стилей
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -109,10 +110,14 @@ jobs:
           SERVER_PATH: ${{ vars.SPRINTHOST_SERVER_PATH || 'domains/logiqa.ru/eq-server' }}
           STATE_PATH: ${{ vars.SPRINTHOST_STATE_PATH || 'domains/logiqa.ru/eq-deploy' }}
           LFTP_PASSWORD: ${{ secrets.SPRINTHOST_PASSWORD }}
-        run: node tools/deploy-hosting.mjs
+        run: |
+          node tools/stamp.mjs .   # версия в адресах скриптов и стилей (только в этой копии)
+          node tools/deploy-hosting.mjs
       - name: Проверить сайт и сервер
         run: |
           curl -fsS https://quest.logiqa.ru/ | grep -q 'English Quest'
           curl -fsS https://quest.logiqa.ru/api/ | grep -q '"ok":true'
           [ "$(curl -fsS "https://quest.logiqa.ru/index.html?v=$GITHUB_SHA" | sha256sum)" = "$(sha256sum < index.html)" ] || { echo "На хостинге не та версия index.html"; exit 1; }
           echo "Сайт и сервер отвечают, версия совпадает"
+          curl -fsSI https://quest.logiqa.ru/index.html | grep -qi '^cache-control: no-cache' || echo "::warning::index.html отдаётся без Cache-Control: no-cache — проверьте .htaccess в корне сайта"
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://quest.logiqa.ru/)" = "301" ] || echo "::warning::http:// не перенаправляется на https://"
