@@ -71,10 +71,10 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
 
-  # Та же сборка — на хостинг (Спринтхост): https://quest.logiqa.ru/
-  # Нужны: секрет SPRINTHOST_SSH_KEY (закрытый ключ только для выкладки) и переменные репозитория
-  # SPRINTHOST_HOST, SPRINTHOST_USER, SPRINTHOST_PATH, SPRINTHOST_KNOWN_HOSTS (см. server/README.md).
-  # Пока переменных нет — шаг пропускается. Папку api/ (сервер) выкладка не трогает.
+  # Сайт и код сервера — на хостинг (Спринтхост, SFTP): https://quest.logiqa.ru/
+  # Загружаются только изменённые файлы (tools/deploy-hosting.mjs); config.php на сервере не трогается.
+  # Нужны: секрет SPRINTHOST_PASSWORD или SPRINTHOST_SSH_KEY и переменные репозитория
+  # SPRINTHOST_HOST, SPRINTHOST_USER, SPRINTHOST_KNOWN_HOSTS (см. server/README.md). Пока их нет — шаг пропускается.
   deploy-hosting:
     name: Публикация на quest.logiqa.ru
     needs: test
@@ -85,33 +85,34 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
-      - name: Собрать сайт (без тестов, инструментов и кода сервера)
-        run: |
-          mkdir _site
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'server' --exclude '_site' \
-            --exclude 'README.md' --exclude 'DESIGN.md' --exclude 'phrases.json' --exclude '.gitignore' ./ _site/
-      - name: Ключ SSH
+      - name: Установить lftp
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+      # Вход по ключу (секрет SPRINTHOST_SSH_KEY) или по паролю (секрет SPRINTHOST_PASSWORD).
+      # Отпечаток сервера (переменная SPRINTHOST_KNOWN_HOSTS) обязателен — без него не подключаемся.
+      - name: Доступ к хостингу
         env:
           KEY: ${{ secrets.SPRINTHOST_SSH_KEY }}
           KNOWN_HOSTS: ${{ vars.SPRINTHOST_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-      - name: Выложить файлы
+          SSH="ssh -a -x -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
+          if [ -n "$KEY" ]; then
+            printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+            SSH="$SSH -o BatchMode=yes -i $HOME/.ssh/deploy"
+          fi
+          echo "SSH_COMMAND=$SSH" >> "$GITHUB_ENV"
+      - name: Выложить изменённые файлы (сервер, сайт, страницы последними)
         env:
-          HOST: ${{ vars.SPRINTHOST_HOST }}
-          USER_NAME: ${{ vars.SPRINTHOST_USER }}
-          DEST: ${{ vars.SPRINTHOST_PATH }}
-          PORT: ${{ vars.SPRINTHOST_PORT || '22' }}
-        # --delete убирает устаревшие файлы (и заглушку хостинга), но api/ и .well-known/ защищены
-        run: |
-          rsync -rlz --delete --delay-updates --chmod=D755,F644 \
-            --filter='protect /api/' --filter='protect /.well-known/' --filter='protect /.htaccess' \
-            -e "ssh -i ~/.ssh/deploy -p $PORT -o BatchMode=yes -o StrictHostKeyChecking=yes" \
-            _site/ "$USER_NAME@$HOST:$DEST/"
+          DEPLOY_URL: sftp://${{ vars.SPRINTHOST_USER }}@${{ vars.SPRINTHOST_HOST }}:${{ vars.SPRINTHOST_PORT || '22' }}
+          SITE_PATH: ${{ vars.SPRINTHOST_PATH || 'domains/logiqa.ru/public_html/quest' }}
+          SERVER_PATH: ${{ vars.SPRINTHOST_SERVER_PATH || 'domains/logiqa.ru/eq-server' }}
+          STATE_PATH: ${{ vars.SPRINTHOST_STATE_PATH || 'domains/logiqa.ru/eq-deploy' }}
+          LFTP_PASSWORD: ${{ secrets.SPRINTHOST_PASSWORD }}
+        run: node tools/deploy-hosting.mjs
       - name: Проверить сайт и сервер
         run: |
           curl -fsS https://quest.logiqa.ru/ | grep -q 'English Quest'
           curl -fsS https://quest.logiqa.ru/api/ | grep -q '"ok":true'
-          echo "Сайт и сервер отвечают"
+          [ "$(curl -fsS "https://quest.logiqa.ru/index.html?v=$GITHUB_SHA" | sha256sum)" = "$(sha256sum < index.html)" ] || { echo "На хостинге не та версия index.html"; exit 1; }
+          echo "Сайт и сервер отвечают, версия совпадает"

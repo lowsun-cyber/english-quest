@@ -36,25 +36,30 @@ server/
 
 ## Сайт на quest.logiqa.ru и автоматическая выкладка
 
-После успешных тестов GitHub Actions выкладывает сайт не только на GitHub Pages, но и в папку поддомена
-(`public_html/quest/`) по SSH. Папка `api/` (сервер) при выкладке не трогается, устаревшие файлы удаляются.
+После успешных тестов GitHub Actions выкладывает по SFTP всё сразу: сайт в `public_html/quest/`, код сервера
+в `eq-server/src` и `eq-server/bin`, `api/index.php` и `api/.htaccess`. Загружаются только изменённые файлы:
+список прошлой выкладки с контрольными суммами хранится в `domains/logiqa.ru/eq-deploy/manifest.json`, вне сайта.
+Удаляется только то, что раньше выложила сама выкладка. `config.php` и другие файлы, положенные вручную, не трогаются.
+Страницы `.html` загружаются последними, после проверки сайт и сервер опрашиваются, а версия `index.html` сверяется.
 
 Настройка один раз:
 
-1. **Ключ только для выкладки** — на своём компьютере:
+1. **Пароль SFTP в секреты репозитория** — набрать в своём терминале (ввод не отображается и никуда, кроме GitHub, не попадает):
    ```bash
-   ssh-keygen -t ed25519 -f ~/.ssh/eq_deploy -N "" -C "github-deploy english-quest"
+   gh secret set SPRINTHOST_PASSWORD
    ```
-2. **Открытый ключ — на хостинг.** Добавить содержимое `~/.ssh/eq_deploy.pub` в `~/.ssh/authorized_keys` на хостинге (или в панели: SSH-ключи). Можно ограничить ключ, поставив перед ним `restrict `.
-3. **Закрытый ключ — в секреты репозитория** (значение не показывается никому):
-   ```bash
-   gh secret set SPRINTHOST_SSH_KEY < ~/.ssh/eq_deploy
-   ```
-4. **Переменные репозитория** (Settings → Secrets and variables → Actions → Variables): `SPRINTHOST_HOST` (адрес SSH),
-   `SPRINTHOST_USER` (логин), `SPRINTHOST_PATH` (`domains/logiqa.ru/public_html/quest`), `SPRINTHOST_KNOWN_HOSTS`
-   (вывод `ssh-keyscan <адрес SSH>`), при нестандартном порте — `SPRINTHOST_PORT`.
+   Вместо пароля можно дать ключ: `gh secret set SPRINTHOST_SSH_KEY < путь_к_закрытому_ключу` (открытый ключ должен быть добавлен на хостинге).
+2. **Переменные репозитория** (Settings → Secrets and variables → Actions → Variables): `SPRINTHOST_USER` (логин),
+   `SPRINTHOST_KNOWN_HOSTS` (вывод `ssh-keyscan <адрес>`), и последней — `SPRINTHOST_HOST` (адрес): она включает выкладку.
+   Пути по умолчанию: `SPRINTHOST_PATH=domains/logiqa.ru/public_html/quest`, `SPRINTHOST_SERVER_PATH=domains/logiqa.ru/eq-server`,
+   `SPRINTHOST_STATE_PATH=domains/logiqa.ru/eq-deploy`; при нестандартном порте — `SPRINTHOST_PORT`.
 
-Пока переменных нет, шаг выкладки на хостинг пропускается.
+Пока `SPRINTHOST_HOST` не задана, шаг выкладки на хостинг пропускается.
+
+Выложить с компьютера (нужен `lftp`; `--dry-run` — только показать, что изменится):
+```bash
+DEPLOY_URL=sftp://ЛОГИН@АДРЕС SITE_PATH=domains/logiqa.ru/public_html/quest SERVER_PATH=domains/logiqa.ru/eq-server STATE_PATH=domains/logiqa.ru/eq-deploy node tools/deploy-hosting.mjs --dry-run
+```
 
 ## Пароли и почта
 
