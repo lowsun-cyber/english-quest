@@ -8,7 +8,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonsOf } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonExercises, lessonsOf } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка из 8 тем. После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -35,11 +35,14 @@ export function mapNodes(grade){
 export function lockReason(node){
   if (state.settings.unlockAll) return null;
   if (node.kind === 'checkpoint'){
+    if (checkpointPassed(node.cp)) return null;
     const left = node.cp.lessons.filter(l => !isLessonComplete(l));
     return left.length ? `Сначала пройди: ${left.map(l => `«${l.title}»`).join(', ')}` : null;
   }
   const ls = lessonsOf(node.lesson.grade), i = ls.indexOf(node.lesson);
   if (i === 0) return null;
+  // начатое остаётся открытым — даже если перед темой потом добавили новую
+  if (Object.keys(state.lessonProgress[node.lesson.id] || {}).length) return null;
   if (i % BLOCK === 0){
     const cp = checkpointsOf(node.lesson.grade)[i / BLOCK - 1];
     return checkpointPassed(cp) ? null : `Сначала сдай «${cp.title}»`;
@@ -114,16 +117,16 @@ document.querySelectorAll('#grade-tabs .tab').forEach(t => {
 });
 
 // ---------- ЭКРАН ТЕМЫ ----------
-export const HUB_EXS = ['cards', ...PARTS];
 export function openLessonHub(lesson){
   const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
   const p = state.lessonProgress[lesson.id] || {};
-  const next = HUB_EXS.find(ex => !p[ex]);
+  const exs = lessonExercises(lesson);
+  const next = exs.find(ex => !p[ex]);
   openModal(`
     ${lessonHeader(lesson, guide)}
     <div class="hub-progress">Сделано ${partsDone(lesson)} из ${PARTS.length}${isLessonComplete(lesson) ? ' · тема пройдена ✓' : ''}</div>
     <div class="hub-grid">
-      ${HUB_EXS.map(ex => {
+      ${exs.map(ex => {
         const [em, ...rest] = EX_NAMES[ex].split(' ');
         return `<button class="hub-ex${p[ex] ? ' done' : ''}${ex === next ? ' next' : ''}" data-ex="${ex}">
           <span class="hub-em" aria-hidden="true">${em}</span>

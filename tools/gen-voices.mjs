@@ -68,7 +68,11 @@ function toWav(buf){
 const KIND_STYLE = {
   letter: 'назови английскую букву — её название, как в английском алфавите; чётко, для ребёнка',
   word: 'чётко и не спеша произнеси одно английское слово для ребёнка 7–10 лет, с естественным английским произношением',
+  lesson: 'чётко, не спеша и дружелюбно прочитай по-английски для ребёнка 7–10 лет, с естественным английским произношением',
 };
+// английская озвучка уроков, записанная раньше (tts_manifest.json → tts_cache/*.mp3): такие фразы не перезаписываем
+const LESSON_AUDIO = existsSync(join(ROOT, 'tts_manifest.json')) ? JSON.parse(readFileSync(join(ROOT, 'tts_manifest.json'), 'utf8')) : {};
+const hasLessonAudio = text => !!(LESSON_AUDIO[text] || LESSON_AUDIO[text.replace(/(^|\s)I(?=[\s'’.,!?]|$)/g, '$1i')]);
 async function synth(text, speaker, kind){
   const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || VOICES[speaker].style;
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
@@ -93,6 +97,7 @@ for (const [i, { text, speaker, kind }] of items.entries()){
   const file = fileFor(text, speaker);
   const out = join(ROOT, 'tts_cache', file);
   if (!FORCE && manifest[text] && existsSync(join(ROOT, 'tts_cache', manifest[text]))){ kept++; continue; }
+  if (kind === 'lesson' && hasLessonAudio(text)){ kept++; continue; }
   process.stdout.write(`${i + 1}/${lines.length} ${text.slice(0, 60)}… `);
   try {
     const wav = join(tmp, 'line.wav');

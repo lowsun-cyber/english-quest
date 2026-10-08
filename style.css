@@ -1430,7 +1430,7 @@ body.drawer-open { overflow: hidden; }
 }
 
 /* ==== СЛОВАРЬ ==== */
-.lesson-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.lesson-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-right: 52px; }   /* справа — крестик окна */
 .lesson-title-row h2 { margin: 0; }
 .lesson-dict { min-width: 40px; min-height: 40px; padding: 4px 8px; font-size: 18px; }
 .dict-form input { width: 100%; box-sizing: border-box; font: inherit; font-size: 18px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
@@ -1459,3 +1459,8 @@ body.drawer-open { overflow: hidden; }
   .account-btn { padding: 4px 8px; gap: 4px; }
   .account-btn #acc-name { max-width: 4.5em; }
 }
+
+/* ==== ЧТО НА КАРТИНКЕ? (2-E) ==== */
+.pic-emoji { font-size: 84px; line-height: 1.1; text-align: center; margin: 10px 0 6px; }
+.pic-options { grid-template-columns: 1fr; }
+.pic-options .opt { font-size: 20px; }

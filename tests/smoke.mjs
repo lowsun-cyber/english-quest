@@ -90,10 +90,11 @@ try {
 
   await test('страница и шапка', () => js(`
     const nodes = document.querySelectorAll('.map-node').length;
-    if (nodes !== 10) throw new Error('узлов на карте: ' + nodes);
+    const g2 = window.EQ.LESSONS.filter(l => l.grade === 2).length, want = g2 + Math.floor(g2 / 4);   // темы + проверки после каждых 4
+    if (nodes !== want) throw new Error('узлов на карте: ' + nodes + ', ждали ' + want);
     if (document.getElementById('stat-xp').textContent !== '0') throw new Error('XP не 0');
     if (!/0 \\/ 10 мин/.test(document.getElementById('goal-sub').textContent)) throw new Error('цель дня: ' + document.getElementById('goal-sub').textContent);
-    return 'карта 10 узлов, цель 0/10';`));
+    return 'карта ' + nodes + ' узлов, цель 0/10';`));
 
   await test('карта: текущая и закрытая тема', () => js(`
     const n = document.querySelectorAll('.map-node');
@@ -105,7 +106,7 @@ try {
   await test('экран темы и карточки', () => js(`
     document.querySelector('.map-node').click(); await __sleep(200);
     const ex = [...document.querySelectorAll('.hub-ex')].map(b => b.dataset.ex).join(',');
-    if (ex !== 'cards,vocab,listen,match,spell,grammar,reading,speak') throw new Error(ex);
+    if (ex !== 'cards,vocab,listen,match,spell,grammar,reading,speak,picture') throw new Error(ex);
     document.querySelector('.hub-ex[data-ex=cards]').click(); await __sleep(200);
     const first = document.querySelector('.flash-en').textContent;
     for (let i = 0; i < 30 && document.getElementById('fc-next'); i++){ document.getElementById('fc-next').click(); await __sleep(30); }
@@ -149,6 +150,18 @@ try {
     const p = __ls().lessonProgress['g2-letters']; __close();
     return 'match ' + p.match + ', spell ' + p.spell + ', grammar ' + p.grammar;`));
 
+  await test('что на картинке (2-E)', () => js(`
+    const L = window.EQ.LESSONS.find(l => l.id === 'g2-letters');
+    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=picture]').click(); await __sleep(300);
+    let n = 0;
+    while (document.querySelector('.pic-emoji') && n < 6){
+      const em = document.querySelector('.pic-emoji').textContent, it = L.pics.find(p => p.emoji === em);
+      [...document.querySelectorAll('.opt')].find(o => o.dataset.o === it.right).click(); n++; await __sleep(1400);
+    }
+    const p = __ls().lessonProgress['g2-letters'].picture; __close();
+    if (n !== L.pics.length || p !== n) throw new Error('ответов ' + n + ', засчитано ' + p);
+    return n + ' картинок, все верно';`));
+
   await test('чтение → тема пройдена → следующая открыта', () => js(`
     const L = window.EQ.LESSONS[0];
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=reading]').click(); await __sleep(300);
@@ -175,9 +188,9 @@ try {
     return 'обе карточки перенесены на завтра';`));
 
   await test('проверка после 4 тем → 💎', () => js(`
-    const st = __ls(); for (const id of ['g2-hello', 'g2-family', 'g2-home']) st.lessonProgress[id] = { vocab: 3, listen: 3, grammar: 2, reading: 1 };
+    const st = __ls(); for (const l of window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order).slice(1, 4)) st.lessonProgress[l.id] = { vocab: 3, listen: 3, grammar: 2, reading: 1 };
     localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
-    const LS = window.EQ.LESSONS.filter(l => l.grade === 2).slice(0, 4), words = LS.flatMap(l => l.words), gram = LS.flatMap(l => l.grammar);
+    const LS = window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order).slice(0, 4), words = LS.flatMap(l => l.words), gram = LS.flatMap(l => l.grammar);
     const cp = document.querySelectorAll('.map-node')[4]; if (!cp.classList.contains('current')) throw new Error('проверка не открылась: ' + cp.className);
     cp.click(); await __sleep(700);
     for (let i = 0; i < 10; i++){
@@ -216,6 +229,17 @@ try {
     const rep = document.getElementById('t-report-out').value;
     for (const s of ['Ответов:', 'Цель дня', 'Трудные слова', 'Сданы проверки']) if (!rep.includes(s)) throw new Error('в отчёте нет «' + s + '»');
     __close(); return tiles + ' плиток, отчёт полный';`));
+
+  await test('начатая тема не закрывается, если перед ней появилась новая', () => js(`
+    const st = __ls(); const L = window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order);
+    const later = L[L.length - 2]; st.lessonProgress[later.id] = { vocab: 1 };
+    localStorage.setItem('english_quest_v2', JSON.stringify(st)); return later.title;`).then(() => load()).then(() => js(`
+    const L = window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order), later = L[L.length - 2];
+    const node = [...document.querySelectorAll('.map-node')].find(n => (n.getAttribute('aria-label') || '').startsWith(later.title));
+    if (!node || node.classList.contains('locked')) throw new Error('начатая тема закрыта: ' + node?.className);
+    const last = [...document.querySelectorAll('.map-node')].find(n => (n.getAttribute('aria-label') || '').startsWith(L[L.length - 1].title));
+    if (!last.classList.contains('locked')) throw new Error('не начатая тема после неё должна быть закрыта');
+    return '«' + later.title + '» открыта';`)));
 
   await test('грамматические навыки: учёт и панель', () => js(`
     const { logSkill } = await import('/js/mistakes.js');

@@ -44,6 +44,7 @@ export function renderHUD(){
   // quests
   const completed = LESSONS.filter(l => isLessonComplete(l)).length;
   document.getElementById('stat-quests').textContent = completed;
+  document.getElementById('stat-quests-total').textContent = LESSONS.length;
 }
 
 export function isLessonComplete(l, st = state){ return lessonComplete(l, st); }

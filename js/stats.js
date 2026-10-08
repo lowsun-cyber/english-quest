@@ -8,8 +8,11 @@ export const PARTS = ['vocab', 'listen', 'match', 'spell', 'grammar', 'reading',
 export const BLOCK = 4;
 export const CHECKPOINT_SIZE = 10;
 export const CHECKPOINT_PASS = 7;
-export const EX_NAMES = { cards: '🃏 Карточки', vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', spell: '✍️ Напиши', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори' };
-export const EX_ORDER = Object.keys(EX_NAMES);
+export const EX_NAMES = { cards: '🃏 Карточки', vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', spell: '✍️ Напиши', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори', picture: '🖼️ Что на картинке?' };
+// для домашки — упражнения, которые есть в каждой теме («Что на картинке?» — только там, где есть картинки-фразы)
+export const EX_ORDER = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak'];
+// упражнения экрана темы: обязательные (PARTS) и дополнительные
+export const lessonExercises = l => ['cards', ...PARTS, ...(l.pics?.length ? ['picture'] : [])];
 export const GOAL_OPTIONS = [5, 10, 15, 20];
 
 export function lessonsOf(grade){ return LESSONS.filter(l => l.grade === grade).sort((a, b) => a.order - b.order); }

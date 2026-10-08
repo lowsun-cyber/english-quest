@@ -22,7 +22,7 @@ check('коды навыков не повторяются', uniq(CURRICULUM.ski
 check('коды типов заданий не повторяются', uniq(CURRICULUM.taskTypes.map(t => t.code)));
 check('навыки: код G<класс>-NN, слой base/frp/ext', CURRICULUM.skills.every(s => new RegExp(`^G${s.grade}-\\d\\d$`).test(s.code) && ['base', 'frp', 'ext'].includes(s.layer)));
 check('темы: id g<класс>-…', CURRICULUM.topics.every(t => t.id.startsWith(`g${t.grade}-`)));
-const KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak'];
+const KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak', 'picture'];
 check('типы заданий: упражнения Quest существуют', CURRICULUM.taskTypes.every(t => t.kinds.every(k => KINDS.includes(k))));
 check('типы заданий: редкость из списка', CURRICULUM.taskTypes.every(t => ['common', 'rare', 'epic', 'legendary'].includes(t.rarity)));
 check('чтение в 4 классе — тип 4-A', taskTypeFor('reading', 4) === '4-A' && taskTypeFor('cards', 2) === null);
@@ -31,8 +31,29 @@ for (const l of LESSONS){
   check(`${l.id}: модуль Spotlight`, /^(Starter|M[1-8])$/.test(l.module || ''), l.module);
   check(`${l.id}: темы своего класса`, Array.isArray(l.topics) && l.topics.length > 0 && l.topics.every(t => topics[t]?.grade === l.grade), l.topics);
   check(`${l.id}: уровень CEFR`, ['Pre-A1', 'A1', 'A1+'].includes(l.cefr), l.cefr);
-  for (const q of l.grammar) if (q.skill) check(`${l.id}: навык ${q.skill} есть в карте`, !!SKILLS[q.skill] && SKILLS[q.skill].grade <= l.grade, q.q);
+  for (const q of l.grammar){
+    if (q.skill) check(`${l.id}: навык ${q.skill} есть в карте`, !!SKILLS[q.skill] && SKILLS[q.skill].grade <= l.grade, q.q);
+    check(`${l.id}: ответ «${q.a}» есть среди вариантов`, q.options.includes(q.a) && new Set(q.options).size === q.options.length, q.q);
+  }
+  check(`${l.id}: у каждого слова есть картинка и перевод`, l.words.every(w => w.en && w.ru && w.emoji), l.words.filter(w => !w.emoji).map(w => w.en));
+  const ems = l.words.map(w => w.emoji);
+  check(`${l.id}: картинки слов не повторяются`, new Set(ems).size === ems.length, ems.filter((e, i) => ems.indexOf(e) !== i));
+  check(`${l.id}: слова не повторяются`, new Set(l.words.map(w => w.en)).size === l.words.length);
+  for (const r of l.reading.questions) check(`${l.id}: ответ на вопрос к тексту среди вариантов`, r.options.includes(r.a), r.q);
+  for (const it of l.pics || []){
+    check(`${l.id}: «${it.right}» — два разных варианта и картинка`, !!it.emoji && it.right && it.wrong && it.right !== it.wrong);
+    if (it.word) check(`${l.id}: слово ${it.word} из «Что на картинке?» есть в уроке`, l.words.some(w => w.en === it.word));
+    if (it.skill) check(`${l.id}: навык ${it.skill} в «Что на картинке?» есть в карте`, !!SKILLS[it.skill] && SKILLS[it.skill].grade <= l.grade);
+  }
 }
+check('id уроков не повторяются', uniq(LESSONS.map(l => l.id)));
+const heroCount = /Spotlight \(2, 3, 4\), (\d+) тем/.exec(readFileSync(join(ROOT, 'index.html'), 'utf8'))?.[1];
+check('число тем на главной совпадает с контентом', +heroCount === LESSONS.length, { наГлавной: heroCount, тем: LESSONS.length });
+for (const g of [2, 3, 4]){
+  const ord = LESSONS.filter(l => l.grade === g).map(l => l.order);
+  check(`${g} класс: порядок тем без повторов`, uniq(ord), ord);
+}
+check('2 класс: у каждой темы есть «Что на картинке?» (тип 2-E)', LESSONS.filter(l => l.grade === 2).every(l => l.pics?.length >= 3));
 for (const g of [2, 3, 4]) check(`${g} класс: у грамматики есть коды навыков`, LESSONS.filter(l => l.grade === g).some(l => l.grammar.some(q => q.skill)));
 
 // сводка (не проверка): насколько словарь дотягивает до цели ФРП

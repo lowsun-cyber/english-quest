@@ -209,6 +209,7 @@ export function startExercise(lesson, kind){
     case 'grammar': return exGrammar(lesson, guide);
     case 'reading': return exReading(lesson, guide);
     case 'speak': return exSpeak(lesson, guide);
+    case 'picture': return exPicture(lesson, guide);
   }
 }
 
@@ -458,6 +459,57 @@ export function exGrammar(lesson, guide){
           penalty();
           afterFeedback(() => { idx++; render(); }, 1400);
         }
+      };
+    });
+  }
+}
+
+// === Что на картинке? (тип 2-E): картинка и две короткие фразы — выбрать верную ===
+// pics: [{ emoji, right, wrong, word?, skill? }] — word: слово урока для «Моих ошибок», skill: навык грамматики
+export function exPicture(lesson, guide){
+  const list = shuffle(lesson.pics || []).slice(0, 5);
+  let idx = 0, right = 0;
+  render();
+  function render(){
+    if (idx >= list.length){
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="question"><h3>Верно: ${right} из ${list.length} 🖼️</h3><p>${right === list.length ? 'Ты всё понял(а) по картинкам!' : 'Ошибки попали в «Мои ошибки» — повторим.'}</p></div>
+        <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
+      `);
+      document.getElementById('next-close').onclick = closeModal;
+      return;
+    }
+    const it = list[idx];
+    const opts = shuffle([it.right, it.wrong]);
+    openModal(`
+      ${lessonHeader(lesson, guide)}
+      <div class="question">
+        <div class="q-text pixel">Что на картинке?</div>
+        <div class="pic-emoji" aria-hidden="true">${it.emoji}</div>
+        <div class="options pic-options">
+          ${opts.map(o => `<button class="opt" data-o="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join('')}
+        </div>
+      </div>
+    `);
+    document.querySelectorAll('.opt').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.opt').forEach(b => b.disabled = true);
+        const ok = btn.dataset.o === it.right;
+        logSkill(it, ok, btn.dataset.o);
+        if (ok){
+          btn.classList.add('correct');
+          right++;
+          reward(10, 2);
+          markProgress(lesson.id, 'picture');
+        } else {
+          btn.classList.add('wrong');
+          document.querySelector(`.opt[data-o="${CSS.escape(it.right)}"]`)?.classList.add('correct');
+          if (it.word && lesson.words.some(w => w.en === it.word)) recordMistake('word', lesson, it.word);
+          penalty();
+        }
+        speak(it.right);
+        afterFeedback(() => { idx++; render(); }, ok ? 1200 : 1800);
       };
     });
   }
