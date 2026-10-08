@@ -62,14 +62,16 @@ function speechParts(wav, noise, minPause){
   return parts;
 }
 // имя пачки — в начале имени файла: «en-01.mp3», «dict-03.mp3» и «en-01 — 5 фраз.mp3» подходят все
-const batchId = f => /^((?:en|ru|dict)-\d+)/i.exec(f)?.[1].toLowerCase();
+const batchId = f => /^((?:en|ru|dict|text)-\d+)/i.exec(f)?.[1].toLowerCase();
 for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)])){
   const id = batchId(f), list = batches[id];
   const wav = join(tmp, id + '.wav');
   ffmpeg(['-i', join(dir, f), '-ac', '1', '-ar', '24000', wav]);
   // подбираем порог тишины и длину паузы, пока кусков не станет столько, сколько фраз
   let parts = null, tried = [];
-  for (const minPause of [0.8, 0.6, 1.0, 0.5, 1.3, 0.4, 1.6]) for (const noise of [-35, -30, -40, -45]){
+  // в рассказах внутри бывают паузы между предложениями — для них сначала пробуем только длинные паузы
+  const pauses = id.startsWith('text-') ? [1.6, 1.3, 2.0, 1.0] : [0.8, 0.6, 1.0, 0.5, 1.3, 0.4, 1.6];
+  for (const minPause of pauses) for (const noise of [-35, -30, -40, -45]){
     if (parts) break;
     const p = speechParts(wav, noise, minPause);
     tried.push(p.length);

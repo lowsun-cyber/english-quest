@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { CURRICULUM, LESSONS, MAX_LEVEL, SKILLS, levelFromXp, rankFor } from './eq.js';
+import { CURRICULUM, LESSONS, MAX_LEVEL, SKILLS, fillItemsFor, levelFromXp, rankFor } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -8,11 +8,13 @@ export const PARTS = ['vocab', 'listen', 'match', 'spell', 'grammar', 'reading',
 export const BLOCK = 4;
 export const CHECKPOINT_SIZE = 10;
 export const CHECKPOINT_PASS = 7;
-export const EX_NAMES = { cards: '🃏 Карточки', vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', spell: '✍️ Напиши', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори', picture: '🖼️ Что на картинке?' };
+export const EX_NAMES = { cards: '🃏 Карточки', vocab: '📚 Слова', listen: '🎧 Слушай', match: '🎯 Пара', spell: '✍️ Напиши', grammar: '🧩 Грамматика', reading: '📖 Чтение', speak: '🎤 Говори', picture: '🖼️ Что на картинке?', fill: '🔤 Вставь слово' };
 // для домашки — упражнения, которые есть в каждой теме («Что на картинке?» — только там, где есть картинки-фразы)
 export const EX_ORDER = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak'];
 // упражнения экрана темы: обязательные (PARTS) и дополнительные
-export const lessonExercises = l => ['cards', ...PARTS, ...(l.pics?.length ? ['picture'] : [])];
+// «Вставь слово» (3-A) — с 3 класса, если из фраз урока получилось хотя бы 3 задания
+export const hasFill = l => l.grade >= 3 && fillItemsFor(l).length >= 3;
+export const lessonExercises = l => ['cards', ...PARTS, ...(l.pics?.length ? ['picture'] : []), ...(hasFill(l) ? ['fill'] : [])];
 export const GOAL_OPTIONS = [5, 10, 15, 20];
 
 export function lessonsOf(grade){ return LESSONS.filter(l => l.grade === grade).sort((a, b) => a.order - b.order); }

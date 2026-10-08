@@ -264,7 +264,7 @@ const LESSONS = [
       {en:'kitchen', ru:'кухня', emoji:'🍳'},
       {en:'bedroom', ru:'спальня', emoji:'🛌'},
       {en:'bathroom', ru:'ванная', emoji:'🚿'},
-      {en:'living room', ru:'гостиная', emoji:'📺'},
+      {en:'living room', ru:'гостиная', emoji:'🖼️'},
       {en:'radio', ru:'радио', emoji:'📻'},
     ],
     phrases:[
@@ -871,7 +871,7 @@ const LESSONS = [
 
   // ============ 3 КЛАСС ============
   {
-    id:'g3-school', grade:3, order:1, guide:'owl', module:'M1', topics:['g3-school'], cefr:'Pre-A1',
+    id:'g3-school', grade:3, order:2, guide:'owl', module:'M1', topics:['g3-school'], cefr:'Pre-A1',
     title:'School Days!', subtitle:'Школа и уроки',
     intro:'Prof. Owl расскажет о школе. Ты — ученик третьего класса, самое время!',
     words:[
@@ -887,6 +887,9 @@ const LESSONS = [
       {en:'eraser', ru:'ластик', emoji:'🩹'},
       {en:'crayon', ru:'мелок', emoji:'🖍️'},
       {en:'lesson', ru:'урок', emoji:'📝'},
+      {en:'uniform', ru:'школьная форма', emoji:'👔'},
+      {en:'library', ru:'библиотека', emoji:'🏛️'},
+      {en:'break', ru:'перемена', emoji:'🔔'},
     ],
     phrases:[
       'Open your book, please.',
@@ -898,13 +901,14 @@ const LESSONS = [
       {skill:'G2-02', q:'I ___ a red pen.', a:'have', hint:'У меня есть.', options:['have','has','am','is']},
       {skill:'G2-02', q:'She ___ a big bag.', a:'has', hint:'She — has.', options:['have','has','is','are']},
     ],
-    reading:{title:'At School', text:'I go to school every day. I have many friends there. My teacher is kind. In my bag I have a book, a pen and a ruler.', questions:[
+    reading:{title:'At School', text:'I go to school every day. I have many friends there. My teacher is kind. In my bag I have a book, a pen and a ruler. I wear a school uniform. At the break we play in the playground, and after lessons I often go to the library. My favourite lesson is English because we sing songs and play games.', questions:[
       {q:'How is the teacher?', a:'kind', options:['funny','sad','kind']},
       {q:'What is in the bag?', a:'a book, a pen and a ruler', options:['a doll','a book, a pen and a ruler','only a ball']},
+      {q:'Where does the child go after lessons?', a:'to the library', options:['to the library','to the shop','to the park']},
     ]},
   },
   {
-    id:'g3-family-moments', grade:3, order:2, guide:'harlow', module:'M2', topics:['g3-family'], cefr:'Pre-A1',
+    id:'g3-family-moments', grade:3, order:4, guide:'harlow', module:'M2', topics:['g3-family'], cefr:'Pre-A1',
     title:'Family Moments!', subtitle:'Семейные моменты',
     intro:'Расскажем о семье и близких людях. Больше слов, больше историй.',
     words:[
@@ -918,6 +922,8 @@ const LESSONS = [
       {en:'aunt', ru:'тётя', emoji:'👩‍🦰'},
       {en:'cousin', ru:'двоюродный брат/сестра', emoji:'🧒'},
       {en:'baby', ru:'малыш', emoji:'👶'},
+      {en:'parents', ru:'родители', emoji:'👪'},
+      {en:'family tree', ru:'семейное древо', emoji:'🌳'},
     ],
     phrases:[
       'This is my mother. Her name is Anna.',
@@ -929,13 +935,14 @@ const LESSONS = [
       {skill:'G3-11', q:'This is my mother. ___ name is Anna.', a:'Her', hint:'Мама — she — her.', options:['His','Her','My','Your']},
       {skill:'G3-11', q:'This is my father. ___ name is Peter.', a:'His', hint:'Папа — he — his.', options:['Her','His','Its','Their']},
     ],
-    reading:{title:'A Big Family', text:'My family is big. I have a mother, a father, one brother and two sisters. My grandma lives with us. She is very kind and she cooks tasty food.', questions:[
+    reading:{title:'A Big Family', text:'My family is big. I have a mother, a father, one brother and two sisters. My grandma lives with us. She is very kind and she cooks tasty food. My grandpa is funny. He tells us stories about his family tree. On Sunday my uncle, my aunt and my cousin come to visit us, and we all have dinner together.', questions:[
       {q:'How many sisters?', a:'two', options:['one','two','three']},
       {q:'Who cooks tasty food?', a:'grandma', options:['mother','grandma','sister']},
+      {q:'Who comes on Sunday?', a:'uncle, aunt and cousin', options:['uncle, aunt and cousin','friends from school','the teacher']},
     ]},
   },
   {
-    id:'g3-food', grade:3, order:3, guide:'harlow', module:'M3', topics:['g3-food'], cefr:'Pre-A1',
+    id:'g3-food', grade:3, order:6, guide:'harlow', module:'M3', topics:['g3-food'], cefr:'Pre-A1',
     title:'All the Things I Like!', subtitle:'Еда и вкусы',
     intro:'Готовим обед по-английски! Что ты любишь?',
     words:[
@@ -951,6 +958,10 @@ const LESSONS = [
       {en:'ice cream', ru:'мороженое', emoji:'🍦'},
       {en:'orange', ru:'апельсин', emoji:'🍊'},
       {en:'apple', ru:'яблоко', emoji:'🍎'},
+      {en:'jelly', ru:'желе', emoji:'🍮'},
+      {en:'lemonade', ru:'лимонад', emoji:'🍋'},
+      {en:'chocolate', ru:'шоколад', emoji:'🍫'},
+      {en:'vegetables', ru:'овощи', emoji:'🥦'},
     ],
     phrases:[
       'I like pizza very much.',
@@ -962,13 +973,14 @@ const LESSONS = [
       {skill:'G3-01', q:'I ___ like milk.', a:'don\u2019t', hint:'Отрицание в 1-м лице.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
       {skill:'G3-01', q:'She ___ like fish.', a:'doesn\u2019t', hint:'She — doesn\u2019t.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
     ],
-    reading:{title:'My Favourite Food', text:'I like pizza and chicken very much. For breakfast I eat an egg and drink milk. My sister does not like eggs, but she loves ice cream.', questions:[
+    reading:{title:'My Favourite Food', text:'I like pizza and chicken very much. For breakfast I eat an egg and drink milk. My sister does not like eggs, but she loves ice cream. On Saturday we go to a café. Dad likes chips and sausages, and Mum likes vegetables. I always have chocolate ice cream and a glass of lemonade. Yummy! What is your favourite food?', questions:[
       {q:'What does the boy eat for breakfast?', a:'an egg', options:['a pizza','an egg','a burger']},
       {q:'What does the sister love?', a:'ice cream', options:['milk','ice cream','eggs']},
+      {q:'Where do they go on Saturday?', a:'to a café', options:['to a café','to the zoo','to school']},
     ]},
   },
   {
-    id:'g3-toys3', grade:3, order:4, guide:'max', module:'M4', topics:['g3-toys'], cefr:'Pre-A1',
+    id:'g3-toys3', grade:3, order:8, guide:'max', module:'M4', topics:['g3-toys'], cefr:'Pre-A1',
     title:'Come in and Play!', subtitle:'Играем: игрушки и предлоги',
     intro:'В крафт-мире всё лежит по местам. Где твой любимый мяч?',
     words:[
@@ -980,6 +992,12 @@ const LESSONS = [
       {en:'robot', ru:'робот', emoji:'🤖'},
       {en:'puzzle', ru:'пазл', emoji:'🧩'},
       {en:'guitar', ru:'гитара', emoji:'🎸'},
+      {en:'musical box', ru:'музыкальная шкатулка', emoji:'🎶'},
+      {en:'tea set', ru:'чайный сервиз', emoji:'🫖'},
+      {en:'rocking horse', ru:'лошадка-качалка', emoji:'🐴'},
+      {en:'train', ru:'поезд', emoji:'🚂'},
+      {en:'teddy bear', ru:'плюшевый мишка', emoji:'🧸'},
+      {en:'toy soldier', ru:'игрушечный солдатик', emoji:'💂'},
     ],
     phrases:[
       'The ball is under the bed.',
@@ -991,13 +1009,14 @@ const LESSONS = [
       {skill:'G3-07', q:'The ball is ___ the bed.', a:'under', hint:'Под.', options:['on','under','in','next to']},
       {skill:'G3-07', q:'The robot is ___ the table.', a:'on', hint:'На.', options:['under','on','in','behind']},
     ],
-    reading:{title:'My Toys', text:'My toys are everywhere! The ball is under the bed. The robot is on the desk. The doll is in the box. My cat is next to my toys — she plays too!', questions:[
+    reading:{title:'My Toys', text:'My toys are everywhere! The ball is under the bed. The robot is on the desk. The doll is in the box. My cat is next to my toys — she plays too! On the shelf there is a musical box and a tea set. My favourite toy is my old rocking horse. Grandpa made it for me, and it is very beautiful.', questions:[
       {q:'Where is the doll?', a:'in the box', options:['on the bed','in the box','under the desk']},
       {q:'Who plays with the toys?', a:'the cat', options:['the dog','the cat','a bird']},
+      {q:'Who made the rocking horse?', a:'Grandpa', options:['Mum','Grandpa','the cat']},
     ]},
   },
   {
-    id:'g3-animals3', grade:3, order:5, guide:'luna', module:'M5', topics:['g3-pet', 'g3-animals'], cefr:'A1',
+    id:'g3-animals3', grade:3, order:9, guide:'luna', module:'M5', topics:['g3-pet', 'g3-animals'], cefr:'A1',
     title:'Furry Friends!', subtitle:'Пушистые друзья и части тела',
     intro:'Nurse Luna покажет, из каких частей состоит животное!',
     words:[
@@ -1010,24 +1029,32 @@ const LESSONS = [
       {en:'body', ru:'тело', emoji:'🧍'},
       {en:'mouth', ru:'рот', emoji:'👄'},
       {en:'wings', ru:'крылья', emoji:'🕊️'},
+      {en:'tooth', ru:'зуб', emoji:'🦷'},
+      {en:'foot', ru:'ступня, нога', emoji:'🦶'},
+      {en:'arm', ru:'рука', emoji:'💪'},
+      {en:'neck', ru:'шея', emoji:'🦒'},
     ],
     phrases:[
       'The cat has a long tail.',
       'The rabbit has big ears.',
       'The bird has small wings.',
       'How many legs? Four legs!',
+      'The dog has got a long tail.',
+      'My cat has got green eyes.',
+      'A giraffe has got a long neck.',
     ],
     grammar:[
       {skill:'G2-02', q:'The cat ___ a long tail.', a:'has', hint:'It — has.', options:['have','has','is','are']},
       {skill:'G2-02', q:'Rabbits ___ big ears.', a:'have', hint:'Множ. число — have.', options:['have','has','is','are']},
     ],
-    reading:{title:'Funny Animals', text:'A dog has four legs and a tail. A bird has two wings and a small beak. A rabbit has big ears and can jump very high. Animals are funny!', questions:[
+    reading:{title:'Funny Animals', text:'A dog has four legs and a tail. A bird has two wings and a small beak. A rabbit has big ears and can jump very high. Animals are funny! A giraffe has got a very long neck and can eat leaves from tall trees. A crocodile has got a long tail and a lot of teeth. My little brother likes giraffes best.', questions:[
       {q:'How many legs has a dog?', a:'four', options:['two','four','six']},
       {q:'What can a rabbit do?', a:'jump high', options:['fly','swim','jump high']},
+      {q:'What can a giraffe eat?', a:'leaves from tall trees', options:['fish','leaves from tall trees','chocolate']},
     ]},
   },
   {
-    id:'g3-home3', grade:3, order:6, guide:'max', module:'M6', topics:['g3-home'], cefr:'A1',
+    id:'g3-home3', grade:3, order:11, guide:'max', module:'M6', topics:['g3-home'], cefr:'A1',
     title:'Home, Sweet Home!', subtitle:'Дом милый дом',
     intro:'Miner Max покажет, где в доме сокровища и предлоги места.',
     words:[
@@ -1041,6 +1068,10 @@ const LESSONS = [
       {en:'mirror', ru:'зеркало', emoji:'🪞'},
       {en:'TV', ru:'телевизор', emoji:'📺'},
       {en:'computer', ru:'компьютер', emoji:'💻'},
+      {en:'cupboard', ru:'шкаф для посуды', emoji:'🗄️'},
+      {en:'cooker', ru:'плита', emoji:'🔥'},
+      {en:'armchair', ru:'кресло', emoji:'💺'},
+      {en:'living room', ru:'гостиная', emoji:'🖼️'},
     ],
     phrases:[
       'There is a sofa in the living room.',
@@ -1052,13 +1083,14 @@ const LESSONS = [
       {skill:'G2-08', q:'There ___ a sofa in the room.', a:'is', hint:'Единственное число — is.', options:['is','are','am','be']},
       {skill:'G2-08', q:'There ___ two windows.', a:'are', hint:'Множественное — are.', options:['is','are','am','be']},
     ],
-    reading:{title:'My House', text:'My house has four rooms. In the kitchen there is a big fridge. In the bedroom there are two beds — one for me and one for my sister. My cat sleeps on the sofa.', questions:[
+    reading:{title:'My House', text:'My house has four rooms. In the kitchen there is a big fridge. In the bedroom there are two beds — one for me and one for my sister. My cat sleeps on the sofa. The living room is big. There is an armchair, a TV and a computer there. In the evening my family watches cartoons together. I love my home!', questions:[
       {q:'How many rooms?', a:'four', options:['two','three','four']},
       {q:'Where does the cat sleep?', a:'on the sofa', options:['under the bed','on the sofa','in the fridge']},
+      {q:'What does the family do in the evening?', a:'watches cartoons', options:['watches cartoons','plays football','goes to bed']},
     ]},
   },
   {
-    id:'g3-dayoff', grade:3, order:7, guide:'harlow', module:'M7', topics:['g3-hobbies', 'g3-holidays'], cefr:'A1',
+    id:'g3-dayoff', grade:3, order:13, guide:'harlow', module:'M7', topics:['g3-hobbies', 'g3-holidays'], cefr:'A1',
     title:'A Day Off!', subtitle:'Выходной и что мы делаем',
     intro:'Выходной! Что делают ребята сейчас? Present Continuous — то, что происходит прямо сейчас.',
     words:[
@@ -1071,24 +1103,35 @@ const LESSONS = [
       {en:'write', ru:'писать', emoji:'✍️'},
       {en:'draw', ru:'рисовать', emoji:'🎨'},
       {en:'ride', ru:'кататься', emoji:'🚴'},
+      {en:'sandcastle', ru:'замок из песка', emoji:'🏖️'},
+      {en:'piano', ru:'пианино', emoji:'🎹'},
+      {en:'basketball', ru:'баскетбол', emoji:'🏀'},
+      {en:'picnic', ru:'пикник', emoji:'🧺'},
+      {en:'hot dog', ru:'хот-дог', emoji:'🌭'},
+      {en:'kite', ru:'воздушный змей', emoji:'🪁'},
     ],
     phrases:[
       'I am running in the park.',
       'She is singing a song.',
       'They are playing football.',
       'Look! The boy is riding a bike.',
+      'We play basketball in the park.',
+      'Let’s have a picnic!',
+      'I can play the piano.',
+      'My brother likes to fly a kite.',
     ],
     grammar:[
       {skill:'G3-08', q:'She ___ singing now.', a:'is', hint:'Present Continuous: is + -ing.', options:['is','are','am','be']},
       {skill:'G3-08', q:'They ___ playing football.', a:'are', hint:'They — are.', options:['is','are','am','be']},
     ],
-    reading:{title:'In the Park', text:'It is Sunday. We are in the park. Tom is running with his dog. Kate is riding a bike. Mum is reading a book on the bench. It is a nice day off!', questions:[
+    reading:{title:'In the Park', text:'It is Sunday. We are in the park. Tom is running with his dog. Kate is riding a bike. Mum is reading a book on the bench. It is a nice day off! Dad is flying a kite with my little sister. I am making a sandcastle near the lake. At one o’clock we have a picnic with sandwiches and hot dogs.', questions:[
       {q:'What is Kate doing?', a:'riding a bike', options:['running','riding a bike','reading']},
       {q:'What is mum doing?', a:'reading a book', options:['sleeping','reading a book','singing']},
+      {q:'What are they eating at the picnic?', a:'sandwiches and hot dogs', options:['soup','sandwiches and hot dogs','pizza']},
     ]},
   },
   {
-    id:'g3-daybyday', grade:3, order:8, guide:'owl', module:'M8', topics:['g3-myday'], cefr:'A1',
+    id:'g3-daybyday', grade:3, order:15, guide:'owl', module:'M8', topics:['g3-myday'], cefr:'A1',
     title:'Day by Day!', subtitle:'Каждый день: время и распорядок',
     intro:'Что ты делаешь каждый день? Prof. Owl научит говорить о времени.',
     words:[
@@ -1101,6 +1144,13 @@ const LESSONS = [
       {en:'Monday', ru:'понедельник', emoji:'1️⃣'},
       {en:'Friday', ru:'пятница', emoji:'5️⃣'},
       {en:'Sunday', ru:'воскресенье', emoji:'7️⃣'},
+      {en:'Tuesday', ru:'вторник', emoji:'2️⃣'},
+      {en:'Wednesday', ru:'среда', emoji:'3️⃣'},
+      {en:'Thursday', ru:'четверг', emoji:'4️⃣'},
+      {en:'Saturday', ru:'суббота', emoji:'6️⃣'},
+      {en:'afternoon', ru:'день (после обеда)', emoji:'🌤️'},
+      {en:'shower', ru:'душ', emoji:'🚿'},
+      {en:'clock', ru:'часы', emoji:'⏰'},
     ],
     phrases:[
       'I have breakfast in the morning.',
@@ -1112,11 +1162,340 @@ const LESSONS = [
       {skill:'G3-09', q:'I get up ___ seven o\u2019clock.', a:'at', hint:'Точное время — at.', options:['on','in','at','of']},
       {skill:'G3-09', q:'I go to school ___ Monday.', a:'on', hint:'Дни недели — on.', options:['at','in','on','of']},
     ],
-    reading:{title:'My Day', text:'I get up at seven o\u2019clock. I have breakfast and go to school at eight. After school I do my homework and play with my friends. In the evening I read a book. I go to bed at nine.', questions:[
+    reading:{title:'My Day', text:'I get up at seven o\u2019clock. I have breakfast and go to school at eight. After school I do my homework and play with my friends. In the evening I read a book. I go to bed at nine. On Tuesday and Thursday I go to the swimming pool in the afternoon. On Saturday I visit my grandma. On Sunday I have a shower, have breakfast and sleep a lot!', questions:[
       {q:'When does the boy go to school?', a:'at eight', options:['at seven','at eight','at nine']},
       {q:'What does he do in the evening?', a:'read a book', options:['play football','read a book','sleep']},
+      {q:'When does the child visit Grandma?', a:'on Saturday', options:['on Monday','on Saturday','on Friday']},
     ]},
   },
+  {
+    id:'g3-friends', grade:3, order:1, guide:'harlow', module:'Starter', topics:['g3-friends'], cefr:'Pre-A1',
+    title:'Welcome Back!', subtitle:'Мои друзья и мой город',
+    intro:'Снова в школу! Встречаем друзей, рассказываем про лето и узнаём, как сказать адрес и номер телефона.',
+    words:[
+      {en:'best friend', ru:'лучший друг', emoji:'🤝'},
+      {en:'neighbour', ru:'сосед', emoji:'🏘️'},
+      {en:'address', ru:'адрес', emoji:'📮'},
+      {en:'phone number', ru:'номер телефона', emoji:'📱'},
+      {en:'photo', ru:'фотография', emoji:'📷'},
+      {en:'together', ru:'вместе', emoji:'👫'},
+      {en:'street', ru:'улица', emoji:'🛣️'},
+      {en:'city', ru:'город', emoji:'🏙️'},
+      {en:'kind', ru:'добрый', emoji:'💗'},
+      {en:'clever', ru:'умный', emoji:'🧠'},
+      {en:'funny', ru:'смешной', emoji:'😄'},
+      {en:'seaside', ru:'море, морское побережье', emoji:'🌊'},
+      {en:'camp', ru:'лагерь', emoji:'⛺'},
+    ],
+    phrases:[
+      'Welcome back, everyone!',
+      'This is my best friend Kate.',
+      'What is your phone number?',
+      'We play together every day.',
+      'I live in Green Street.',
+    ],
+    grammar:[
+      {q:'This is Kate. ___ is my best friend.', a:'She', hint:'Кейт — девочка.', options:['She','He','It','They'], skill:'G2-01'},
+      {q:'We ___ friends.', a:'are', hint:'Мы — are.', options:['are','is','am','be'], skill:'G2-01'},
+      {q:'Kate ___ in Green Street.', a:'lives', hint:'Она — добавь -s.', options:['lives','live','living','is live'], skill:'G3-01'},
+    ],
+    reading:{title:'My Best Friend', text:'My name is Sasha. My best friend is Kate. She is my neighbour, and we live in Green Street. Kate is kind and funny. In summer we were at camp together. We swam in the sea and took a lot of photos. Now we are back at school. Kate has got a new phone number, and I write it in my notebook.', questions:[
+      {q:'Who is Sasha’s best friend?', a:'Kate', options:['Kate','Anna','Lulu']},
+      {q:'Where do they live?', a:'in Green Street', options:['in Green Street','in London','in a village']},
+      {q:'Where were they in summer?', a:'at camp', options:['at camp','at school','at the zoo']},
+    ]},
+  },
+  {
+    id:'g3-subjects', grade:3, order:3, guide:'owl', module:'M1', topics:['g3-school'], cefr:'Pre-A1',
+    title:'My Favourite Subject!', subtitle:'Школьные предметы и фигуры',
+    intro:'Какой у тебя любимый урок? Математика, рисование или физкультура? Выучим названия школьных предметов.',
+    words:[
+      {en:'English', ru:'английский язык', emoji:'🇬🇧'},
+      {en:'Maths', ru:'математика', emoji:'➕'},
+      {en:'Art', ru:'рисование', emoji:'🎨'},
+      {en:'Music', ru:'музыка', emoji:'🎼'},
+      {en:'PE', ru:'физкультура', emoji:'🤸'},
+      {en:'Science', ru:'естествознание', emoji:'🔬'},
+      {en:'History', ru:'история', emoji:'🏺'},
+      {en:'Geography', ru:'география', emoji:'🌍'},
+      {en:'subject', ru:'школьный предмет', emoji:'📚'},
+      {en:'library', ru:'библиотека', emoji:'🏛️'},
+      {en:'circle', ru:'круг', emoji:'⭕'},
+      {en:'square', ru:'квадрат', emoji:'🟦'},
+      {en:'triangle', ru:'треугольник', emoji:'🔺'},
+    ],
+    phrases:[
+      'What is your favourite subject?',
+      'My favourite subject is Art.',
+      'We have Maths on Monday.',
+      'I like Music and PE.',
+    ],
+    grammar:[
+      {q:'What ___ your favourite subject?', a:'is', hint:'Один предмет — is.', options:['is','are','am','do'], skill:'G2-01'},
+      {q:'We ___ got English today.', a:'have', hint:'Мы — have got.', options:['have','has','are','is'], skill:'G2-02'},
+      {q:'Draw ___ triangle, please.', a:'a', hint:'Треугольник начинается с согласной t.', options:['a','an','the','—'], skill:'G3-03'},
+    ],
+    reading:{title:'A Busy Monday', text:'On Monday Tom has got four lessons. First he has got English. Then he has got Maths, and he counts to one hundred. After the break Tom has got Art. He draws a circle, a square and a triangle. The last lesson is PE. Tom runs and jumps. His favourite subject is PE, but his sister likes the library and History.', questions:[
+      {q:'What is Tom’s first lesson?', a:'English', options:['English','Art','PE']},
+      {q:'What does Tom draw?', a:'a circle, a square and a triangle', options:['a circle, a square and a triangle','a cat','a house']},
+      {q:'What is Tom’s favourite subject?', a:'PE', options:['PE','Maths','History']},
+    ]},
+  },
+  {
+    id:'g3-birthday', grade:3, order:5, guide:'robo', module:'M2', topics:['g3-birthday'], cefr:'Pre-A1',
+    title:'Birthday Party!', subtitle:'День рождения: гости и приглашения',
+    intro:'Устраиваем праздник! Научимся приглашать гостей, благодарить за подарки и загадывать желание.',
+    words:[
+      {en:'party', ru:'праздник, вечеринка', emoji:'🥳'},
+      {en:'guest', ru:'гость', emoji:'🙋'},
+      {en:'invitation', ru:'приглашение', emoji:'✉️'},
+      {en:'birthday cake', ru:'праздничный торт', emoji:'🎂'},
+      {en:'party hat', ru:'праздничный колпак', emoji:'🎉'},
+      {en:'gift', ru:'подарок', emoji:'🎁'},
+      {en:'wish', ru:'желание', emoji:'🌠'},
+      {en:'surprise', ru:'сюрприз', emoji:'😲'},
+      {en:'games', ru:'игры', emoji:'🎲'},
+      {en:'balloons', ru:'воздушные шары', emoji:'🎈'},
+      {en:'candles', ru:'свечи', emoji:'🕯️'},
+      {en:'lemonade', ru:'лимонад', emoji:'🍋'},
+    ],
+    phrases:[
+      'Come to my party!',
+      'Thank you for the gift.',
+      'Make a wish!',
+      'How old are you today?',
+    ],
+    grammar:[
+      {q:'She ___ ten today.', a:'is', hint:'Ей — is.', options:['is','are','am','has'], skill:'G2-01'},
+      {q:'Look at the ___! There are nine on the cake.', a:'candles', hint:'Свечей много — candles.', options:['candles','candle','candlees','a candle'], skill:'G2-04'},
+      {q:'This is ___ gift. — It is Ann’s.', a:'Ann’s', hint:'Чей? Аннин — Ann’s.', options:['Ann’s','Ann','of Ann','Anns'], skill:'G3-05'},
+    ],
+    reading:{title:'Lulu’s Party', text:'Today is Lulu’s birthday. She is nine. Lulu sends invitations to her friends. At four o’clock the guests come. They have got gifts and balloons. Lulu’s mum brings a big birthday cake with nine candles. "Make a wish!" says Mum. Lulu closes her eyes and blows out the candles. Then the children play games and drink lemonade. It is a great party!', questions:[
+      {q:'How old is Lulu?', a:'nine', options:['seven','nine','ten']},
+      {q:'Who brings the cake?', a:'Lulu’s mum', options:['Lulu’s mum','the guests','Lulu’s dad']},
+      {q:'What do the children drink?', a:'lemonade', options:['milk','lemonade','tea']},
+    ]},
+  },
+  {
+    id:'g3-lunchbox', grade:3, order:7, guide:'luna', module:'M3', topics:['g3-food'], cefr:'Pre-A1',
+    title:'My Lunch Box!', subtitle:'Что в ланч-боксе: some и any',
+    intro:'Собираем ланч-бокс в школу. Узнаем, как сказать «немного» и «нисколько» — some и any.',
+    words:[
+      {en:'lunch box', ru:'ланч-бокс', emoji:'🍱'},
+      {en:'menu', ru:'меню', emoji:'📋'},
+      {en:'potatoes', ru:'картошка', emoji:'🥔'},
+      {en:'pasta', ru:'макароны', emoji:'🍝'},
+      {en:'carrots', ru:'морковь', emoji:'🥕'},
+      {en:'rice', ru:'рис', emoji:'🍚'},
+      {en:'popcorn', ru:'попкорн', emoji:'🍿'},
+      {en:'biscuits', ru:'печенье', emoji:'🍪'},
+      {en:'cake', ru:'торт, кекс', emoji:'🧁'},
+      {en:'vegetables', ru:'овощи', emoji:'🥦'},
+      {en:'water', ru:'вода', emoji:'💧'},
+      {en:'shopping list', ru:'список покупок', emoji:'📝'},
+      {en:'juice', ru:'сок', emoji:'🧃'},
+    ],
+    phrases:[
+      'Can I have some pasta, please?',
+      'Here you are.',
+      'Have you got any carrots?',
+      'I need some water.',
+    ],
+    grammar:[
+      {q:'I’ve got ___ biscuits.', a:'some', hint:'В утвердительном предложении — some.', options:['some','any','a','an'], skill:'G3-02'},
+      {q:'Have you got ___ juice?', a:'any', hint:'В вопросе — any.', options:['any','some','a','many'], skill:'G3-02'},
+      {q:'He ___ like rice.', a:'doesn’t', hint:'Он не любит — doesn’t.', options:['doesn’t','don’t','isn’t','not'], skill:'G3-01'},
+    ],
+    reading:{title:'What’s in the Lunch Box?', text:'Every morning Mum makes a lunch box for Ben. Today there is some pasta and some carrots in it. There are three biscuits too. Ben looks in his lunch box. "Have we got any juice?" he asks. "No, we haven’t got any juice," says Mum, "but here is some water." Mum writes juice on the shopping list. Ben puts his lunch box in his bag and goes to school.', questions:[
+      {q:'Who makes the lunch box?', a:'Mum', options:['Mum','Dad','Ben']},
+      {q:'What is in the lunch box?', a:'pasta, carrots and biscuits', options:['pasta, carrots and biscuits','pizza and chips','rice and fish']},
+      {q:'What does Mum write on the shopping list?', a:'juice', options:['water','juice','cake']},
+    ]},
+  },
+  {
+    id:'g3-wild', grade:3, order:10, guide:'luna', module:'M5', topics:['g3-animals'], cefr:'A1',
+    title:'Wild and Farm Animals!', subtitle:'Дикие и домашние животные, числа до 100',
+    intro:'На ферме живут коровы и овцы, а в джунглях — львы и обезьяны. Заодно научимся считать до ста.',
+    words:[
+      {en:'lion', ru:'лев', emoji:'🦁'},
+      {en:'monkey', ru:'обезьяна', emoji:'🐒'},
+      {en:'tiger', ru:'тигр', emoji:'🐯'},
+      {en:'giraffe', ru:'жираф', emoji:'🦒'},
+      {en:'crocodile', ru:'крокодил', emoji:'🐊'},
+      {en:'parrot', ru:'попугай', emoji:'🦜'},
+      {en:'cow', ru:'корова', emoji:'🐄'},
+      {en:'sheep', ru:'овца, овцы', emoji:'🐑'},
+      {en:'pig', ru:'свинья', emoji:'🐖'},
+      {en:'goat', ru:'коза', emoji:'🐐'},
+      {en:'farm', ru:'ферма', emoji:'🚜'},
+      {en:'twenty', ru:'двадцать', emoji:'2️⃣0️⃣'},
+      {en:'thirty', ru:'тридцать', emoji:'3️⃣0️⃣'},
+      {en:'fifty', ru:'пятьдесят', emoji:'5️⃣0️⃣'},
+      {en:'hundred', ru:'сто', emoji:'💯'},
+    ],
+    phrases:[
+      'A monkey can climb trees.',
+      'There are twenty cows on the farm.',
+      'The giraffe has got a long neck.',
+      'One sheep, two sheep!',
+    ],
+    grammar:[
+      {q:'One sheep, five ___.', a:'sheep', hint:'Это слово не меняется!', options:['sheep','sheeps','sheepes','a sheep'], skill:'G3-06'},
+      {q:'A parrot ___ talk.', a:'can', hint:'Попугай умеет говорить.', options:['can','cans','is','has'], skill:'G2-03'},
+      {q:'There ___ fifty goats on the farm.', a:'are', hint:'Коз много — there are.', options:['are','is','am','has'], skill:'G2-08'},
+    ],
+    reading:{title:'Uncle Bob’s Farm', text:'Uncle Bob has got a big farm. There are thirty cows, twenty sheep and five pigs on his farm. There is a goat too. Its name is Billy, and it eats everything! On Sunday Uncle Bob takes us to the zoo. We see a lion, two tigers and a giraffe with a very long neck. A green parrot says "Hello!" to us. It is a funny day.', questions:[
+      {q:'How many cows are on the farm?', a:'thirty', options:['twenty','thirty','five']},
+      {q:'What is the goat’s name?', a:'Billy', options:['Bob','Billy','Rex']},
+      {q:'Who says "Hello!"?', a:'a parrot', options:['a lion','a parrot','a giraffe']},
+    ]},
+  },
+  {
+    id:'g3-tale', grade:3, order:12, guide:'owl', module:'M6', topics:['g3-tale'], cefr:'A1',
+    title:'The Toy Soldier!', subtitle:'Сказка: что было однажды (was, went, saw)',
+    intro:'Жил-был игрушечный солдатик… В сказках всё происходит в прошлом. Учимся узнавать слова «был», «пошёл», «увидел».',
+    words:[
+      {en:'once upon a time', ru:'жили-были, однажды', emoji:'📜'},
+      {en:'fairy tale', ru:'сказка', emoji:'📖'},
+      {en:'toy soldier', ru:'игрушечный солдатик', emoji:'💂'},
+      {en:'ballerina', ru:'балерина', emoji:'🩰'},
+      {en:'shelf', ru:'полка', emoji:'🗄️'},
+      {en:'was', ru:'был, была (is в прошлом)', emoji:'⏪'},
+      {en:'lived', ru:'жил (live в прошлом)', emoji:'🏠'},
+      {en:'went', ru:'пошёл (go в прошлом)', emoji:'🚶'},
+      {en:'saw', ru:'увидел (see в прошлом)', emoji:'👀'},
+      {en:'said', ru:'сказал (say в прошлом)', emoji:'💬'},
+      {en:'fell', ru:'упал (fall в прошлом)', emoji:'⬇️'},
+      {en:'brave', ru:'храбрый', emoji:'🦸'},
+      {en:'happy', ru:'счастливый', emoji:'😊'},
+    ],
+    phrases:[
+      'Once upon a time there was a toy soldier.',
+      'He lived on a shelf.',
+      'He saw a beautiful ballerina.',
+      'They were very happy.',
+    ],
+    grammar:[
+      {q:'Yesterday he ___ to the park. (go)', a:'went', hint:'go в прошлом — went.', options:['went','goed','go','goes'], skill:'G3-10'},
+      {q:'Once upon a time there ___ a king.', a:'was', hint:'is в прошлом — was.', options:['was','is','were','be'], skill:'G3-10'},
+      {q:'She ___ a big dog. (see)', a:'saw', hint:'see в прошлом — saw.', options:['saw','seed','see','sees'], skill:'G3-10'},
+    ],
+    reading:{title:'The Brave Toy Soldier', text:'Once upon a time there was a little toy soldier. He lived on a shelf in a playroom. One day he saw a beautiful ballerina in a toy castle. "She is lovely," he said. Then a big wind came and the soldier fell out of the window! He was in the street. A boy found him and brought him home. The toy soldier went back to his shelf, and he and the ballerina were happy.', questions:[
+      {q:'Where did the toy soldier live?', a:'on a shelf', options:['on a shelf','in a box','in a castle']},
+      {q:'Who did he see?', a:'a ballerina', options:['a king','a ballerina','a dragon']},
+      {q:'Who found the soldier?', a:'a boy', options:['a girl','a boy','a cat']},
+    ]},
+  },
+  {
+    id:'g3-weather', grade:3, order:14, guide:'robo', module:'M7', topics:['g3-weather'], cefr:'A1',
+    title:'Months and Weather!', subtitle:'Месяцы, времена года и погода',
+    intro:'В году двенадцать месяцев! Выучим их названия и научимся рассказывать о погоде в любое время года.',
+    words:[
+      {en:'January', ru:'январь', emoji:'❄️'},
+      {en:'February', ru:'февраль', emoji:'💝'},
+      {en:'March', ru:'март', emoji:'🌷'},
+      {en:'April', ru:'апрель', emoji:'☔'},
+      {en:'May', ru:'май', emoji:'🌼'},
+      {en:'June', ru:'июнь', emoji:'🌞'},
+      {en:'July', ru:'июль', emoji:'🏖️'},
+      {en:'August', ru:'август', emoji:'🍉'},
+      {en:'September', ru:'сентябрь', emoji:'🏫'},
+      {en:'October', ru:'октябрь', emoji:'🎃'},
+      {en:'November', ru:'ноябрь', emoji:'🍂'},
+      {en:'December', ru:'декабрь', emoji:'🎄'},
+      {en:'rainy', ru:'дождливый', emoji:'🌧️'},
+      {en:'snowy', ru:'снежный', emoji:'🌨️'},
+      {en:'cloudy', ru:'облачный', emoji:'⛅'},
+    ],
+    phrases:[
+      'My birthday is in May.',
+      'It is cold and snowy in January.',
+      'It is often rainy in April.',
+      'School starts in September.',
+    ],
+    grammar:[
+      {q:'My birthday is ___ June.', a:'in', hint:'С месяцами — in.', options:['in','on','at','of'], skill:'G3-09'},
+      {q:'It ___ raining now.', a:'is', hint:'Сейчас идёт дождь — it is raining.', options:['is','are','am','be'], skill:'G3-08'},
+      {q:'It ___ snows in December.', a:'often', hint:'Часто — often.', options:['often','now','yesterday','tomorrow'], skill:'G3-01'},
+    ],
+    reading:{title:'A Year with Max', text:'Max likes all the seasons. In January it is cold and snowy, and he skis in the park. In April it is often rainy, so he wears his boots. In June, July and August it is hot and sunny. Max goes to the seaside with his family. In September he goes back to school. In October it is cloudy and windy, and Max flies his kite. His favourite month is December because of the New Year!', questions:[
+      {q:'What does Max do in January?', a:'he skis', options:['he skis','he swims','he flies a kite']},
+      {q:'Where does Max go in summer?', a:'to the seaside', options:['to school','to the seaside','to the zoo']},
+      {q:'What is his favourite month?', a:'December', options:['May','September','December']},
+    ]},
+  },
+  {
+    id:'g3-countries', grade:3, order:16, guide:'harlow', module:'M8', topics:['g3-countries'], cefr:'A1',
+    title:'Big Ben and the Kremlin!', subtitle:'Страны, столицы, достопримечательности',
+    intro:'Отправляемся в путешествие по двум столицам — Москве и Лондону. Узнаем, какие там есть достопримечательности.',
+    words:[
+      {en:'capital', ru:'столица', emoji:'🏙️'},
+      {en:'the Kremlin', ru:'Кремль', emoji:'🏰'},
+      {en:'Red Square', ru:'Красная площадь', emoji:'🟥'},
+      {en:'Tower Bridge', ru:'Тауэрский мост', emoji:'🌉'},
+      {en:'the Thames', ru:'Темза', emoji:'🌊'},
+      {en:'the Volga', ru:'Волга', emoji:'🏞️'},
+      {en:'Saint Petersburg', ru:'Санкт-Петербург', emoji:'⛲'},
+      {en:'England', ru:'Англия', emoji:'🏴'},
+      {en:'palace', ru:'дворец', emoji:'🏯'},
+      {en:'museum', ru:'музей', emoji:'🏛️'},
+      {en:'famous', ru:'знаменитый', emoji:'⭐'},
+      {en:'double-decker', ru:'двухэтажный автобус', emoji:'🚌'},
+      {en:'tourist', ru:'турист', emoji:'🧳'},
+    ],
+    phrases:[
+      'Moscow is the capital of Russia.',
+      'London is the capital of Great Britain.',
+      'The Thames is a river in London.',
+      'There is a famous museum in Saint Petersburg.',
+    ],
+    grammar:[
+      {q:'There ___ many famous museums in Moscow.', a:'are', hint:'Музеев много — there are.', options:['are','is','am','be'], skill:'G2-08'},
+      {q:'The Volga is ___ long river.', a:'a', hint:'Перед согласной — a.', options:['a','an','the','—'], skill:'G3-03'},
+      {q:'___ is Big Ben? — In London.', a:'Where', hint:'Где? — Where.', options:['Where','What','Who','How'], skill:'G2-01'},
+    ],
+    reading:{title:'Two Famous Cities', text:'Moscow is the capital of Russia. In the centre of Moscow there is Red Square and the Kremlin. Many tourists come to see them. London is the capital of Great Britain. The river Thames is in London. Tourists like Tower Bridge and Big Ben. They ride on red double-decker buses. Saint Petersburg is a famous city in Russia too. There are beautiful palaces and museums there.', questions:[
+      {q:'What is the capital of Russia?', a:'Moscow', options:['Moscow','London','Saint Petersburg']},
+      {q:'Which river is in London?', a:'the Thames', options:['the Volga','the Thames','the Neva']},
+      {q:'What do tourists ride in London?', a:'double-decker buses', options:['double-decker buses','bikes','horses']},
+    ]},
+  },
+  {
+    id:'g3-folklore', grade:3, order:17, guide:'harlow', module:'M8', topics:['g3-folklore'], cefr:'A1',
+    title:'Holidays and Traditions!', subtitle:'Праздники: Рождество, Пасха, Хэллоуин, 8 Марта',
+    intro:'В разных странах — разные праздники. Узнаем, как отмечают Рождество, Пасху, Хэллоуин и Мамин день.',
+    words:[
+      {en:'Christmas tree', ru:'рождественская ёлка', emoji:'🎄'},
+      {en:'Christmas pudding', ru:'рождественский пудинг', emoji:'🍮'},
+      {en:'carol', ru:'рождественская песня', emoji:'🎶'},
+      {en:'Easter', ru:'Пасха', emoji:'🐣'},
+      {en:'Easter egg', ru:'пасхальное яйцо', emoji:'🥚'},
+      {en:'Halloween', ru:'Хэллоуин', emoji:'🎃'},
+      {en:'costume', ru:'костюм', emoji:'🦹'},
+      {en:'ghost', ru:'привидение', emoji:'👻'},
+      {en:'Mother’s Day', ru:'День матери', emoji:'💐'},
+      {en:'card', ru:'открытка', emoji:'💌'},
+      {en:'tradition', ru:'традиция', emoji:'🪅'},
+      {en:'special', ru:'особенный', emoji:'✨'},
+    ],
+    phrases:[
+      'We decorate the Christmas tree.',
+      'Children paint Easter eggs.',
+      'On Halloween children wear costumes.',
+      'I make a card for my mum.',
+    ],
+    grammar:[
+      {q:'In Britain people ___ Christmas pudding.', a:'eat', hint:'Они — без -s.', options:['eat','eats','eating','is eat'], skill:'G3-01'},
+      {q:'Look! The children ___ painting eggs.', a:'are', hint:'Сейчас, они — are …ing.', options:['are','is','am','do'], skill:'G3-08'},
+      {q:'This is ___ card for my mum.', a:'a', hint:'Одна открытка — a.', options:['a','an','some','any'], skill:'G3-03'},
+    ],
+    reading:{title:'Special Days', text:'Every country has got its traditions. In Britain children sing carols at Christmas, and families eat Christmas pudding. At Easter children paint Easter eggs and look for chocolate eggs in the garden. On Halloween they wear funny costumes, and some children are ghosts! In Russia we have Mother’s Day too. I always make a special card and give flowers to my mum.', questions:[
+      {q:'What do British families eat at Christmas?', a:'Christmas pudding', options:['Christmas pudding','pizza','soup']},
+      {q:'What do children paint at Easter?', a:'eggs', options:['cards','eggs','trees']},
+      {q:'What does the child give to Mum?', a:'a card and flowers', options:['a card and flowers','a cake','a toy']},
+    ]},
+  },
+
   // ============ 4 КЛАСС ============
   {
     id:'g4-family4', grade:4, order:1, guide:'harlow', module:'M1', topics:['g4-friends', 'g4-family'], cefr:'A1',
@@ -1448,6 +1827,7 @@ function voiceLines(){
   for (const l of LESSONS) for (const text of [
     ...l.words.map(w => w.en), ...l.phrases, ...l.grammar.map(q => q.q.replace('___', q.a)),
     ...(l.pics || []).map(p => p.right), l.reading.text,
+    ...(l.grade >= 3 ? fillItemsFor(l).map(f => f.q.replace('___', f.a)) : []),
   ]) if (!seen.has(text)){ seen.add(text); out.push({ speaker: 'harlow', lang: 'en', kind: 'lesson', text }); }
   return out;
 }
@@ -1563,7 +1943,7 @@ const CURRICULUM = {
     { code: '2-C', grade: 2, title: 'Собрать слово из букв', rarity: 'rare', kinds: ['spell'] },
     { code: '2-D', grade: 2, title: 'Найди лишнее в тематическом ряду', rarity: 'common', kinds: [] },
     { code: '2-E', grade: 2, title: 'Картинка → выбор из двух фраз', rarity: 'epic', kinds: ['picture'] },
-    { code: '3-A', grade: 3, title: 'Вставить слово в короткую фразу', rarity: 'common', kinds: ['grammar'] },
+    { code: '3-A', grade: 3, title: 'Вставить слово в короткую фразу', rarity: 'common', kinds: ['fill'] },
     { code: '3-B', grade: 3, title: 'Сопоставить вопрос и ответ', rarity: 'rare', kinds: [] },
     { code: '3-C', grade: 3, title: 'Короткий диалог с выбором реплики', rarity: 'epic', kinds: [] },
     { code: '3-D', grade: 3, title: 'Картинка → выбор предложения', rarity: 'common', kinds: [] },
@@ -1578,6 +1958,32 @@ const CURRICULUM = {
   ],
 };
 const SKILLS = Object.fromEntries(CURRICULUM.skills.map(s => [s.code, s]));
+
+// «Вставь слово» (тип 3-A): из фраз и текста урока — предложения со словом урока; слово пропущено,
+// подсказка — перевод (без неё «My ___ is Anna» подошли бы и mother, и sister). Варианты — другие слова урока.
+function fillItemsFor(lesson){
+  const sentences = [...lesson.phrases, ...lesson.reading.text.split(/(?<=[.!?])\s+/)]
+    .map(s => s.trim()).filter(s => s.split(' ').length >= 3 && s.split(' ').length <= 14);
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const out = [], used = new Set();
+  // сначала длинные слова: «ice cream» раньше «ice»
+  const words = [...lesson.words].sort((a, b) => b.en.length - a.en.length);
+  for (const s of sentences){
+    for (const w of words){
+      if (used.has(w.en)) continue;
+      const m = new RegExp(`(^|[^A-Za-z’'])(${esc(w.en)})(?=$|[^A-Za-z’'])`, 'i').exec(s);
+      // слово в начале предложения с большой буквы — пропуск выглядел бы странно (кроме имён и названий)
+      if (!m || (m.index === 0 && w.en[0] !== w.en[0].toUpperCase())) continue;
+      const others = lesson.words.filter(x => x.en !== w.en && !new RegExp(`\\b${esc(x.en)}\\b`, 'i').test(s));
+      if (others.length < 3) continue;
+      const at = m.index + m[1].length;
+      out.push({ q: s.slice(0, at) + '___' + s.slice(at + m[2].length), a: w.en, hint: w.ru, word: w.en, others: others.map(x => x.en) });
+      used.add(w.en);
+      break;
+    }
+  }
+  return out;
+}
 // Код типа задания для упражнения Quest в уроке этого класса (или null, если в карте такого нет)
 function taskTypeFor(kind, grade){
   return CURRICULUM.taskTypes.find(t => t.grade === grade && t.kinds.includes(kind))?.code || null;
@@ -1590,5 +1996,5 @@ window.EQ = {
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   RANKS, rankFor,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
-  CURRICULUM, SKILLS, taskTypeFor, EMOJI: E,
+  CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor,
 };

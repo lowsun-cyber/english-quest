@@ -1,7 +1,7 @@
 // English Quest — Упражнения: карточки, слова, слушай, пары, напиши, грамматика, чтение, говори.
 import { PASS_SCORE, candidatesFromResults, phraseWords, scoreSpeech } from './speech.js';
 import { logAnswer } from './activity.js';
-import { CHARACTERS, LESSONS, lessonStartLine } from './eq.js';
+import { CHARACTERS, LESSONS, fillItemsFor, lessonStartLine } from './eq.js';
 import { checkHomework } from './homework.js';
 import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
 import { renderMap } from './map.js';
@@ -210,6 +210,7 @@ export function startExercise(lesson, kind){
     case 'reading': return exReading(lesson, guide);
     case 'speak': return exSpeak(lesson, guide);
     case 'picture': return exPicture(lesson, guide);
+    case 'fill': return exFill(lesson, guide);
   }
 }
 
@@ -459,6 +460,52 @@ export function exGrammar(lesson, guide){
           penalty();
           afterFeedback(() => { idx++; render(); }, 1400);
         }
+      };
+    });
+  }
+}
+
+// === Вставь слово (тип 3-A): фраза урока с пропуском, подсказка — перевод, варианты — слова урока ===
+export function exFill(lesson, guide){
+  const list = shuffle(fillItemsFor(lesson)).slice(0, 5);
+  let idx = 0, right = 0;
+  render();
+  function render(){
+    if (idx >= list.length){
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="question"><h3>Верно: ${right} из ${list.length} 🔤</h3><p>${right === list.length ? 'Все слова на своих местах!' : 'Слова с ошибками попали в «Мои ошибки».'}</p></div>
+        <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
+      `);
+      document.getElementById('next-close').onclick = closeModal;
+      return;
+    }
+    const it = list[idx];
+    const opts = shuffle([it.a, ...shuffle(it.others).slice(0, 3)]);
+    openModal(`
+      ${lessonHeader(lesson, guide)}
+      <div class="question">
+        <div class="q-text pixel">Вставь слово</div>
+        <div class="q-text q-sentence">${escapeHtml(it.q)}</div>
+        <div class="q-hint">💡 ${escapeHtml(it.hint)}</div>
+        <div class="options q-options-gap">
+          ${opts.map(o => `<button class="opt" data-o="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join('')}
+        </div>
+      </div>
+    `);
+    document.querySelectorAll('.opt').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.opt').forEach(b => b.disabled = true);
+        const ok = btn.dataset.o === it.a;
+        if (ok){ btn.classList.add('correct'); right++; reward(10, 2); markProgress(lesson.id, 'fill'); }
+        else {
+          btn.classList.add('wrong');
+          document.querySelector(`.opt[data-o="${CSS.escape(it.a)}"]`)?.classList.add('correct');
+          recordMistake('word', lesson, it.word);
+          penalty();
+        }
+        speak(it.q.replace('___', it.a));
+        afterFeedback(() => { idx++; render(); }, ok ? 1200 : 1800);
       };
     });
   }

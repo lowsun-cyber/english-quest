@@ -22,7 +22,7 @@ check('коды навыков не повторяются', uniq(CURRICULUM.ski
 check('коды типов заданий не повторяются', uniq(CURRICULUM.taskTypes.map(t => t.code)));
 check('навыки: код G<класс>-NN, слой base/frp/ext', CURRICULUM.skills.every(s => new RegExp(`^G${s.grade}-\\d\\d$`).test(s.code) && ['base', 'frp', 'ext'].includes(s.layer)));
 check('темы: id g<класс>-…', CURRICULUM.topics.every(t => t.id.startsWith(`g${t.grade}-`)));
-const KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak', 'picture'];
+const KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak', 'picture', 'fill'];
 check('типы заданий: упражнения Quest существуют', CURRICULUM.taskTypes.every(t => t.kinds.every(k => KINDS.includes(k))));
 check('типы заданий: редкость из списка', CURRICULUM.taskTypes.every(t => ['common', 'rare', 'epic', 'legendary'].includes(t.rarity)));
 check('чтение в 4 классе — тип 4-A', taskTypeFor('reading', 4) === '4-A' && taskTypeFor('cards', 2) === null);
@@ -54,6 +54,14 @@ for (const g of [2, 3, 4]){
   check(`${g} класс: порядок тем без повторов`, uniq(ord), ord);
 }
 check('2 класс: у каждой темы есть «Что на картинке?» (тип 2-E)', LESSONS.filter(l => l.grade === 2).every(l => l.pics?.length >= 3));
+const { fillItemsFor } = ctx.window.EQ;
+for (const l of LESSONS.filter(l => l.grade === 3)){
+  const n = l.reading.text.split(/\s+/).length;
+  check(`${l.id}: мини-сказка (3-F) — 60–130 слов и 3 вопроса`, n >= 60 && n <= 130 && l.reading.questions.length >= 3, { слов: n, вопросов: l.reading.questions.length });
+  const f = fillItemsFor(l);
+  check(`${l.id}: «Вставь слово» (3-A) — не меньше 3 заданий`, f.length >= 3, f.length);
+  for (const it of f) check(`${l.id}: «${it.q}» — один пропуск, ответ — слово урока`, it.q.split('___').length === 2 && l.words.some(w => w.en === it.a) && it.others.length >= 3);
+}
 for (const g of [2, 3, 4]) check(`${g} класс: у грамматики есть коды навыков`, LESSONS.filter(l => l.grade === g).some(l => l.grammar.some(q => q.skill)));
 
 // сводка (не проверка): насколько словарь дотягивает до цели ФРП

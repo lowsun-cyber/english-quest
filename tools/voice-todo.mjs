@@ -13,7 +13,7 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const dir = resolve((process.argv[2] || join(process.env.HOME, 'Downloads', 'quest-voice')).replace(/^~/, process.env.HOME));
-const BATCH = 20, WORD_BATCH = 40;   // отдельные слова режутся по паузам надёжнее — пачки крупнее
+const BATCH = 20, WORD_BATCH = 40, TEXT_BATCH = 5;   // слова режутся по паузам надёжнее всего, длинные тексты — хуже
 
 const sandbox = { window: {} };
 vm.runInNewContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), sandbox);
@@ -43,6 +43,11 @@ const PROMPTS = {
 Манера: тёплый, добрый мужской голос (доктор Dr. Harlow), естественное английское произношение, чётко и не спеша.
 Прочитай каждое слово один раз, строго по порядку, и после каждого сделай паузу 2 секунды.
 Ничего не добавляй от себя: без вступления, без номеров, без перевода и без комментариев. Нужен один аудиофайл.`,
+  text: `Озвучь по-английски короткие рассказы для детей 7–10 лет.
+Озвучка: Google Gemini TTS (gemini-2.5-pro-tts), голос Enceladus.
+Манера: тёплый, добрый мужской голос (доктор Dr. Harlow), естественное английское произношение, выразительно, не спеша.
+Прочитай каждый рассказ целиком один раз, строго по порядку. Между рассказами — пауза 3 секунды, внутри рассказа длинных пауз не делай.
+Ничего не добавляй от себя: без вступления, без номеров, без комментариев. Нужен один аудиофайл.`,
   ru: `Озвучь по-русски реплики доктора-оленя Dr. Harlow для детей 7–10 лет.
 Озвучка: Google Gemini TTS (gemini-2.5-pro-tts), голос Enceladus.
 Манера: тёплый, добрый и спокойный мужской голос доктора, говорит не спеша и чётко.
@@ -54,14 +59,14 @@ let md = `# Озвучка English Quest\n\nВсего фраз: ${todo.length}.
   `Как сделать: для каждой пачки вставьте в Perplexity промпт и фразы пачки, скачайте аудио и сохраните\n` +
   `в эту папку под именем пачки (например, \`en-01.mp3\`). Потом скажите Claude — он подключит записи.\n` +
   `Если в записи окажется лишняя или пропущенная фраза, пачка не подключится — её можно переозвучить отдельно.\n`;
-const group = x => x.lang === 'ru' ? 'ru' : x.kind === 'dict' ? 'dict' : 'en';
-for (const lang of ['ru', 'en', 'dict']){
-  const list = todo.filter(x => group(x) === lang), size = lang === 'dict' ? WORD_BATCH : BATCH;
+const group = x => x.lang === 'ru' ? 'ru' : x.kind === 'dict' ? 'dict' : x.text.length > 160 ? 'text' : 'en';
+for (const lang of ['ru', 'en', 'text', 'dict']){
+  const list = todo.filter(x => group(x) === lang), size = { dict: WORD_BATCH, text: TEXT_BATCH }[lang] || BATCH;
   for (let i = 0; i < list.length; i += size){
     const id = `${lang}-${String(i / size + 1).padStart(2, '0')}`;
     const part = list.slice(i, i + size);
     batches[id] = part.map(x => ({ text: x.text, speaker: x.speaker }));
-    md += `\n## ${id} — ${part.length} ${lang === 'ru' ? 'реплик по-русски' : lang === 'dict' ? 'слов словаря' : 'фраз по-английски'}\n\n` +
+    md += `\n## ${id} — ${part.length} ${{ ru: 'реплик по-русски', dict: 'слов словаря', text: 'рассказов по-английски' }[lang] || 'фраз по-английски'}\n\n` +
       '```\n' + PROMPTS[lang] + '\n\n' + part.map(x => x.text).join('\n') + '\n```\n';
   }
 }

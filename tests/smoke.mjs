@@ -162,6 +162,23 @@ try {
     if (n !== L.pics.length || p !== n) throw new Error('ответов ' + n + ', засчитано ' + p);
     return n + ' картинок, все верно';`));
 
+  await test('вставь слово (3-A), 3 класс', () => js(`
+    const st = __ls(); st.settings.unlockAll = true; st.settings.mapGrade = 3;
+    localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
+    const L = window.EQ.LESSONS.filter(l => l.grade === 3).sort((a, b) => a.order - b.order)[0], items = window.EQ.fillItemsFor(L);
+    document.querySelector('.map-node').click(); await __sleep(250);
+    document.querySelector('.hub-ex[data-ex=fill]').click(); await __sleep(300);
+    let n = 0;
+    while (document.querySelector('.q-sentence') && n < 6){
+      const it = items.find(x => x.q === document.querySelector('.q-sentence').textContent);
+      if (!it) throw new Error('нет задания для «' + document.querySelector('.q-sentence').textContent + '»');
+      [...document.querySelectorAll('.opt')].find(o => o.dataset.o === it.a).click(); n++; await __sleep(1400);
+    }
+    const st = __ls(); const p = st.lessonProgress[L.id]?.fill; __close();
+    st.settings.unlockAll = false; st.settings.mapGrade = 2; localStorage.setItem('english_quest_v2', JSON.stringify(st));
+    if (n !== 5 || p !== 5) throw new Error('ответов ' + n + ', засчитано ' + p);
+    return L.title + ': 5 из 5';`)).then(r => load().then(() => r)));
+
   await test('чтение → тема пройдена → следующая открыта', () => js(`
     const L = window.EQ.LESSONS[0];
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=reading]').click(); await __sleep(300);
