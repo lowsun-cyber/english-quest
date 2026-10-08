@@ -102,6 +102,10 @@ function studentContent({ student, state: st, updated, devices }, meta){
     table(['*', 80, 90], ['Проверка', 'Лучший результат', 'Сдана'],
       S.checkpoints.map(({ cp, r }) => [plain(cp.title), r ? `${r.best} из ${CHECKPOINT_SIZE}` : '—', r?.passedAt ? date(r.passedAt) : (r ? 'не сдана' : 'не начата')])),
 
+    h2('Грамматика по навыкам'),
+    S.skills.length ? table(['*', 40, 50, 50, 110], ['Навык', 'Код', 'Верно', 'Ответов', 'Чаще всего путает'],
+      S.skills.map(x => [(x.weak ? '! ' : '') + plain(x.skill.title), x.code, `${x.pct}%`, String(x.ok + x.bad), x.wrong.slice(0, 3).map(([o, n]) => `${plain(o)} ×${n}`).join(', ') || '—'])) : { text: 'Пока нет — навыки появятся после упражнений «Грамматика».', color: MUTED, margin: [0, 2, 0, 10] },
+
     h2(`Трудные слова и вопросы (${S.hard.length})`),
     S.hard.length ? table(['*', 90, 60, 36, 70], ['Слово или вопрос', 'Тема', 'Тип', 'Ошиб.', 'Повтор'],
       S.hard.map(({ m, data }) => [

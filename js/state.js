@@ -10,6 +10,7 @@ export const DEFAULT_STATE = {
   mastered: 0,     // сколько ошибок выучено до конца
   activity: {},    // { 'YYYY-MM-DD': { sec, ok, bad } } — для режима репетитора
   lessonWrong: {}, // { lessonId: число ошибок за всё время }
+  skills: {},      // { 'G2-01': { ok, bad, last, wrong: { 'неверный вариант': n } } } — грамматические навыки (CURRICULUM.skills)
   homework: null,  // текущее домашнее задание, см. makeHomework()
   checkpoints: {}, // { 'g2-p1': { best, passedAt } } — проверки после каждых 4 тем
   settings: { theme: 'light', speechRate: 0.9, dailyGoal: 10 },

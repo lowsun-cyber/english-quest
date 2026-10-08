@@ -149,6 +149,14 @@ export function openTutorPanel(){
       }).join('')}
     </ul>
 
+    <h3 class="t-h">Грамматика по навыкам</h3>
+    ${s.skills.length ? `
+      <ul class="t-hard" role="list">
+        ${s.skills.map(x => `
+          <li><span class="t-hard-main">${x.weak ? '⚠️' : '✅'} ${escapeHtml(x.skill.title)} <span class="t-muted">${x.code}</span></span>
+          <span class="t-muted">${x.pct}% верно из ${x.ok + x.bad}${x.wrong[0] ? ` · путает: <b>${escapeHtml(x.wrong[0][0])}</b>` : ''}</span></li>`).join('')}
+      </ul>` : '<p class="t-muted">Пока нет — навыки появятся после упражнений «Грамматика».</p>'}
+
     <h3 class="t-h">Трудные слова и вопросы</h3>
     ${s.hard.length ? `
       <ul class="t-hard" role="list">

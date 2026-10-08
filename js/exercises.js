@@ -5,7 +5,7 @@ import { CHARACTERS, LESSONS, lessonStartLine } from './eq.js';
 import { checkHomework } from './homework.js';
 import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
 import { renderMap } from './map.js';
-import { recordMistake } from './mistakes.js';
+import { logSkill, recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak, speakWordOrPhrase, stopSpeech } from './tts.js';
 import { afterFeedback, back, closeModal, modal, openModal, showGuide, toast } from './ui.js';
@@ -443,6 +443,7 @@ export function exGrammar(lesson, guide){
     `);
     document.querySelectorAll('.opt').forEach(btn => {
       btn.onclick = () => {
+        logSkill(q, btn.dataset.o === q.a, btn.dataset.o);
         if (btn.dataset.o === q.a){
           btn.classList.add('correct');
           reward(15, 3);

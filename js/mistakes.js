@@ -30,6 +30,23 @@ export function recordMistake(type, lesson, ref){
   renderMistakes();
 }
 
+// Грамматический навык вопроса (q.skill, коды из карты программы): верно/неверно и какой неверный вариант
+// выбран — по нему видно типичную ошибку (goed вместо went). Сохраняет вызывающий код вместе с ответом.
+const SKILL_WRONG_KEEP = 8;
+export function logSkill(q, ok, chosen){
+  if (!q?.skill) return;
+  const s = state.skills[q.skill] || (state.skills[q.skill] = { ok: 0, bad: 0, last: 0 });
+  s[ok ? 'ok' : 'bad'] += 1;
+  s.last = Date.now();
+  if (!ok && chosen){
+    const w = s.wrong || (s.wrong = {});
+    w[chosen] = (w[chosen] || 0) + 1;
+    // храним только самые частые варианты
+    const keep = Object.entries(w).sort((a, b) => b[1] - a[1]).slice(0, SKILL_WRONG_KEEP);
+    s.wrong = Object.fromEntries(keep);
+  }
+}
+
 // Ошибка → слово или вопрос из контента (общая с админ-панелью, см. stats.js)
 export { resolveMistake };
 
@@ -167,6 +184,7 @@ export function startReview(){
         document.querySelectorAll('.opt').forEach(b => b.disabled = true);
         const ok = btn.dataset.o === answer;
         const stored = state.mistakes[entry.key];
+        if (m.type === 'grammar') logSkill(data.q, ok, btn.dataset.o);
         if (ok){
           btn.classList.add('correct');
           right++;

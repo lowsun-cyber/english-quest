@@ -131,7 +131,7 @@ const E = {
 const LESSONS = [
   // ============ 2 КЛАСС ============
   {
-    id:'g2-letters', grade:2, order:1, guide:'owl',
+    id:'g2-letters', grade:2, order:1, guide:'owl', module:'Starter', topics:['g2-abc'], cefr:'Pre-A1',
     title:'My Letters!', subtitle:'Алфавит и первые звуки',
     intro:'Начнём с самого начала — с английских букв. Слушай внимательно, как звучит каждая буква.',
     words:[
@@ -164,7 +164,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g2-hello', grade:2, order:2, guide:'harlow',
+    id:'g2-hello', grade:2, order:2, guide:'harlow', module:'Starter', topics:['g2-greet', 'g2-friends'], cefr:'Pre-A1',
     title:'Hello!', subtitle:'Приветствие и знакомство',
     intro:'Поздороваемся по-английски. Hello — значит «привет».',
     words:[
@@ -193,7 +193,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g2-family', grade:2, order:3, guide:'harlow',
+    id:'g2-family', grade:2, order:3, guide:'harlow', module:'Starter', topics:['g2-family'], cefr:'Pre-A1',
     title:'My Family!', subtitle:'Семья',
     intro:'Семья — это самое важное. Давай выучим, как назвать по-английски маму, папу и других.',
     words:[
@@ -213,7 +213,7 @@ const LESSONS = [
       'My brother is funny.',
     ],
     grammar:[
-      {q:'This ___ my mum.', a:'is', hint:'Единственное число, третье лицо.', options:['is','am','are','be']},
+      {skill:'G2-01', q:'This ___ my mum.', a:'is', hint:'Единственное число, третье лицо.', options:['is','am','are','be']},
       {q:'I ___ my family.', a:'love', hint:'Люблю.', options:['love','like','have','see']},
     ],
     reading:{title:'My Family', text:'I have a big family. My mum is kind. My dad is funny. My sister is small. I love them all.', questions:[
@@ -222,7 +222,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g2-home', grade:2, order:4, guide:'max',
+    id:'g2-home', grade:2, order:4, guide:'max', module:'M1', topics:['g2-family'], cefr:'Pre-A1',
     title:'My Home!', subtitle:'Мой дом и комнаты',
     intro:'Заглянем в дом. Крафт-мир начинается с уютного жилища!',
     words:[
@@ -244,8 +244,8 @@ const LESSONS = [
       'Open the door, please.',
     ],
     grammar:[
-      {q:'The lamp ___ on the table.', a:'is', hint:'Единственное число.', options:['is','are','am','be']},
-      {q:'I sleep ___ my bed.', a:'in', hint:'Предлог места «в».', options:['in','on','under','next']},
+      {skill:'G2-01', q:'The lamp ___ on the table.', a:'is', hint:'Единственное число.', options:['is','are','am','be']},
+      {skill:'G2-07', q:'I sleep ___ my bed.', a:'in', hint:'Предлог места «в».', options:['in','on','under','next']},
     ],
     reading:{title:'My Room', text:'This is my room. My bed is near the window. The lamp is on the table. There is a big teddy bear on my bed.', questions:[
       {q:'Where is the bed?', a:'near the window', options:['near the door','near the window','in the bath']},
@@ -253,7 +253,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g2-birthday', grade:2, order:5, guide:'harlow',
+    id:'g2-birthday', grade:2, order:5, guide:'harlow', module:'M2', topics:['g2-birthday', 'g2-food'], cefr:'Pre-A1',
     title:'My Birthday!', subtitle:'День рождения и цифры',
     intro:'Праздник! Давай выучим числа и слова о дне рождения.',
     words:[
@@ -279,8 +279,8 @@ const LESSONS = [
       'Here is your present.',
     ],
     grammar:[
-      {q:'How old ___ you?', a:'are', hint:'Ты — are.', options:['are','is','am','be']},
-      {q:'I ___ nine years old.', a:'am', hint:'Я — am.', options:['am','is','are','be']},
+      {skill:'G2-01', q:'How old ___ you?', a:'are', hint:'Ты — are.', options:['are','is','am','be']},
+      {skill:'G2-01', q:'I ___ nine years old.', a:'am', hint:'Я — am.', options:['am','is','are','be']},
     ],
     reading:{title:'Happy Birthday!', text:'Today is my birthday. I am nine years old. I have a big cake with nine candles. My friends come and sing "Happy Birthday" to me.', questions:[
       {q:'How old is the boy?', a:'nine', options:['seven','eight','nine']},
@@ -288,7 +288,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g2-animals', grade:2, order:6, guide:'luna',
+    id:'g2-animals', grade:2, order:6, guide:'luna', module:'M3', topics:['g2-pet', 'g2-hobbies'], cefr:'Pre-A1',
     title:'My Animals!', subtitle:'Животные',
     intro:'Nurse Luna и Dr. Harlow приветствуют в госпитале! Познакомимся с животными.',
     words:[
@@ -313,7 +313,7 @@ const LESSONS = [
     ],
     grammar:[
       {q:'I can jump ___ a frog.', a:'like', hint:'«Как» кто-то.', options:['like','and','with','of']},
-      {q:'The cat ___ on the sofa.', a:'is', hint:'Одна кошка.', options:['is','are','am','be']},
+      {skill:'G2-01', q:'The cat ___ on the sofa.', a:'is', hint:'Одна кошка.', options:['is','are','am','be']},
     ],
     reading:{title:'My Pet', text:'I have a small dog. His name is Rex. He is brown and funny. Rex can run, jump and swim. I love my dog!', questions:[
       {q:'What colour is Rex?', a:'brown', options:['black','white','brown']},
@@ -321,7 +321,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g2-toys', grade:2, order:7, guide:'max',
+    id:'g2-toys', grade:2, order:7, guide:'max', module:'M4', topics:['g2-colors'], cefr:'Pre-A1',
     title:'My Toys!', subtitle:'Игрушки',
     intro:'Загляни в комнату игрушек! Готов крафтить весёлые слова?',
     words:[
@@ -343,8 +343,8 @@ const LESSONS = [
       'My train is red and blue.',
     ],
     grammar:[
-      {q:'This ___ my toy car.', a:'is', hint:'Единственное число.', options:['is','are','am','be']},
-      {q:'The doll is ___ the bed.', a:'under', hint:'Под кроватью.', options:['on','in','under','next to']},
+      {skill:'G2-01', q:'This ___ my toy car.', a:'is', hint:'Единственное число.', options:['is','are','am','be']},
+      {skill:'G2-07', q:'The doll is ___ the bed.', a:'under', hint:'Под кроватью.', options:['on','in','under','next to']},
     ],
     reading:{title:'My Toy Box', text:'I have a big toy box. In my box I have a red car, a small doll and a soft teddy bear. My teddy bear is my best friend.', questions:[
       {q:'What colour is the car?', a:'red', options:['blue','red','green']},
@@ -352,7 +352,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g2-holidays', grade:2, order:8, guide:'harlow',
+    id:'g2-holidays', grade:2, order:8, guide:'harlow', module:'M5', topics:['g2-weekend', 'g2-hometown'], cefr:'Pre-A1',
     title:'My Holidays!', subtitle:'Каникулы и одежда',
     intro:'Каникулы! Что мы надеваем и куда идём?',
     words:[
@@ -374,7 +374,7 @@ const LESSONS = [
       'Let\u2019s go to the beach.',
     ],
     grammar:[
-      {q:'It ___ sunny today.', a:'is', hint:'It — is.', options:['is','are','am','be']},
+      {skill:'G2-01', q:'It ___ sunny today.', a:'is', hint:'It — is.', options:['is','are','am','be']},
       {q:'I ___ my hat.', a:'wear', hint:'Надеваю.', options:['wear','see','have','play']},
     ],
     reading:{title:'A Sunny Day', text:'Today is a sunny day. Mum and I go to the park. I wear a t-shirt and shorts. I play with my ball and eat an ice cream.', questions:[
@@ -384,7 +384,7 @@ const LESSONS = [
   },
   // ============ 3 КЛАСС ============
   {
-    id:'g3-school', grade:3, order:1, guide:'owl',
+    id:'g3-school', grade:3, order:1, guide:'owl', module:'M1', topics:['g3-school'], cefr:'Pre-A1',
     title:'School Days!', subtitle:'Школа и уроки',
     intro:'Prof. Owl расскажет о школе. Ты — ученик третьего класса, самое время!',
     words:[
@@ -408,8 +408,8 @@ const LESSONS = [
       'Look at the blackboard.',
     ],
     grammar:[
-      {q:'I ___ a red pen.', a:'have', hint:'У меня есть.', options:['have','has','am','is']},
-      {q:'She ___ a big bag.', a:'has', hint:'She — has.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'I ___ a red pen.', a:'have', hint:'У меня есть.', options:['have','has','am','is']},
+      {skill:'G2-02', q:'She ___ a big bag.', a:'has', hint:'She — has.', options:['have','has','is','are']},
     ],
     reading:{title:'At School', text:'I go to school every day. I have many friends there. My teacher is kind. In my bag I have a book, a pen and a ruler.', questions:[
       {q:'How is the teacher?', a:'kind', options:['funny','sad','kind']},
@@ -417,7 +417,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g3-family-moments', grade:3, order:2, guide:'harlow',
+    id:'g3-family-moments', grade:3, order:2, guide:'harlow', module:'M2', topics:['g3-family'], cefr:'Pre-A1',
     title:'Family Moments!', subtitle:'Семейные моменты',
     intro:'Расскажем о семье и близких людях. Больше слов, больше историй.',
     words:[
@@ -439,8 +439,8 @@ const LESSONS = [
       'My baby brother is small.',
     ],
     grammar:[
-      {q:'This is my mother. ___ name is Anna.', a:'Her', hint:'Мама — she — her.', options:['His','Her','My','Your']},
-      {q:'This is my father. ___ name is Peter.', a:'His', hint:'Папа — he — his.', options:['Her','His','Its','Their']},
+      {skill:'G3-11', q:'This is my mother. ___ name is Anna.', a:'Her', hint:'Мама — she — her.', options:['His','Her','My','Your']},
+      {skill:'G3-11', q:'This is my father. ___ name is Peter.', a:'His', hint:'Папа — he — his.', options:['Her','His','Its','Their']},
     ],
     reading:{title:'A Big Family', text:'My family is big. I have a mother, a father, one brother and two sisters. My grandma lives with us. She is very kind and she cooks tasty food.', questions:[
       {q:'How many sisters?', a:'two', options:['one','two','three']},
@@ -448,7 +448,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g3-food', grade:3, order:3, guide:'harlow',
+    id:'g3-food', grade:3, order:3, guide:'harlow', module:'M3', topics:['g3-food'], cefr:'Pre-A1',
     title:'All the Things I Like!', subtitle:'Еда и вкусы',
     intro:'Готовим обед по-английски! Что ты любишь?',
     words:[
@@ -472,8 +472,8 @@ const LESSONS = [
       'Yes, I do. It is tasty!',
     ],
     grammar:[
-      {q:'I ___ like milk.', a:'don\u2019t', hint:'Отрицание в 1-м лице.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
-      {q:'She ___ like fish.', a:'doesn\u2019t', hint:'She — doesn\u2019t.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
+      {skill:'G3-01', q:'I ___ like milk.', a:'don\u2019t', hint:'Отрицание в 1-м лице.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
+      {skill:'G3-01', q:'She ___ like fish.', a:'doesn\u2019t', hint:'She — doesn\u2019t.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
     ],
     reading:{title:'My Favourite Food', text:'I like pizza and chicken very much. For breakfast I eat an egg and drink milk. My sister does not like eggs, but she loves ice cream.', questions:[
       {q:'What does the boy eat for breakfast?', a:'an egg', options:['a pizza','an egg','a burger']},
@@ -481,7 +481,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g3-toys3', grade:3, order:4, guide:'max',
+    id:'g3-toys3', grade:3, order:4, guide:'max', module:'M4', topics:['g3-toys'], cefr:'Pre-A1',
     title:'Come in and Play!', subtitle:'Играем: игрушки и предлоги',
     intro:'В крафт-мире всё лежит по местам. Где твой любимый мяч?',
     words:[
@@ -501,8 +501,8 @@ const LESSONS = [
       'Where is my plane? It is next to the bag.',
     ],
     grammar:[
-      {q:'The ball is ___ the bed.', a:'under', hint:'Под.', options:['on','under','in','next to']},
-      {q:'The robot is ___ the table.', a:'on', hint:'На.', options:['under','on','in','behind']},
+      {skill:'G3-07', q:'The ball is ___ the bed.', a:'under', hint:'Под.', options:['on','under','in','next to']},
+      {skill:'G3-07', q:'The robot is ___ the table.', a:'on', hint:'На.', options:['under','on','in','behind']},
     ],
     reading:{title:'My Toys', text:'My toys are everywhere! The ball is under the bed. The robot is on the desk. The doll is in the box. My cat is next to my toys — she plays too!', questions:[
       {q:'Where is the doll?', a:'in the box', options:['on the bed','in the box','under the desk']},
@@ -510,7 +510,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g3-animals3', grade:3, order:5, guide:'luna',
+    id:'g3-animals3', grade:3, order:5, guide:'luna', module:'M5', topics:['g3-pet', 'g3-animals'], cefr:'A1',
     title:'Furry Friends!', subtitle:'Пушистые друзья и части тела',
     intro:'Nurse Luna покажет, из каких частей состоит животное!',
     words:[
@@ -531,8 +531,8 @@ const LESSONS = [
       'How many legs? Four legs!',
     ],
     grammar:[
-      {q:'The cat ___ a long tail.', a:'has', hint:'It — has.', options:['have','has','is','are']},
-      {q:'Rabbits ___ big ears.', a:'have', hint:'Множ. число — have.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'The cat ___ a long tail.', a:'has', hint:'It — has.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'Rabbits ___ big ears.', a:'have', hint:'Множ. число — have.', options:['have','has','is','are']},
     ],
     reading:{title:'Funny Animals', text:'A dog has four legs and a tail. A bird has two wings and a small beak. A rabbit has big ears and can jump very high. Animals are funny!', questions:[
       {q:'How many legs has a dog?', a:'four', options:['two','four','six']},
@@ -540,7 +540,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g3-home3', grade:3, order:6, guide:'max',
+    id:'g3-home3', grade:3, order:6, guide:'max', module:'M6', topics:['g3-home'], cefr:'A1',
     title:'Home, Sweet Home!', subtitle:'Дом милый дом',
     intro:'Miner Max покажет, где в доме сокровища и предлоги места.',
     words:[
@@ -562,8 +562,8 @@ const LESSONS = [
       'My cat is under the sofa.',
     ],
     grammar:[
-      {q:'There ___ a sofa in the room.', a:'is', hint:'Единственное число — is.', options:['is','are','am','be']},
-      {q:'There ___ two windows.', a:'are', hint:'Множественное — are.', options:['is','are','am','be']},
+      {skill:'G2-08', q:'There ___ a sofa in the room.', a:'is', hint:'Единственное число — is.', options:['is','are','am','be']},
+      {skill:'G2-08', q:'There ___ two windows.', a:'are', hint:'Множественное — are.', options:['is','are','am','be']},
     ],
     reading:{title:'My House', text:'My house has four rooms. In the kitchen there is a big fridge. In the bedroom there are two beds — one for me and one for my sister. My cat sleeps on the sofa.', questions:[
       {q:'How many rooms?', a:'four', options:['two','three','four']},
@@ -571,7 +571,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g3-dayoff', grade:3, order:7, guide:'harlow',
+    id:'g3-dayoff', grade:3, order:7, guide:'harlow', module:'M7', topics:['g3-hobbies', 'g3-holidays'], cefr:'A1',
     title:'A Day Off!', subtitle:'Выходной и что мы делаем',
     intro:'Выходной! Что делают ребята сейчас? Present Continuous — то, что происходит прямо сейчас.',
     words:[
@@ -592,8 +592,8 @@ const LESSONS = [
       'Look! The boy is riding a bike.',
     ],
     grammar:[
-      {q:'She ___ singing now.', a:'is', hint:'Present Continuous: is + -ing.', options:['is','are','am','be']},
-      {q:'They ___ playing football.', a:'are', hint:'They — are.', options:['is','are','am','be']},
+      {skill:'G3-08', q:'She ___ singing now.', a:'is', hint:'Present Continuous: is + -ing.', options:['is','are','am','be']},
+      {skill:'G3-08', q:'They ___ playing football.', a:'are', hint:'They — are.', options:['is','are','am','be']},
     ],
     reading:{title:'In the Park', text:'It is Sunday. We are in the park. Tom is running with his dog. Kate is riding a bike. Mum is reading a book on the bench. It is a nice day off!', questions:[
       {q:'What is Kate doing?', a:'riding a bike', options:['running','riding a bike','reading']},
@@ -601,7 +601,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g3-daybyday', grade:3, order:8, guide:'owl',
+    id:'g3-daybyday', grade:3, order:8, guide:'owl', module:'M8', topics:['g3-myday'], cefr:'A1',
     title:'Day by Day!', subtitle:'Каждый день: время и распорядок',
     intro:'Что ты делаешь каждый день? Prof. Owl научит говорить о времени.',
     words:[
@@ -622,8 +622,8 @@ const LESSONS = [
       'On Sunday I play with my friends.',
     ],
     grammar:[
-      {q:'I get up ___ seven o\u2019clock.', a:'at', hint:'Точное время — at.', options:['on','in','at','of']},
-      {q:'I go to school ___ Monday.', a:'on', hint:'Дни недели — on.', options:['at','in','on','of']},
+      {skill:'G3-09', q:'I get up ___ seven o\u2019clock.', a:'at', hint:'Точное время — at.', options:['on','in','at','of']},
+      {skill:'G3-09', q:'I go to school ___ Monday.', a:'on', hint:'Дни недели — on.', options:['at','in','on','of']},
     ],
     reading:{title:'My Day', text:'I get up at seven o\u2019clock. I have breakfast and go to school at eight. After school I do my homework and play with my friends. In the evening I read a book. I go to bed at nine.', questions:[
       {q:'When does the boy go to school?', a:'at eight', options:['at seven','at eight','at nine']},
@@ -632,7 +632,7 @@ const LESSONS = [
   },
   // ============ 4 КЛАСС ============
   {
-    id:'g4-family4', grade:4, order:1, guide:'harlow',
+    id:'g4-family4', grade:4, order:1, guide:'harlow', module:'M1', topics:['g4-friends', 'g4-family'], cefr:'A1',
     title:'Family & Friends!', subtitle:'Друзья и внешность',
     intro:'В 4 классе мы описываем людей: рост, волосы, характер.',
     words:[
@@ -655,8 +655,8 @@ const LESSONS = [
       'What is he like? He is friendly.',
     ],
     grammar:[
-      {q:'He ___ got fair hair.', a:'has', hint:'He/she — has got.', options:['have','has','is','are']},
-      {q:'They ___ got a big house.', a:'have', hint:'They — have got.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'He ___ got fair hair.', a:'has', hint:'He/she — has got.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'They ___ got a big house.', a:'have', hint:'They — have got.', options:['have','has','is','are']},
     ],
     reading:{title:'My Cousin Mia', text:'Mia is my cousin. She is ten. She is tall and slim. She has got long dark hair and green eyes. Mia is very funny — she can tell great jokes!', questions:[
       {q:'How old is Mia?', a:'ten', options:['nine','ten','eleven']},
@@ -664,7 +664,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g4-workingday', grade:4, order:2, guide:'harlow',
+    id:'g4-workingday', grade:4, order:2, guide:'harlow', module:'M2', topics:['g4-jobs', 'g4-routine'], cefr:'A1',
     title:'A Working Day!', subtitle:'Профессии и рабочий день',
     intro:'Кем работают люди? Узнаем самые важные профессии.',
     words:[
@@ -686,7 +686,7 @@ const LESSONS = [
       'What does your dad do?',
     ],
     grammar:[
-      {q:'She ___ in a hospital.', a:'works', hint:'She — глагол + s.', options:['work','works','working','are']},
+      {skill:'G4-01', q:'She ___ in a hospital.', a:'works', hint:'She — глагол + s.', options:['work','works','working','are']},
       {q:'I ___ help my mum.', a:'always', hint:'Наречие частоты.', options:['always','tomorrow','now','yesterday']},
     ],
     reading:{title:'My Mum the Doctor', text:'My mum is a doctor. She works in a big hospital. Every day she helps sick people. She usually gets up at six and comes home at seven. I am proud of her!', questions:[
@@ -695,7 +695,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g4-tastytreats', grade:4, order:3, guide:'harlow',
+    id:'g4-tastytreats', grade:4, order:3, guide:'harlow', module:'M3', topics:['g4-routine', 'g4-shopping'], cefr:'A1',
     title:'Tasty Treats!', subtitle:'Вкусняшки и порции',
     intro:'Ммм, вкусно! Учим how much и how many.',
     words:[
@@ -717,8 +717,8 @@ const LESSONS = [
       'There is some milk in the fridge.',
     ],
     grammar:[
-      {q:'How ___ sugar? (нельзя посчитать)', a:'much', hint:'Неисчисляемое — much.', options:['much','many','a','some']},
-      {q:'How ___ lemons? (можно посчитать)', a:'many', hint:'Исчисляемое — many.', options:['much','many','a','some']},
+      {skill:'G4-02', q:'How ___ sugar? (нельзя посчитать)', a:'much', hint:'Неисчисляемое — much.', options:['much','many','a','some']},
+      {skill:'G4-02', q:'How ___ lemons? (можно посчитать)', a:'many', hint:'Исчисляемое — many.', options:['much','many','a','some']},
     ],
     reading:{title:'Grandma\u2019s Cake', text:'My grandma makes the best cake. She needs a lot of flour, some sugar and three eggs. She also puts one lemon in the cake. It is very tasty!', questions:[
       {q:'How many eggs?', a:'three', options:['two','three','four']},
@@ -726,7 +726,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g4-zoo', grade:4, order:4, guide:'luna',
+    id:'g4-zoo', grade:4, order:4, guide:'luna', module:'M4', topics:['g4-nature'], cefr:'A1',
     title:'At the Zoo!', subtitle:'В зоопарке',
     intro:'Nurse Luna берёт нас в путешествие в зоопарк! Смотри в оба.',
     words:[
@@ -748,8 +748,8 @@ const LESSONS = [
       'Look! Monkeys are jumping.',
     ],
     grammar:[
-      {q:'The lion is ___ than the cat.', a:'bigger', hint:'Сравнительная степень.', options:['big','bigger','biggest','more big']},
-      {q:'The giraffe is the ___ animal.', a:'tallest', hint:'Превосходная степень.', options:['tall','taller','tallest','more tall']},
+      {skill:'G4-04', q:'The lion is ___ than the cat.', a:'bigger', hint:'Сравнительная степень.', options:['big','bigger','biggest','more big']},
+      {skill:'G4-04', q:'The giraffe is the ___ animal.', a:'tallest', hint:'Превосходная степень.', options:['tall','taller','tallest','more tall']},
     ],
     reading:{title:'A Day at the Zoo', text:'On Sunday we went to the zoo. We saw a big lion, two funny monkeys and a huge elephant. The giraffe was the tallest animal there. It was a great day!', questions:[
       {q:'Which animal was the tallest?', a:'giraffe', options:['lion','elephant','giraffe']},
@@ -757,7 +757,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g4-yesterday', grade:4, order:5, guide:'owl',
+    id:'g4-yesterday', grade:4, order:5, guide:'owl', module:'M5', topics:['g4-travel', 'g4-friends'], cefr:'A1',
     title:'Where Were You Yesterday?', subtitle:'Прошедшее время was/were',
     intro:'Where were you? Prof. Owl учит рассказывать о вчерашнем дне.',
     words:[
@@ -778,8 +778,8 @@ const LESSONS = [
       'Where were you?',
     ],
     grammar:[
-      {q:'I ___ at home yesterday.', a:'was', hint:'I / he / she / it — was.', options:['was','were','is','are']},
-      {q:'They ___ happy.', a:'were', hint:'They / we / you — were.', options:['was','were','is','are']},
+      {skill:'G4-05', q:'I ___ at home yesterday.', a:'was', hint:'I / he / she / it — was.', options:['was','were','is','are']},
+      {skill:'G4-05', q:'They ___ happy.', a:'were', hint:'They / we / you — were.', options:['was','were','is','are']},
     ],
     reading:{title:'Yesterday', text:'Yesterday I was at my grandma\u2019s house. My cousins were there too. We played all day. In the evening I was very tired but very happy!', questions:[
       {q:'Where was the boy?', a:'at grandma\u2019s', options:['at school','at grandma\u2019s','at the zoo']},
@@ -787,7 +787,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g4-tellthetale', grade:4, order:6, guide:'owl',
+    id:'g4-tellthetale', grade:4, order:6, guide:'owl', module:'M6', topics:['g4-tale'], cefr:'A1',
     title:'Tell the Tale!', subtitle:'Сказка и прошедшее время',
     intro:'Prof. Owl рассказывает сказку. Учим правильные глаголы в прошедшем.',
     words:[
@@ -807,8 +807,8 @@ const LESSONS = [
       'They lived happily ever after.',
     ],
     grammar:[
-      {q:'He ___ (jump) yesterday.', a:'jumped', hint:'Правильный глагол + -ed.', options:['jumped','jump','jumps','jumping']},
-      {q:'She ___ (play) football.', a:'played', hint:'play → played.', options:['played','play','plays','playing']},
+      {skill:'G4-06', q:'He ___ (jump) yesterday.', a:'jumped', hint:'Правильный глагол + -ed.', options:['jumped','jump','jumps','jumping']},
+      {skill:'G4-06', q:'She ___ (play) football.', a:'played', hint:'play → played.', options:['played','play','plays','playing']},
     ],
     reading:{title:'The Brave Prince', text:'Long ago there was a brave prince. He lived in a big castle. One day a dragon came to the village. The prince fought the dragon and saved the people. Everyone was very happy!', questions:[
       {q:'Where did the prince live?', a:'in a big castle', options:['in a forest','in a big castle','in a shop']},
@@ -816,7 +816,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g4-daystoremember', grade:4, order:7, guide:'harlow',
+    id:'g4-daystoremember', grade:4, order:7, guide:'harlow', module:'M7', topics:['g4-family', 'g4-countries'], cefr:'A1',
     title:'Days to Remember!', subtitle:'Памятные дни',
     intro:'Рассказываем о праздниках и воспоминаниях. Неправильные глаголы!',
     words:[
@@ -838,8 +838,8 @@ const LESSONS = [
       'It was a day to remember.',
     ],
     grammar:[
-      {q:'Yesterday I ___ to school.', a:'went', hint:'go → went.', options:['go','goed','went','gone']},
-      {q:'I ___ a big cat.', a:'saw', hint:'see → saw.', options:['see','sawed','saw','seen']},
+      {skill:'G4-07', q:'Yesterday I ___ to school.', a:'went', hint:'go → went.', options:['go','goed','went','gone']},
+      {skill:'G4-07', q:'I ___ a big cat.', a:'saw', hint:'see → saw.', options:['see','sawed','saw','seen']},
     ],
     reading:{title:'My Best Birthday', text:'Last year on my birthday my parents took me to the zoo. I saw lions, giraffes and a big elephant. In the evening we had a big cake. It was a day to remember!', questions:[
       {q:'Where did they go?', a:'to the zoo', options:['to the park','to the zoo','to a shop']},
@@ -847,7 +847,7 @@ const LESSONS = [
     ]},
   },
   {
-    id:'g4-placestogo', grade:4, order:8, guide:'harlow',
+    id:'g4-placestogo', grade:4, order:8, guide:'harlow', module:'M8', topics:['g4-holidays', 'g4-travel'], cefr:'A1',
     title:'Places to Go!', subtitle:'Путешествия и будущее время',
     intro:'Куда мы поедем на каникулы? Учим going to.',
     words:[
@@ -868,8 +868,8 @@ const LESSONS = [
       'What are you going to do?',
     ],
     grammar:[
-      {q:'I ___ going to visit London.', a:'am', hint:'I — am.', options:['am','is','are','be']},
-      {q:'They ___ going to travel.', a:'are', hint:'They — are.', options:['am','is','are','be']},
+      {skill:'G4-08', q:'I ___ going to visit London.', a:'am', hint:'I — am.', options:['am','is','are','be']},
+      {skill:'G4-08', q:'They ___ going to travel.', a:'are', hint:'They — are.', options:['am','is','are','be']},
     ],
     reading:{title:'Summer Plans', text:'This summer we are going to visit London. We are going to fly by plane. We are going to see Big Ben and go to a big park. I can\u2019t wait!', questions:[
       {q:'How are they going to travel?', a:'by plane', options:['by train','by plane','by ship']},
@@ -970,6 +970,125 @@ function harlowRussianLines(){
   ].filter(ru))];
 }
 
+// ---------- КАРТА ПРОГРАММЫ (Spotlight 2–4 + ФРП) ----------
+// Источник — документ «Quest: карта программы по английскому, 2–4 классы».
+// Слои: base — есть в Spotlight; frp — обязательный минимум ФРП сверх учебника; ext — расширение Quest.
+// Метки урока: module (Starter, M1…M8), topics (id тем ниже), cefr. Метка вопроса грамматики: skill (код навыка).
+const CURRICULUM = {
+  levels: {
+    2: { cefr: 'Pre-A1', cambridge: 'начало Starters', words: 200, region: 'Мой мир' },
+    3: { cefr: 'Pre-A1 / A1', cambridge: 'Starters', words: 350, region: 'Мой дом и окрестности' },
+    4: { cefr: 'A1', cambridge: 'Starters / начало Movers', words: 500, region: 'Большой мир' },
+  },
+  // темы ФРП по классам; hours — часы из ФРП (вес темы: сколько квестов в локации), null — уточнить
+  topics: [
+    { id: 'g2-abc', grade: 2, title: 'Алфавит и звуки', section: 'Spotlight, вводный модуль', hours: null },
+    { id: 'g2-greet', grade: 2, title: 'Приветствие, знакомство', section: 'Мир моего «я»', hours: 3 },
+    { id: 'g2-family', grade: 2, title: 'Моя семья', section: 'Мир моего «я»', hours: 13 },
+    { id: 'g2-birthday', grade: 2, title: 'Мой день рождения', section: 'Мир моего «я»', hours: 4 },
+    { id: 'g2-food', grade: 2, title: 'Моя любимая еда', section: 'Мир моего «я»', hours: 5 },
+    { id: 'g2-colors', grade: 2, title: 'Любимый цвет, игрушка', section: 'Мир моих увлечений', hours: 7 },
+    { id: 'g2-hobbies', grade: 2, title: 'Любимые занятия', section: 'Мир моих увлечений', hours: 3 },
+    { id: 'g2-pet', grade: 2, title: 'Мой питомец', section: 'Мир моих увлечений', hours: 3 },
+    { id: 'g2-weekend', grade: 2, title: 'Выходной день', section: 'Мир моих увлечений', hours: 3 },
+    { id: 'g2-school', grade: 2, title: 'Моя школа', section: 'Мир вокруг меня', hours: 2 },
+    { id: 'g2-friends', grade: 2, title: 'Мои друзья', section: 'Мир вокруг меня', hours: 2 },
+    { id: 'g2-hometown', grade: 2, title: 'Моя малая родина', section: 'Мир вокруг меня', hours: 6 },
+    { id: 'g2-countries', grade: 2, title: 'Страны и столицы', section: 'Родная страна', hours: 2 },
+    { id: 'g2-folklore', grade: 2, title: 'Фольклор, персонажи книг', section: 'Родная страна', hours: 6 },
+    { id: 'g2-holidays', grade: 2, title: 'Праздники', section: 'Родная страна', hours: 2 },
+
+    { id: 'g3-family', grade: 3, title: 'Моя семья', section: 'Мир моего «я»', hours: 5 },
+    { id: 'g3-birthday', grade: 3, title: 'Мой день рождения', section: 'Мир моего «я»', hours: 2 },
+    { id: 'g3-food', grade: 3, title: 'Моя любимая еда', section: 'Мир моего «я»', hours: 4 },
+    { id: 'g3-myday', grade: 3, title: 'Мой день', section: 'Мир моего «я»', hours: 2 },
+    { id: 'g3-toys', grade: 3, title: 'Любимая игрушка, игра', section: 'Мир моих увлечений', hours: 3 },
+    { id: 'g3-pet', grade: 3, title: 'Мой питомец', section: 'Мир моих увлечений', hours: 2 },
+    { id: 'g3-hobbies', grade: 3, title: 'Любимые занятия', section: 'Мир моих увлечений', hours: 5 },
+    { id: 'g3-tale', grade: 3, title: 'Любимая сказка', section: 'Мир моих увлечений', hours: 5 },
+    { id: 'g3-holidays', grade: 3, title: 'Выходной, каникулы', section: 'Мир моих увлечений', hours: 6 },
+    { id: 'g3-home', grade: 3, title: 'Моя комната, дом', section: 'Мир вокруг меня', hours: 4 },
+    { id: 'g3-school', grade: 3, title: 'Моя школа', section: 'Мир вокруг меня', hours: 4 },
+    { id: 'g3-friends', grade: 3, title: 'Мои друзья, малая родина', section: 'Мир вокруг меня', hours: 4 },
+    { id: 'g3-animals', grade: 3, title: 'Дикие и домашние животные', section: 'Мир вокруг меня', hours: 3 },
+    { id: 'g3-weather', grade: 3, title: 'Погода, времена года', section: 'Мир вокруг меня', hours: 2 },
+    { id: 'g3-countries', grade: 3, title: 'Страны, столицы, достопримечательности', section: 'Родная страна', hours: 6 },
+    { id: 'g3-folklore', grade: 3, title: 'Фольклор, персонажи, праздники', section: 'Родная страна', hours: null },
+
+    { id: 'g4-family', grade: 4, title: 'Семья, день рождения, подарки', section: 'Мир моего «я»', hours: null },
+    { id: 'g4-routine', grade: 4, title: 'Еда, распорядок, домашние обязанности', section: 'Мир моего «я»', hours: null },
+    { id: 'g4-games', grade: 4, title: 'Игры, питомец, любимые занятия', section: 'Мир моих увлечений', hours: null },
+    { id: 'g4-sport', grade: 4, title: 'Спорт', section: 'Мир моих увлечений', hours: null },
+    { id: 'g4-tale', grade: 4, title: 'Любимая сказка, история', section: 'Мир моих увлечений', hours: null },
+    { id: 'g4-holidays', grade: 4, title: 'Выходной, каникулы', section: 'Мир моих увлечений', hours: null },
+    { id: 'g4-room', grade: 4, title: 'Комната, мебель и интерьер', section: 'Мир вокруг меня', hours: null },
+    { id: 'g4-school', grade: 4, title: 'Школа, любимые предметы', section: 'Мир вокруг меня', hours: null },
+    { id: 'g4-friends', grade: 4, title: 'Друзья: внешность, характер', section: 'Мир вокруг меня', hours: null },
+    { id: 'g4-travel', grade: 4, title: 'Малая родина, путешествия', section: 'Мир вокруг меня', hours: null },
+    { id: 'g4-nature', grade: 4, title: 'Животные, погода, времена года', section: 'Мир вокруг меня', hours: null },
+    { id: 'g4-shopping', grade: 4, title: 'Покупки', section: 'Мир вокруг меня', hours: null },
+    { id: 'g4-countries', grade: 4, title: 'Страны, достопримечательности, праздники', section: 'Родная страна', hours: null },
+    { id: 'g4-jobs', grade: 4, title: 'Профессии', section: 'сквозная', hours: null },
+  ],
+  // грамматические навыки: ошибка записывается с кодом навыка; навыки слоя frp до Spotlight — только на узнавание
+  skills: [
+    { code: 'G2-01', grade: 2, title: 'to be: am / is / are', where: 'вводный модуль', layer: 'base', error: 'I is, They is' },
+    { code: 'G2-02', grade: 2, title: 'have got / has got', where: 'M4', layer: 'base', error: 'He have got' },
+    { code: 'G2-03', grade: 2, title: 'can / can’t + глагол', where: 'M3', layer: 'base', error: 'He can swims' },
+    { code: 'G2-04', grade: 2, title: 'Множественное число по правилу', where: '', layer: 'base', error: 'two cat' },
+    { code: 'G2-05', grade: 2, title: 'Повелительное наклонение, Don’t', where: '', layer: 'base', error: 'Not sit down!' },
+    { code: 'G2-06', grade: 2, title: 'my / your / our, this', where: '', layer: 'base', error: 'It’s me book' },
+    { code: 'G2-07', grade: 2, title: 'Предлоги in / on / under', where: 'M1', layer: 'base', error: 'путаница in / on' },
+    { code: 'G2-08', grade: 2, title: 'there is / there are', where: '', layer: 'frp', error: 'There is two cats' },
+    { code: 'G2-09', grade: 2, title: 'I like / he likes', where: '', layer: 'frp', error: 'She like milk' },
+    { code: 'G3-01', grade: 3, title: 'Present Simple: -s в 3-м лице, do / does', where: 'M3, M8', layer: 'base', error: 'Does he likes?' },
+    { code: 'G3-02', grade: 3, title: 'some / any', where: 'M3', layer: 'base', error: 'I haven’t got some' },
+    { code: 'G3-03', grade: 3, title: 'a / an', where: 'M4', layer: 'base', error: 'a apple' },
+    { code: 'G3-04', grade: 3, title: 'this / that / these / those', where: 'M4', layer: 'base', error: 'this books' },
+    { code: 'G3-05', grade: 3, title: 'Притяжательный падеж ’s', where: 'M4', layer: 'base', error: 'the book of Ann' },
+    { code: 'G3-06', grade: 3, title: 'Исключения множественного числа', where: 'M5', layer: 'base', error: 'mouses, childs' },
+    { code: 'G3-07', grade: 3, title: 'Предлоги места, правописание -es', where: 'M6', layer: 'base', error: 'boxs' },
+    { code: 'G3-08', grade: 3, title: 'Present Continuous', where: 'M7', layer: 'base', error: 'He playing' },
+    { code: 'G3-09', grade: 3, title: 'Время по часам, дни недели', where: 'M8', layer: 'base', error: 'at Monday' },
+    { code: 'G3-10', grade: 3, title: 'Past Simple — узнавание', where: '', layer: 'frp', error: 'не узнаёт went как go' },
+    { code: 'G3-11', grade: 3, title: 'Притяжательные местоимения his / her / its / their', where: 'M2', layer: 'base', error: 'his вместо her' },
+    { code: 'G4-01', grade: 4, title: 'Present Simple или Continuous', where: 'M1–M2', layer: 'base', error: 'He is play every day' },
+    { code: 'G4-02', grade: 4, title: 'much / many / a lot of', where: 'M3', layer: 'base', error: 'many milk' },
+    { code: 'G4-03', grade: 4, title: 'must / mustn’t', where: 'M3', layer: 'base', error: 'You must to go' },
+    { code: 'G4-04', grade: 4, title: 'Степени сравнения', where: 'M4', layer: 'base', error: 'more big, gooder' },
+    { code: 'G4-05', grade: 4, title: 'was / were, порядковые числа', where: 'M5', layer: 'base', error: 'They was' },
+    { code: 'G4-06', grade: 4, title: 'Past Simple правильных глаголов, did', where: 'M6', layer: 'base', error: 'Did you played?' },
+    { code: 'G4-07', grade: 4, title: 'Неправильные глаголы', where: 'M7', layer: 'base', error: 'goed' },
+    { code: 'G4-08', grade: 4, title: 'be going to, will / won’t', where: 'M8', layer: 'base', error: 'I going to' },
+    { code: 'G4-09', grade: 4, title: 'have to', where: '', layer: 'frp', error: 'He have to' },
+  ],
+  // типы заданий: код → описание и редкость квеста; kinds — какие упражнения Quest уже им соответствуют
+  taskTypes: [
+    { code: '2-A', grade: 2, title: 'Услышал слово → выбрал картинку', rarity: 'common', kinds: ['listen'] },
+    { code: '2-B', grade: 2, title: 'Буква или звук → слово', rarity: 'rare', kinds: [] },
+    { code: '2-C', grade: 2, title: 'Собрать слово из букв', rarity: 'rare', kinds: ['spell'] },
+    { code: '2-D', grade: 2, title: 'Найди лишнее в тематическом ряду', rarity: 'common', kinds: [] },
+    { code: '2-E', grade: 2, title: 'Картинка → выбор из двух фраз', rarity: 'epic', kinds: [] },
+    { code: '3-A', grade: 3, title: 'Вставить слово в короткую фразу', rarity: 'common', kinds: ['grammar'] },
+    { code: '3-B', grade: 3, title: 'Сопоставить вопрос и ответ', rarity: 'rare', kinds: [] },
+    { code: '3-C', grade: 3, title: 'Короткий диалог с выбором реплики', rarity: 'epic', kinds: [] },
+    { code: '3-D', grade: 3, title: 'Картинка → выбор предложения', rarity: 'common', kinds: [] },
+    { code: '3-E', grade: 3, title: 'Подпись к картинке из готовых слов', rarity: 'rare', kinds: [] },
+    { code: '3-F', grade: 3, title: 'Мини-сказка с вопросами', rarity: 'epic', kinds: ['reading'] },
+    { code: '4-A', grade: 4, title: 'Текст до 160 слов + вопросы', rarity: 'rare', kinds: ['reading'] },
+    { code: '4-B', grade: 4, title: 'Верно / неверно / не сказано', rarity: 'common', kinds: [] },
+    { code: '4-C', grade: 4, title: 'Собрать предложение из слов', rarity: 'common', kinds: [] },
+    { code: '4-D', grade: 4, title: 'Прочитать таблицу и ответить', rarity: 'rare', kinds: [] },
+    { code: '4-E', grade: 4, title: 'Написать слово или фразу самостоятельно', rarity: 'epic', kinds: [] },
+    { code: '4-F', grade: 4, title: 'Дописать письмо другу по образцу', rarity: 'legendary', kinds: [] },
+  ],
+};
+const SKILLS = Object.fromEntries(CURRICULUM.skills.map(s => [s.code, s]));
+// Код типа задания для упражнения Quest в уроке этого класса (или null, если в карте такого нет)
+function taskTypeFor(kind, grade){
+  return CURRICULUM.taskTypes.find(t => t.grade === grade && t.kinds.includes(kind))?.code || null;
+}
+
 // экспорт в глобальную область
 window.EQ = {
   CHARACTERS,
@@ -977,4 +1096,5 @@ window.EQ = {
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   RANKS, rankFor,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
+  CURRICULUM, SKILLS, taskTypeFor,
 };

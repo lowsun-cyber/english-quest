@@ -2,7 +2,7 @@
 import { logAnswer } from './activity.js';
 import { addItem, renderHUD, renderInventory, reward } from './hud.js';
 import { BLOCK, CHECKPOINT_PASS, CHECKPOINT_SIZE, lessonsOf, renderMap } from './map.js';
-import { recordMistake } from './mistakes.js';
+import { logSkill, recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, closeModal, confetti, openModal } from './ui.js';
@@ -66,6 +66,7 @@ export function startCheckpoint(cp){
         document.querySelectorAll('.opt').forEach(b => b.disabled = true);
         const ok = btn.dataset.o === answer;
         logAnswer(ok);
+        if (item.type === 'grammar') logSkill(item.q, ok, btn.dataset.o);
         if (ok){ btn.classList.add('correct'); right++; }
         else {
           btn.classList.add('wrong');

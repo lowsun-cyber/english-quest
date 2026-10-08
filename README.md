@@ -59,6 +59,7 @@ python3 -m http.server 8000     # открыть http://localhost:8000
 ```bash
 node tests/speech.mjs   # сравнение речи для «Говори»
 node tests/merge.mjs    # объединение прогресса с разных устройств
+node tests/curriculum.mjs  # разметка уроков по карте программы (темы, навыки G2–G4)
 node tests/api.mjs      # сервер учителя (нужен PHP 8.1+)
 node tests/smoke.mjs    # всё приложение в headless Chrome
 ```

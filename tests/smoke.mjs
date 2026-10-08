@@ -217,6 +217,21 @@ try {
     for (const s of ['Ответов:', 'Цель дня', 'Трудные слова', 'Сданы проверки']) if (!rep.includes(s)) throw new Error('в отчёте нет «' + s + '»');
     __close(); return tiles + ' плиток, отчёт полный';`));
 
+  await test('грамматические навыки: учёт и панель', () => js(`
+    const { logSkill } = await import('/js/mistakes.js');
+    const { saveState } = await import('/js/state.js');
+    const q = window.EQ.LESSONS.find(l => l.id === 'g4-daystoremember').grammar.find(g => g.skill === 'G4-07');
+    logSkill(q, false, 'goed'); logSkill(q, false, 'goed'); logSkill(q, true, q.a); logSkill({ q: 'без навыка' }, false, 'x');
+    await saveState();
+    const sk = __ls().skills;
+    if (sk['G4-07']?.bad !== 2 || sk['G4-07'].ok !== 1 || sk['G4-07'].wrong.goed !== 2 || Object.keys(sk).some(k => !window.EQ.SKILLS[k])) throw new Error('учёт навыка: ' + JSON.stringify(sk));
+    await __gate();
+    const txt = document.getElementById('modal-body').innerText;
+    if (!/Грамматика по навыкам/.test(txt) || !/Неправильные глаголы/.test(txt) || !/путает: goed/.test(txt)) throw new Error('в панели нет навыка');
+    document.getElementById('t-report').click(); await __sleep(300);
+    if (!/Грамматика, над чем поработать: Неправильные глаголы/.test(document.getElementById('t-report-out').value)) throw new Error('в отчёте нет слабого навыка');
+    __close(); return 'G4-07: 1 верно, 2 ошибки (goed)';`));
+
   await test('лист для печати', () => js(`
     let printed = 0; window.print = () => { printed++; };
     await __gate();

@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { LESSONS, MAX_LEVEL, levelFromXp, rankFor } from './eq.js';
+import { CURRICULUM, LESSONS, MAX_LEVEL, SKILLS, levelFromXp, rankFor } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -79,6 +79,23 @@ const minutes = sec => sec > 0 && sec < 60 ? '<1' : Math.round(sec / 60);
 const pctOf = (ok, bad) => ok + bad ? Math.round(ok * 100 / (ok + bad)) : null;
 
 // Сводка за последние n дней + за всё время
+// ---------- грамматические навыки (коды G2–G4 из карты программы) ----------
+// weak — есть ошибки и верных меньше 70% (или ошибок не меньше трёх); сначала слабые, затем по коду
+export const SKILL_WEAK_PCT = 70;
+export function skillStats(st){
+  return Object.entries(st.skills || {}).filter(([code]) => SKILLS[code]).map(([code, v]) => {
+    const ok = v.ok || 0, bad = v.bad || 0, pct = pctOf(ok, bad);
+    const wrong = Object.entries(v.wrong || {}).sort((a, b) => b[1] - a[1]);
+    return { code, skill: SKILLS[code], ok, bad, pct, last: v.last || 0, wrong, weak: bad > 0 && (pct < SKILL_WEAK_PCT || bad >= 3) };
+  }).sort((a, b) => (b.weak - a.weak) || (a.weak ? a.pct - b.pct : 0) || a.code.localeCompare(b.code));
+}
+// Что уже встречалось ребёнку по карте программы: темы и навыки начатых уроков
+export function curriculumCoverage(st){
+  const started = LESSONS.filter(l => Object.keys(st.lessonProgress?.[l.id] || {}).length);
+  const topics = new Set(started.flatMap(l => l.topics || []));
+  return { topics: topics.size, topicsTotal: CURRICULUM.topics.length, skills: Object.keys(st.skills || {}).filter(c => SKILLS[c]).length, skillsTotal: CURRICULUM.skills.length };
+}
+
 export function studentStats(st, n = 7){
   const days = lastDaysOf(st, n);
   const sec = days.reduce((s, d) => s + d.sec, 0);
@@ -102,6 +119,7 @@ export function studentStats(st, n = 7){
     lessonsDone: lessons.filter(x => x.done).length,
     xp, level, maxLevel: MAX_LEVEL, rank: rankFor(level), gold: st.gold || 0, mastered: st.mastered || 0,
     collected: Object.keys(st.inventory || {}).length,
+    skills: skillStats(st), coverage: curriculumCoverage(st),
     allTime: { days: all, sec: allSec, min: minutes(allSec), ok: allOk, bad: allBad, pct: pctOf(allOk, allBad),
       activeDays: all.filter(d => d.sec > 0 || (d.ok || 0) + (d.bad || 0) > 0).length, first: allKeys[0] || null, last: allKeys[allKeys.length - 1] || null },
   };
@@ -120,6 +138,8 @@ export function reportText(st, who = '', s = studentStats(st), extra = []){
   if (worst.length) lines.push(`Больше всего ошибок: ${worst.map(x => `${x.l.title} (${x.wrong})`).join(', ')}`);
   const words = s.hard.filter(x => x.m.type === 'word').slice(0, 8).map(x => x.data.word.en);
   if (words.length) lines.push(`Трудные слова: ${words.join(', ')}`);
+  const weak = s.skills.filter(x => x.weak).slice(0, 3);
+  if (weak.length) lines.push(`Грамматика, над чем поработать: ${weak.map(x => `${x.skill.title} (${x.pct}%${x.wrong[0] ? `, путает: ${x.wrong[0][0]}` : ''})`).join('; ')}`);
   if (st.mastered) lines.push(`Выучено после ошибок: ${st.mastered}`);
   lines.push(...extra);
   const cpsDone = CHECKPOINTS.filter(cp => st.checkpoints?.[cp.id]?.passedAt);

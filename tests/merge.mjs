@@ -109,5 +109,16 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('объединение не меняет входы', l.xp === 40 && r.xp === 100);
 }
 
+// грамматические навыки: ответы и неверные варианты складываются, время — последнее
+{
+  const base = S({ skills: { 'G4-07': { ok: 2, bad: 1, last: 100, wrong: { goed: 1 } } } });
+  const tablet = S({ skills: { 'G4-07': { ok: 3, bad: 2, last: 200, wrong: { goed: 2 } } } });
+  const phone = S({ skills: { 'G4-07': { ok: 4, bad: 3, last: 300, wrong: { goed: 1, gone: 1 } }, 'G2-01': { ok: 1, bad: 0, last: 250 } } });
+  const k = M(base, tablet, phone).skills;
+  check('навыки: ответы с обоих устройств складываются', k['G4-07'].ok === 5 && k['G4-07'].bad === 4 && k['G4-07'].last === 300, k);
+  check('навыки: неверные варианты складываются', k['G4-07'].wrong.goed === 2 && k['G4-07'].wrong.gone === 1, k['G4-07'].wrong);
+  check('навыки: новый навык с другого устройства появляется', k['G2-01']?.ok === 1);
+}
+
 console.log(`\n${total - fail} из ${total} проверок объединения прошли`);
 process.exit(fail ? 1 : 0);

@@ -462,6 +462,15 @@ async function renderStudent(id){
       </div>
     </section>
 
+    <section class="adm-card">
+      <h2 class="adm-h2">Грамматика по навыкам <span class="t-muted">встречалось ${S.coverage.skills} из ${S.coverage.skillsTotal} · темы ${S.coverage.topics} из ${S.coverage.topicsTotal}</span></h2>
+      ${S.skills.length ? `<div class="t-table-wrap"><table class="t-table adm-table">
+        <thead><tr><th>Навык</th><th>Класс</th><th>Верно</th><th>Ответов</th><th>Чаще всего путает</th></tr></thead>
+        <tbody>${S.skills.map(x => `<tr><td>${x.weak ? '⚠️' : '✅'} ${esc(x.skill.title)} <span class="t-muted">${x.code}</span></td><td>${x.skill.grade}</td><td>${x.pct}%</td><td>${x.ok + x.bad}</td>
+          <td>${x.wrong.length ? x.wrong.slice(0, 3).map(([o, n]) => `${esc(o)} ×${n}`).join(', ') : '<span class="t-muted">—</span>'}</td></tr>`).join('')}</tbody>
+      </table></div>` : '<p class="t-muted">Пока нет — навыки появятся после упражнений «Грамматика».</p>'}
+    </section>
+
     <section class="adm-card adm-cols">
       <div>
         <h2 class="adm-h2">Отчёт</h2>
