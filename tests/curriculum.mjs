@@ -22,7 +22,7 @@ check('коды навыков не повторяются', uniq(CURRICULUM.ski
 check('коды типов заданий не повторяются', uniq(CURRICULUM.taskTypes.map(t => t.code)));
 check('навыки: код G<класс>-NN, слой base/frp/ext', CURRICULUM.skills.every(s => new RegExp(`^G${s.grade}-\\d\\d$`).test(s.code) && ['base', 'frp', 'ext'].includes(s.layer)));
 check('темы: id g<класс>-…', CURRICULUM.topics.every(t => t.id.startsWith(`g${t.grade}-`)));
-const KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak', 'picture', 'fill'];
+const KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak', 'picture', 'fill', 'build'];
 check('типы заданий: упражнения Quest существуют', CURRICULUM.taskTypes.every(t => t.kinds.every(k => KINDS.includes(k))));
 check('типы заданий: редкость из списка', CURRICULUM.taskTypes.every(t => ['common', 'rare', 'epic', 'legendary'].includes(t.rarity)));
 check('чтение в 4 классе — тип 4-A', taskTypeFor('reading', 4) === '4-A' && taskTypeFor('cards', 2) === null);
@@ -54,7 +54,14 @@ for (const g of [2, 3, 4]){
   check(`${g} класс: порядок тем без повторов`, uniq(ord), ord);
 }
 check('2 класс: у каждой темы есть «Что на картинке?» (тип 2-E)', LESSONS.filter(l => l.grade === 2).every(l => l.pics?.length >= 3));
-const { fillItemsFor } = ctx.window.EQ;
+const { fillItemsFor, buildItemsFor } = ctx.window.EQ;
+for (const l of LESSONS.filter(l => l.grade === 4)){
+  const n = l.reading.text.split(/\s+/).length;
+  check(`${l.id}: текст (4-A) — 70–160 слов и 3 вопроса`, n >= 70 && n <= 160 && l.reading.questions.length >= 3, { слов: n, вопросов: l.reading.questions.length });
+  const b = buildItemsFor(l);
+  check(`${l.id}: «Собери предложение» (4-C) — не меньше 3 заданий`, b.length >= 3, b.length);
+  for (const it of b) check(`${l.id}: «${it.text}» — 4–9 слов`, it.tokens.length >= 4 && it.tokens.length <= 9 && it.tokens.join(' ') === it.text);
+}
 for (const l of LESSONS.filter(l => l.grade === 3)){
   const n = l.reading.text.split(/\s+/).length;
   check(`${l.id}: мини-сказка (3-F) — 60–130 слов и 3 вопроса`, n >= 60 && n <= 130 && l.reading.questions.length >= 3, { слов: n, вопросов: l.reading.questions.length });

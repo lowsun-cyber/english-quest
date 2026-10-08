@@ -1464,3 +1464,16 @@ body.drawer-open { overflow: hidden; }
 .pic-emoji { font-size: 84px; line-height: 1.1; text-align: center; margin: 10px 0 6px; }
 .pic-options { grid-template-columns: 1fr; }
 .pic-options .opt { font-size: 20px; }
+
+/* ==== СОБЕРИ ПРЕДЛОЖЕНИЕ (4-C) ==== */
+.build-answer, .build-pool { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 14px 0; min-height: 52px; }
+.build-answer { padding: 10px; border: 2px dashed var(--line); border-radius: 12px; align-items: center; }
+.build-tile { font: inherit; font-size: 18px; font-weight: 700; padding: 8px 14px; min-height: 44px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; box-shadow: 0 3px 0 var(--line); }
+.build-tile.on { background: #d5eefa; color: var(--on-color); }
+[data-theme="dark"] .build-tile.on { background: #1f3346; color: #cfe8ff; }
+.build-result.ok { color: #2f8f3f; }
+.build-result.bad { color: #c0392b; }
+@media (max-width: 720px) {
+  /* на телефоне крестик окна стоит над заголовком — кнопка словаря слева от названия темы */
+  .lesson-title-row { flex-direction: row-reverse; justify-content: flex-end; padding-right: 48px; }
+}

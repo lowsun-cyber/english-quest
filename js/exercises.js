@@ -1,7 +1,7 @@
 // English Quest — Упражнения: карточки, слова, слушай, пары, напиши, грамматика, чтение, говори.
 import { PASS_SCORE, candidatesFromResults, phraseWords, scoreSpeech } from './speech.js';
 import { logAnswer } from './activity.js';
-import { CHARACTERS, LESSONS, fillItemsFor, lessonStartLine } from './eq.js';
+import { CHARACTERS, LESSONS, buildItemsFor, fillItemsFor, lessonStartLine } from './eq.js';
 import { checkHomework } from './homework.js';
 import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
 import { renderMap } from './map.js';
@@ -211,6 +211,7 @@ export function startExercise(lesson, kind){
     case 'speak': return exSpeak(lesson, guide);
     case 'picture': return exPicture(lesson, guide);
     case 'fill': return exFill(lesson, guide);
+    case 'build': return exBuild(lesson, guide);
   }
 }
 
@@ -462,6 +463,63 @@ export function exGrammar(lesson, guide){
         }
       };
     });
+  }
+}
+
+// === Собери предложение (тип 4-C): слова фразы перемешаны — нажимать по порядку ===
+export function exBuild(lesson, guide){
+  const list = shuffle(buildItemsFor(lesson)).slice(0, 5);
+  let idx = 0, right = 0;
+  render();
+  function render(){
+    if (idx >= list.length){
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="question"><h3>Собрано верно: ${right} из ${list.length} 🧱</h3><p>${right === list.length ? 'Отличный порядок слов!' : 'Порядок слов в английском строгий — потренируемся ещё.'}</p></div>
+        <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
+      `);
+      document.getElementById('next-close').onclick = closeModal;
+      return;
+    }
+    const it = list[idx];
+    // перемешиваем так, чтобы порядок точно отличался от правильного
+    let pool = it.tokens.map((t, i) => ({ t, i }));
+    for (let k = 0; k < 10 && pool.every((x, j) => x.i === j); k++) pool = shuffle(pool);
+    const picked = [];
+    draw();
+    function draw(){
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="question">
+          <div class="q-text pixel">Собери предложение</div>
+          <div class="build-answer" aria-live="polite">${picked.map((x, j) => `<button class="build-tile on" data-j="${j}">${escapeHtml(x.t)}</button>`).join('') || '<span class="t-muted">нажимай на слова по порядку</span>'}</div>
+          <div class="build-pool">${pool.map((x, j) => picked.includes(x) ? '' : `<button class="build-tile" data-p="${j}">${escapeHtml(x.t)}</button>`).join('')}</div>
+          <div class="controls">
+            <button class="btn" id="build-check" ${picked.length === pool.length ? '' : 'disabled'}>✅ Проверить</button>
+            <button class="btn secondary" id="build-hear">🔊 Подсказка</button>
+          </div>
+        </div>
+      `);
+      document.querySelectorAll('.build-tile[data-p]').forEach(b => b.onclick = () => { picked.push(pool[+b.dataset.p]); draw(); });
+      document.querySelectorAll('.build-tile[data-j]').forEach(b => b.onclick = () => { picked.splice(+b.dataset.j, 1); draw(); });
+      document.getElementById('build-hear').onclick = () => speak(it.text);
+      document.getElementById('build-check').onclick = check;
+    }
+    function check(){
+      const ok = picked.map(x => x.t).join(' ') === it.text;
+      logSkill(it, ok, ok ? null : picked.map(x => x.t).join(' '));
+      if (ok){ right++; reward(15, 3); markProgress(lesson.id, 'build'); toast('✅ +15 XP'); }
+      else { penalty(); }
+      openModal(`
+        ${lessonHeader(lesson, guide)}
+        <div class="question">
+          <div class="q-text pixel">${ok ? 'Верно! 🎉' : 'Почти! Правильно так:'}</div>
+          <div class="q-text q-sentence build-result ${ok ? 'ok' : 'bad'}">${escapeHtml(it.text)}</div>
+        </div>
+      `);
+      speak(it.text);
+      afterFeedback(() => { idx++; render(); }, ok ? 1500 : 2600);
+    }
   }
 }
 

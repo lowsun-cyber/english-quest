@@ -1498,7 +1498,7 @@ const LESSONS = [
 
   // ============ 4 КЛАСС ============
   {
-    id:'g4-family4', grade:4, order:1, guide:'harlow', module:'M1', topics:['g4-friends', 'g4-family'], cefr:'A1',
+    id:'g4-family4', grade:4, order:2, guide:'harlow', module:'M1', topics:['g4-friends', 'g4-family'], cefr:'A1',
     title:'Family & Friends!', subtitle:'Друзья и внешность',
     intro:'В 4 классе мы описываем людей: рост, волосы, характер.',
     words:[
@@ -1513,6 +1513,10 @@ const LESSONS = [
       {en:'uncle', ru:'дядя', emoji:'👨'},
       {en:'aunt', ru:'тётя', emoji:'👩'},
       {en:'cousin', ru:'кузен', emoji:'🧒'},
+      {en:'curly hair', ru:'кудрявые волосы', emoji:'👩‍🦱'},
+      {en:'glasses', ru:'очки', emoji:'👓'},
+      {en:'young', ru:'молодой', emoji:'👶'},
+      {en:'old', ru:'старый, пожилой', emoji:'👴'},
     ],
     phrases:[
       'Uncle Harry is tall and slim.',
@@ -1524,13 +1528,14 @@ const LESSONS = [
       {skill:'G2-02', q:'He ___ got fair hair.', a:'has', hint:'He/she — has got.', options:['have','has','is','are']},
       {skill:'G2-02', q:'They ___ got a big house.', a:'have', hint:'They — have got.', options:['have','has','is','are']},
     ],
-    reading:{title:'My Cousin Mia', text:'Mia is my cousin. She is ten. She is tall and slim. She has got long dark hair and green eyes. Mia is very funny — she can tell great jokes!', questions:[
+    reading:{title:'My Cousin Mia', text:'Mia is my cousin. She is ten. She is tall and slim. She has got long dark hair and green eyes. Mia is very funny — she can tell great jokes! Her dad is my uncle Harry. He is tall and he has got curly hair and glasses. Uncle Harry is very kind and friendly. Mia’s grandpa is old, but he is very strong. Every Sunday the whole family has dinner together at Grandpa’s house.', questions:[
       {q:'How old is Mia?', a:'ten', options:['nine','ten','eleven']},
       {q:'What eyes has Mia got?', a:'green', options:['blue','brown','green']},
+      {q:'What does Uncle Harry look like?', a:'tall, with curly hair and glasses', options:['tall, with curly hair and glasses','short and slim','fair hair and green eyes']},
     ]},
   },
   {
-    id:'g4-workingday', grade:4, order:2, guide:'harlow', module:'M2', topics:['g4-jobs', 'g4-routine'], cefr:'A1',
+    id:'g4-workingday', grade:4, order:5, guide:'harlow', module:'M2', topics:['g4-jobs', 'g4-routine'], cefr:'A1',
     title:'A Working Day!', subtitle:'Профессии и рабочий день',
     intro:'Кем работают люди? Узнаем самые важные профессии.',
     words:[
@@ -1544,6 +1549,10 @@ const LESSONS = [
       {en:'postman', ru:'почтальон', emoji:'📮'},
       {en:'hospital', ru:'больница', emoji:'🏥'},
       {en:'shop', ru:'магазин', emoji:'🏬'},
+      {en:'always', ru:'всегда', emoji:'♾️'},
+      {en:'usually', ru:'обычно', emoji:'🔄'},
+      {en:'never', ru:'никогда', emoji:'🚫'},
+      {en:'uniform', ru:'форма', emoji:'👔'},
     ],
     phrases:[
       'My mum is a doctor. She works in a hospital.',
@@ -1553,15 +1562,16 @@ const LESSONS = [
     ],
     grammar:[
       {skill:'G4-01', q:'She ___ in a hospital.', a:'works', hint:'She — глагол + s.', options:['work','works','working','are']},
-      {q:'I ___ help my mum.', a:'always', hint:'Наречие частоты.', options:['always','tomorrow','now','yesterday']},
+      {skill:'G4-11', q:'I ___ help my mum.', a:'always', hint:'Наречие частоты.', options:['always','tomorrow','now','yesterday']},
     ],
-    reading:{title:'My Mum the Doctor', text:'My mum is a doctor. She works in a big hospital. Every day she helps sick people. She usually gets up at six and comes home at seven. I am proud of her!', questions:[
+    reading:{title:'My Mum the Doctor', text:'My mum is a doctor. She works in a big hospital. Every day she helps sick people. She usually gets up at six and comes home at seven. I am proud of her! My dad is a vet. He always wears a white uniform and helps sick animals. On Saturdays I sometimes go to work with him. I usually feed the cats and dogs. I never feel bored there! When I grow up, I want to be a vet too.', questions:[
       {q:'What is mum?', a:'a doctor', options:['a nurse','a doctor','a teacher']},
       {q:'When does she get up?', a:'at six', options:['at five','at six','at seven']},
+      {q:'What does the dad do?', a:'he is a vet', options:['he is a vet','he is a doctor','he is a farmer']},
     ]},
   },
   {
-    id:'g4-tastytreats', grade:4, order:3, guide:'harlow', module:'M3', topics:['g4-routine', 'g4-shopping'], cefr:'A1',
+    id:'g4-tastytreats', grade:4, order:8, guide:'harlow', module:'M3', topics:['g4-routine', 'g4-shopping'], cefr:'A1',
     title:'Tasty Treats!', subtitle:'Вкусняшки и порции',
     intro:'Ммм, вкусно! Учим how much и how many.',
     words:[
@@ -1575,6 +1585,11 @@ const LESSONS = [
       {en:'jelly', ru:'желе', emoji:'🍮'},
       {en:'biscuits', ru:'печенье', emoji:'🍪'},
       {en:'a lot of', ru:'много', emoji:'📦'},
+      {en:'beans', ru:'фасоль', emoji:'🫘'},
+      {en:'olive oil', ru:'оливковое масло', emoji:'🫒'},
+      {en:'salt', ru:'соль', emoji:'🧂'},
+      {en:'pepper', ru:'перец', emoji:'🌶️'},
+      {en:'tomato', ru:'помидор', emoji:'🍅'},
     ],
     phrases:[
       'How much sugar do you need?',
@@ -1586,13 +1601,14 @@ const LESSONS = [
       {skill:'G4-02', q:'How ___ sugar? (нельзя посчитать)', a:'much', hint:'Неисчисляемое — much.', options:['much','many','a','some']},
       {skill:'G4-02', q:'How ___ lemons? (можно посчитать)', a:'many', hint:'Исчисляемое — many.', options:['much','many','a','some']},
     ],
-    reading:{title:'Grandma\u2019s Cake', text:'My grandma makes the best cake. She needs a lot of flour, some sugar and three eggs. She also puts one lemon in the cake. It is very tasty!', questions:[
+    reading:{title:'Grandma\u2019s Cake', text:'My grandma makes the best cake. She needs a lot of flour, some sugar and three eggs. She also puts one lemon in the cake. It is very tasty! On Sundays we make pizza together. We need tomatoes, cheese, a little olive oil and some salt and pepper. My little brother puts too many beans on his pizza! How much cheese do we need? A lot! Pizza day is my favourite day of the week.', questions:[
       {q:'How many eggs?', a:'three', options:['two','three','four']},
       {q:'What is in the cake?', a:'flour, sugar, eggs, lemon', options:['only sugar','flour, sugar, eggs, lemon','only lemon']},
+      {q:'What do they make on Sundays?', a:'pizza', options:['pizza','soup','cake']},
     ]},
   },
   {
-    id:'g4-zoo', grade:4, order:4, guide:'luna', module:'M4', topics:['g4-nature'], cefr:'A1',
+    id:'g4-zoo', grade:4, order:10, guide:'luna', module:'M4', topics:['g4-nature'], cefr:'A1',
     title:'At the Zoo!', subtitle:'В зоопарке',
     intro:'Nurse Luna берёт нас в путешествие в зоопарк! Смотри в оба.',
     words:[
@@ -1606,6 +1622,11 @@ const LESSONS = [
       {en:'penguin', ru:'пингвин', emoji:'🐧'},
       {en:'seal', ru:'тюлень', emoji:'🦭'},
       {en:'dolphin', ru:'дельфин', emoji:'🐬'},
+      {en:'lizard', ru:'ящерица', emoji:'🦎'},
+      {en:'whale', ru:'кит', emoji:'🐋'},
+      {en:'koala', ru:'коала', emoji:'🐨'},
+      {en:'kangaroo', ru:'кенгуру', emoji:'🦘'},
+      {en:'lazy', ru:'ленивый', emoji:'🦥'},
     ],
     phrases:[
       'The lion is stronger than the tiger.',
@@ -1617,13 +1638,14 @@ const LESSONS = [
       {skill:'G4-04', q:'The lion is ___ than the cat.', a:'bigger', hint:'Сравнительная степень.', options:['big','bigger','biggest','more big']},
       {skill:'G4-04', q:'The giraffe is the ___ animal.', a:'tallest', hint:'Превосходная степень.', options:['tall','taller','tallest','more tall']},
     ],
-    reading:{title:'A Day at the Zoo', text:'On Sunday we went to the zoo. We saw a big lion, two funny monkeys and a huge elephant. The giraffe was the tallest animal there. It was a great day!', questions:[
+    reading:{title:'A Day at the Zoo', text:'On Sunday we went to the zoo. We saw a big lion, two funny monkeys and a huge elephant. The giraffe was the tallest animal there. It was a great day! The monkeys were jumping from tree to tree, and the lazy hippo was sleeping in the water. In the sea world we saw a whale and some dolphins. A whale is bigger than a dolphin. My favourite animal was the koala — it is smaller than a kangaroo, but it is so cute!', questions:[
       {q:'Which animal was the tallest?', a:'giraffe', options:['lion','elephant','giraffe']},
       {q:'When did they go?', a:'on Sunday', options:['on Monday','on Sunday','on Friday']},
+      {q:'What was the hippo doing?', a:'sleeping in the water', options:['eating','sleeping in the water','running']},
     ]},
   },
   {
-    id:'g4-yesterday', grade:4, order:5, guide:'owl', module:'M5', topics:['g4-travel', 'g4-friends'], cefr:'A1',
+    id:'g4-yesterday', grade:4, order:12, guide:'owl', module:'M5', topics:['g4-travel', 'g4-friends'], cefr:'A1',
     title:'Where Were You Yesterday?', subtitle:'Прошедшее время was/were',
     intro:'Where were you? Prof. Owl учит рассказывать о вчерашнем дне.',
     words:[
@@ -1636,6 +1658,11 @@ const LESSONS = [
       {en:'thirsty', ru:'хочет пить', emoji:'💧'},
       {en:'bored', ru:'скучающий', emoji:'😐'},
       {en:'scared', ru:'испуганный', emoji:'😨'},
+      {en:'angry', ru:'сердитый', emoji:'😠'},
+      {en:'first', ru:'первый', emoji:'🥇'},
+      {en:'second', ru:'второй', emoji:'🥈'},
+      {en:'third', ru:'третий', emoji:'🥉'},
+      {en:'last', ru:'прошлый, последний', emoji:'⏮️'},
     ],
     phrases:[
       'I was at home yesterday.',
@@ -1647,13 +1674,14 @@ const LESSONS = [
       {skill:'G4-05', q:'I ___ at home yesterday.', a:'was', hint:'I / he / she / it — was.', options:['was','were','is','are']},
       {skill:'G4-05', q:'They ___ happy.', a:'were', hint:'They / we / you — were.', options:['was','were','is','are']},
     ],
-    reading:{title:'Yesterday', text:'Yesterday I was at my grandma\u2019s house. My cousins were there too. We played all day. In the evening I was very tired but very happy!', questions:[
+    reading:{title:'Yesterday', text:'Yesterday I was at my grandma\u2019s house. My cousins were there too. We played all day. In the evening I was very tired but very happy! Last Saturday was different. I was at home and I was bored and a little angry because it was raining. My best friend was ill. But on Sunday the sun was out, and we were in the park all day. I was the first in our running race!', questions:[
       {q:'Where was the boy?', a:'at grandma\u2019s', options:['at school','at grandma\u2019s','at the zoo']},
       {q:'How was he in the evening?', a:'tired and happy', options:['sad and bored','tired and happy','angry']},
+      {q:'Why was the child bored last Saturday?', a:'it was raining', options:['it was raining','it was hot','school was closed']},
     ]},
   },
   {
-    id:'g4-tellthetale', grade:4, order:6, guide:'owl', module:'M6', topics:['g4-tale'], cefr:'A1',
+    id:'g4-tellthetale', grade:4, order:13, guide:'owl', module:'M6', topics:['g4-tale'], cefr:'A1',
     title:'Tell the Tale!', subtitle:'Сказка и прошедшее время',
     intro:'Prof. Owl рассказывает сказку. Учим правильные глаголы в прошедшем.',
     words:[
@@ -1665,6 +1693,11 @@ const LESSONS = [
       {en:'gold', ru:'золото', emoji:'🥇'},
       {en:'crown', ru:'корона', emoji:'👑'},
       {en:'brave', ru:'храбрый', emoji:'🦸'},
+      {en:'porridge', ru:'каша', emoji:'🥣'},
+      {en:'wizard', ru:'волшебник', emoji:'🧙'},
+      {en:'golden', ru:'золотой', emoji:'🌟'},
+      {en:'poor', ru:'бедный', emoji:'🥺'},
+      {en:'lamb', ru:'ягнёнок', emoji:'🐑'},
     ],
     phrases:[
       'Long, long ago there was a castle.',
@@ -1676,13 +1709,14 @@ const LESSONS = [
       {skill:'G4-06', q:'He ___ (jump) yesterday.', a:'jumped', hint:'Правильный глагол + -ed.', options:['jumped','jump','jumps','jumping']},
       {skill:'G4-06', q:'She ___ (play) football.', a:'played', hint:'play → played.', options:['played','play','plays','playing']},
     ],
-    reading:{title:'The Brave Prince', text:'Long ago there was a brave prince. He lived in a big castle. One day a dragon came to the village. The prince fought the dragon and saved the people. Everyone was very happy!', questions:[
+    reading:{title:'The Brave Prince', text:'Long ago there was a brave prince. He lived in a big castle. One day a dragon came to the village. The prince fought the dragon and saved the people. Everyone was very happy! In the same village there lived a poor girl and her little lamb. Every morning she cooked porridge for her old grandpa. The prince saw the girl and loved her kindness. A wizard gave them a golden crown, and the prince and the girl lived happily ever after.', questions:[
       {q:'Where did the prince live?', a:'in a big castle', options:['in a forest','in a big castle','in a shop']},
       {q:'What did he do?', a:'fought the dragon', options:['ran away','fought the dragon','ate a cake']},
+      {q:'What did the girl cook every morning?', a:'porridge', options:['porridge','soup','pancakes']},
     ]},
   },
   {
-    id:'g4-daystoremember', grade:4, order:7, guide:'harlow', module:'M7', topics:['g4-family', 'g4-countries'], cefr:'A1',
+    id:'g4-daystoremember', grade:4, order:15, guide:'harlow', module:'M7', topics:['g4-family', 'g4-countries'], cefr:'A1',
     title:'Days to Remember!', subtitle:'Памятные дни',
     intro:'Рассказываем о праздниках и воспоминаниях. Неправильные глаголы!',
     words:[
@@ -1696,6 +1730,10 @@ const LESSONS = [
       {en:'went', ru:'ходил (go)', emoji:'👣'},
       {en:'saw', ru:'видел (see)', emoji:'👁️'},
       {en:'had', ru:'был/имел (have)', emoji:'🎁'},
+      {en:'celebrate', ru:'праздновать', emoji:'🥳'},
+      {en:'competition', ru:'соревнование', emoji:'🏅'},
+      {en:'present', ru:'подарок', emoji:'🎀'},
+      {en:'card', ru:'открытка', emoji:'💌'},
     ],
     phrases:[
       'Last summer I went to the sea.',
@@ -1707,13 +1745,14 @@ const LESSONS = [
       {skill:'G4-07', q:'Yesterday I ___ to school.', a:'went', hint:'go → went.', options:['go','goed','went','gone']},
       {skill:'G4-07', q:'I ___ a big cat.', a:'saw', hint:'see → saw.', options:['see','sawed','saw','seen']},
     ],
-    reading:{title:'My Best Birthday', text:'Last year on my birthday my parents took me to the zoo. I saw lions, giraffes and a big elephant. In the evening we had a big cake. It was a day to remember!', questions:[
+    reading:{title:'My Best Birthday', text:'Last year on my birthday my parents took me to the zoo. I saw lions, giraffes and a big elephant. In the evening we had a big cake. It was a day to remember! My friends came to the party too. We played games and had a dancing competition. My best friend won it! I got a lot of presents and cards. My favourite present was a new bike from my grandparents. We celebrated until nine o’clock.', questions:[
       {q:'Where did they go?', a:'to the zoo', options:['to the park','to the zoo','to a shop']},
       {q:'What did they have in the evening?', a:'a big cake', options:['pizza','a big cake','ice cream']},
+      {q:'Who won the dancing competition?', a:'the best friend', options:['the best friend','the birthday child','Grandpa']},
     ]},
   },
   {
-    id:'g4-placestogo', grade:4, order:8, guide:'harlow', module:'M8', topics:['g4-holidays', 'g4-travel'], cefr:'A1',
+    id:'g4-placestogo', grade:4, order:17, guide:'harlow', module:'M8', topics:['g4-holidays', 'g4-travel'], cefr:'A1',
     title:'Places to Go!', subtitle:'Путешествия и будущее время',
     intro:'Куда мы поедем на каникулы? Учим going to.',
     words:[
@@ -1726,6 +1765,10 @@ const LESSONS = [
       {en:'train', ru:'поезд', emoji:'🚂'},
       {en:'ship', ru:'корабль', emoji:'🚢'},
       {en:'suitcase', ru:'чемодан', emoji:'🧳'},
+      {en:'rest', ru:'отдыхать', emoji:'😌'},
+      {en:'diary', ru:'дневник', emoji:'📔'},
+      {en:'relax', ru:'расслабляться', emoji:'🧘'},
+      {en:'map', ru:'карта', emoji:'🗺️'},
     ],
     phrases:[
       'I am going to visit London.',
@@ -1737,9 +1780,399 @@ const LESSONS = [
       {skill:'G4-08', q:'I ___ going to visit London.', a:'am', hint:'I — am.', options:['am','is','are','be']},
       {skill:'G4-08', q:'They ___ going to travel.', a:'are', hint:'They — are.', options:['am','is','are','be']},
     ],
-    reading:{title:'Summer Plans', text:'This summer we are going to visit London. We are going to fly by plane. We are going to see Big Ben and go to a big park. I can\u2019t wait!', questions:[
+    reading:{title:'Summer Plans', text:'This summer we are going to visit London. We are going to fly by plane. We are going to see Big Ben and go to a big park. I can\u2019t wait! Then we are going to take a train to the seaside. I am going to swim, relax on the beach and write in my holiday diary every day. Dad is going to buy a map of the city, and Mum is going to rest and read books. It is going to be a great holiday!', questions:[
       {q:'How are they going to travel?', a:'by plane', options:['by train','by plane','by ship']},
       {q:'What are they going to see?', a:'Big Ben', options:['a lion','Big Ben','a lake']},
+      {q:'What is the child going to write?', a:'a holiday diary', options:['a holiday diary','a letter','a story']},
+    ]},
+  },
+  {
+    id:'g4-back', grade:4, order:1, guide:'harlow', module:'Starter', topics:['g4-school'], cefr:'A1',
+    title:'Back Together!', subtitle:'Снова вместе: школа, предметы, анкета',
+    intro:'Новый учебный год! Вспоминаем друзей и предметы, учимся рассказывать о себе: имя, фамилия, возраст, класс.',
+    words:[
+      {en:'surname', ru:'фамилия', emoji:'🪪'},
+      {en:'age', ru:'возраст', emoji:'🎂'},
+      {en:'class', ru:'класс', emoji:'🏫'},
+      {en:'year', ru:'год (обучения)', emoji:'📆'},
+      {en:'timetable', ru:'расписание', emoji:'🗓️'},
+      {en:'favourite subject', ru:'любимый предмет', emoji:'⭐'},
+      {en:'library card', ru:'читательский билет', emoji:'💳'},
+      {en:'join', ru:'присоединяться', emoji:'➕'},
+      {en:'hope', ru:'надеяться', emoji:'🤞'},
+      {en:'remember', ru:'помнить', emoji:'💭'},
+      {en:'feel', ru:'чувствовать', emoji:'💓'},
+      {en:'CD', ru:'компакт-диск', emoji:'💿'},
+    ],
+    phrases:[
+      'Nice to see you again!',
+      'What is your surname?',
+      'My favourite subject is Science.',
+      'I hope you had a good summer.',
+      'What year are you in?',
+    ],
+    grammar:[
+      {q:'___ is your surname? — Petrov.', a:'What', hint:'Что? Какая? — What.', options:['What','Who','Where','When'], skill:'G4-12'},
+      {q:'I ___ in Year Four now.', a:'am', hint:'После I — am.', options:['am','is','are','be'], skill:'G2-01'},
+      {q:'We ___ Science on Tuesdays.', a:'have', hint:'Мы — have.', options:['have','has','are','having'], skill:'G3-01'},
+    ],
+    reading:{title:'A New Pupil', text:'It is the first day of school. There is a new pupil in our class. His name is Steve and his surname is Brown. He is ten years old. Steve is from Manchester, but now he lives in our town. On Monday we have English, Maths and Science. Steve’s favourite subject is Science because he likes experiments. After lessons we go to the library together, and Steve gets his first library card. "I hope we can be friends," he says. "I feel happy here!"', questions:[
+      {q:'What is the new pupil’s surname?', a:'Brown', options:['Brown','Petrov','Smith']},
+      {q:'Why does Steve like Science?', a:'he likes experiments', options:['he likes experiments','he likes songs','he likes football']},
+      {q:'Where do they go after lessons?', a:'to the library', options:['to the library','to the park','home']},
+    ]},
+  },
+  {
+    id:'g4-mythings', grade:4, order:3, guide:'max', module:'M1', topics:['g4-games'], cefr:'A1',
+    title:'My Things!', subtitle:'Мои вещи и где они лежат',
+    intro:'Где мои ключи? А телефон? Научимся называть свои вещи и говорить, где они лежат.',
+    words:[
+      {en:'watch', ru:'часы (наручные)', emoji:'⌚'},
+      {en:'hairbrush', ru:'расчёска', emoji:'🪮'},
+      {en:'roller blades', ru:'роликовые коньки', emoji:'🛼'},
+      {en:'gloves', ru:'перчатки', emoji:'🧤'},
+      {en:'keys', ru:'ключи', emoji:'🔑'},
+      {en:'mobile phone', ru:'мобильный телефон', emoji:'📱'},
+      {en:'camera', ru:'фотоаппарат', emoji:'📷'},
+      {en:'guitar', ru:'гитара', emoji:'🎸'},
+      {en:'helmet', ru:'шлем', emoji:'⛑️'},
+      {en:'skateboard', ru:'скейтборд', emoji:'🛹'},
+      {en:'video game', ru:'видеоигра', emoji:'🎮'},
+      {en:'backpack', ru:'рюкзак', emoji:'🎒'},
+    ],
+    phrases:[
+      'Where are my keys?',
+      'They are behind the sofa.',
+      'My mobile phone is next to the lamp.',
+      'Put your helmet on, please.',
+    ],
+    grammar:[
+      {q:'The gloves are ___ the table. (под)', a:'under', hint:'Под — under.', options:['under','on','behind','next to'], skill:'G3-07'},
+      {q:'My camera is ___ front of the TV.', a:'in', hint:'Перед — in front of.', options:['in','on','at','under'], skill:'G3-07'},
+      {q:'Look! Tom ___ playing the guitar.', a:'is', hint:'Сейчас, он — is …ing.', options:['is','are','am','do'], skill:'G4-01'},
+    ],
+    reading:{title:'Where Is Everything?', text:'Every morning Kate loses something. Today she can’t find her keys and her mobile phone. "Mum, where are my keys?" she asks. "They are on the shelf, next to your camera," says Mum. Kate finds her keys, but where is her phone? She looks under the bed and behind the sofa. Then her little brother laughs. He is playing a video game on her phone in the kitchen! Kate takes her phone, her helmet and her roller blades and goes to the park.', questions:[
+      {q:'Where are Kate’s keys?', a:'on the shelf', options:['on the shelf','under the bed','in the kitchen']},
+      {q:'Who has got Kate’s phone?', a:'her little brother', options:['her mum','her little brother','her friend']},
+      {q:'Where does Kate go?', a:'to the park', options:['to school','to the park','to the shop']},
+    ]},
+  },
+  {
+    id:'g4-hobbies', grade:4, order:4, guide:'robo', module:'M1', topics:['g4-games'], cefr:'A1',
+    title:'My Hobbies!', subtitle:'Увлечения и что я делаю сейчас',
+    intro:'Кто-то катается на лыжах, кто-то играет на скрипке. Расскажем о хобби и о том, что мы делаем прямо сейчас.',
+    words:[
+      {en:'skiing', ru:'катание на лыжах', emoji:'⛷️'},
+      {en:'sailing', ru:'парусный спорт', emoji:'⛵'},
+      {en:'skating', ru:'катание на коньках', emoji:'⛸️'},
+      {en:'surfing', ru:'сёрфинг', emoji:'🏄'},
+      {en:'diving', ru:'ныряние', emoji:'🤿'},
+      {en:'playing the violin', ru:'игра на скрипке', emoji:'🎻'},
+      {en:'painting', ru:'рисование красками', emoji:'🎨'},
+      {en:'chess', ru:'шахматы', emoji:'♟️'},
+      {en:'collecting stamps', ru:'коллекционирование марок', emoji:'📮'},
+      {en:'hamster', ru:'хомяк', emoji:'🐹'},
+      {en:'hobby', ru:'хобби', emoji:'🧩'},
+      {en:'plump', ru:'пухлый', emoji:'🐻'},
+    ],
+    phrases:[
+      'My hobby is painting.',
+      'What is William doing? He is skiing.',
+      'I like playing chess with my dad.',
+      'My hamster is small and plump.',
+    ],
+    grammar:[
+      {q:'What ___ you doing? — I’m painting.', a:'are', hint:'You — are …ing.', options:['are','is','do','does'], skill:'G4-01'},
+      {q:'She likes ___ the violin.', a:'playing', hint:'Like + глагол с -ing.', options:['playing','play','plays','played'], skill:'G4-01'},
+      {q:'My brother ___ surfing every summer.', a:'goes', hint:'Каждое лето — Present Simple, он — goes.', options:['goes','is going','go','going'], skill:'G4-01'},
+    ],
+    reading:{title:'Friends and Hobbies', text:'My best friend is William. He is tall and he loves sport. In winter he goes skiing and skating, and in summer he goes sailing with his dad. Right now he is diving in the sea in Greece! I am different. My hobbies are painting and playing the violin. I also collect stamps from different countries. My little sister has got a plump hamster called Biscuit. Her hobby is playing with him. What is your hobby?', questions:[
+      {q:'Where is William now?', a:'in Greece', options:['at school','in Greece','at home']},
+      {q:'What does the writer collect?', a:'stamps', options:['stamps','toys','coins']},
+      {q:'What is the hamster’s name?', a:'Biscuit', options:['Biscuit','William','Rex']},
+    ]},
+  },
+  {
+    id:'g4-town', grade:4, order:6, guide:'max', module:'M2', topics:['g4-travel', 'g4-jobs'], cefr:'A1',
+    title:'In My Town!', subtitle:'Места в городе и кто там работает',
+    intro:'Пекарь работает в пекарне, механик — в гараже. Узнаем, как найти дорогу и кто где работает.',
+    words:[
+      {en:'station', ru:'вокзал, станция', emoji:'🚉'},
+      {en:'garage', ru:'гараж, автомастерская', emoji:'🔧'},
+      {en:'theatre', ru:'театр', emoji:'🎭'},
+      {en:'baker’s', ru:'булочная', emoji:'🥖'},
+      {en:'greengrocer’s', ru:'овощной магазин', emoji:'🥬'},
+      {en:'post office', ru:'почта', emoji:'🏤'},
+      {en:'police station', ru:'полицейский участок', emoji:'🚓'},
+      {en:'mechanic', ru:'механик', emoji:'🧑‍🔧'},
+      {en:'waiter', ru:'официант', emoji:'🍽️'},
+      {en:'police officer', ru:'полицейский', emoji:'👮'},
+      {en:'bridge', ru:'мост', emoji:'🌉'},
+      {en:'Excuse me', ru:'извините (обращение)', emoji:'🙋'},
+    ],
+    phrases:[
+      'Excuse me, where is the post office?',
+      'It is in Bridge Street.',
+      'A mechanic works in a garage.',
+      'I sometimes go to the theatre.',
+    ],
+    grammar:[
+      {q:'A baker ___ bread every morning.', a:'bakes', hint:'Он — добавь -s.', options:['bakes','bake','is bake','baking'], skill:'G3-01'},
+      {q:'I ___ go to the theatre. (иногда)', a:'sometimes', hint:'Иногда — sometimes.', options:['sometimes','never','yesterday','now'], skill:'G4-11'},
+      {q:'___ does your mum work? — In a café.', a:'Where', hint:'Где? — Where.', options:['Where','What','Who','When'], skill:'G4-12'},
+    ],
+    reading:{title:'A Walk in Bridge Street', text:'Bridge Street is a busy street in my town. There is a baker’s at the corner. Mr Jones is a baker. He always gets up at five o’clock and bakes fresh bread. Next to the baker’s there is a greengrocer’s with fruit and vegetables. My uncle is a mechanic. He works in the garage near the station. On Saturdays my family sometimes goes to the theatre, and after the show we eat in a café. The waiter there is very polite.', questions:[
+      {q:'When does Mr Jones get up?', a:'at five o’clock', options:['at five o’clock','at nine o’clock','at noon']},
+      {q:'Where does the uncle work?', a:'in the garage', options:['in the theatre','in the garage','in the café']},
+      {q:'Who is very polite?', a:'the waiter', options:['the baker','the waiter','the mechanic']},
+    ]},
+  },
+  {
+    id:'g4-sport', grade:4, order:7, guide:'robo', module:'M2', topics:['g4-sport'], cefr:'A1',
+    title:'Sport for Everyone!', subtitle:'Спорт, время и «как часто»',
+    intro:'Волейбол, теннис, хоккей! Говорим о спорте, о том, сколько времени, и как часто мы тренируемся.',
+    words:[
+      {en:'sports centre', ru:'спортивный центр', emoji:'🏟️'},
+      {en:'volleyball', ru:'волейбол', emoji:'🏐'},
+      {en:'badminton', ru:'бадминтон', emoji:'🏸'},
+      {en:'tennis', ru:'теннис', emoji:'🎾'},
+      {en:'baseball', ru:'бейсбол', emoji:'⚾'},
+      {en:'hockey', ru:'хоккей', emoji:'🏒'},
+      {en:'football', ru:'футбол', emoji:'⚽'},
+      {en:'team', ru:'команда', emoji:'👥'},
+      {en:'coach', ru:'тренер', emoji:'📣'},
+      {en:'win', ru:'побеждать', emoji:'🏆'},
+      {en:'quarter past', ru:'четверть (после часа)', emoji:'🕒'},
+      {en:'half past', ru:'половина (после часа)', emoji:'🕧'},
+      {en:'twice a week', ru:'два раза в неделю', emoji:'✌️'},
+    ],
+    phrases:[
+      'I play tennis twice a week.',
+      'What time is it? It’s half past four.',
+      'Our team always wins!',
+      'I have to go to the sports centre.',
+    ],
+    grammar:[
+      {q:'He ___ to train every day.', a:'has', hint:'Он должен — he has to.', options:['has','have','must','is'], skill:'G4-09'},
+      {q:'We ___ play hockey in summer.', a:'never', hint:'Никогда — never.', options:['never','always','now','often to'], skill:'G4-11'},
+      {q:'It’s quarter ___ five. (без четверти пять)', a:'to', hint:'Без четверти — quarter to.', options:['to','past','at','in'], skill:'G3-09'},
+    ],
+    reading:{title:'A Busy Sports Week', text:'Nick loves sport. He goes to the sports centre three times a week. On Mondays he plays volleyball with his team. On Wednesdays he has tennis, and on Fridays he plays badminton with his sister. His coach is strict: "You have to come at quarter past four, not at half past four!" Nick never plays hockey because he can’t skate, but he often watches hockey on TV with his dad. Last Sunday Nick’s volleyball team won a big match.', questions:[
+      {q:'How often does Nick go to the sports centre?', a:'three times a week', options:['once a week','three times a week','every day']},
+      {q:'Why doesn’t Nick play hockey?', a:'he can’t skate', options:['he can’t skate','he doesn’t like it','he is tired']},
+      {q:'What happened last Sunday?', a:'the volleyball team won', options:['the volleyball team won','Nick was ill','it rained']},
+    ]},
+  },
+  {
+    id:'g4-shopping', grade:4, order:9, guide:'luna', module:'M3', topics:['g4-shopping'], cefr:'A1',
+    title:'Shopping List!', subtitle:'Покупки: пакет, буханка, банка',
+    intro:'Идём за продуктами! Буханка хлеба, банка варенья, пакет молока — научимся называть упаковки и спрашивать цену.',
+    words:[
+      {en:'packet', ru:'пачка, пакет', emoji:'📦'},
+      {en:'bar', ru:'плитка (шоколада)', emoji:'🍫'},
+      {en:'kilo', ru:'килограмм', emoji:'⚖️'},
+      {en:'loaf', ru:'буханка', emoji:'🍞'},
+      {en:'jar', ru:'банка (стеклянная)', emoji:'🫙'},
+      {en:'carton', ru:'пакет (молока, сока)', emoji:'🥛'},
+      {en:'bottle', ru:'бутылка', emoji:'🍾'},
+      {en:'tin', ru:'консервная банка', emoji:'🥫'},
+      {en:'price', ru:'цена', emoji:'🏷️'},
+      {en:'money', ru:'деньги', emoji:'💰'},
+      {en:'shop assistant', ru:'продавец', emoji:'🧑‍💼'},
+      {en:'basket', ru:'корзина', emoji:'🧺'},
+      {en:'fast food', ru:'фастфуд', emoji:'🍔'},
+    ],
+    phrases:[
+      'A loaf of bread, please.',
+      'How much is a bar of chocolate?',
+      'May I have a carton of milk?',
+      'We need a kilo of apples.',
+    ],
+    grammar:[
+      {q:'How ___ milk do we need?', a:'much', hint:'Молоко не считают — much.', options:['much','many','a','lot'], skill:'G4-02'},
+      {q:'How ___ bottles are there?', a:'many', hint:'Бутылки считают — many.', options:['many','much','a lot','any'], skill:'G4-02'},
+      {q:'___ I have some sweets, please?', a:'May', hint:'Можно мне…? — May I…?', options:['May','Must','Am','Do'], skill:'G4-10'},
+    ],
+    reading:{title:'At the Supermarket', text:'On Saturday Ben and his mum go to the supermarket with a shopping list. They need a loaf of bread, a carton of milk, two tins of beans and a jar of honey. Ben puts everything in the basket. "May I have a bar of chocolate?" he asks. "Yes, you may, but only one," says Mum. They don’t buy fast food because Mum says it isn’t healthy. At the checkout the shop assistant smiles. "That’s twelve pounds, please." Mum pays the money, and they go home.', questions:[
+      {q:'How many tins of beans do they need?', a:'two', options:['one','two','three']},
+      {q:'What does Ben ask for?', a:'a bar of chocolate', options:['a bar of chocolate','a burger','an ice cream']},
+      {q:'How much is everything?', a:'twelve pounds', options:['two pounds','twelve pounds','twenty pounds']},
+    ]},
+  },
+  {
+    id:'g4-room', grade:4, order:11, guide:'max', module:'M4', topics:['g4-room'], cefr:'A1',
+    title:'My Room!', subtitle:'Моя комната и правила',
+    intro:'Шкаф, ковёр, полки, постер на стене… Опишем свою комнату и выучим правила: что надо и чего нельзя делать.',
+    words:[
+      {en:'wardrobe', ru:'платяной шкаф', emoji:'🚪'},
+      {en:'carpet', ru:'ковёр', emoji:'🟥'},
+      {en:'curtains', ru:'шторы', emoji:'🪟'},
+      {en:'bookcase', ru:'книжный шкаф', emoji:'📚'},
+      {en:'poster', ru:'постер', emoji:'🖼️'},
+      {en:'plant', ru:'растение', emoji:'🪴'},
+      {en:'pillow', ru:'подушка', emoji:'☁️'},
+      {en:'blanket', ru:'одеяло', emoji:'🛏️'},
+      {en:'mirror', ru:'зеркало', emoji:'🪞'},
+      {en:'drawer', ru:'ящик стола', emoji:'🗃️'},
+      {en:'tidy', ru:'убирать; аккуратный', emoji:'🧹'},
+      {en:'rules', ru:'правила', emoji:'📜'},
+    ],
+    phrases:[
+      'There is a big wardrobe in my room.',
+      'You must tidy your room.',
+      'You mustn’t eat in your bedroom.',
+      'My books are in the bookcase.',
+    ],
+    grammar:[
+      {q:'You ___ tidy your room every day.', a:'must', hint:'Надо, обязан — must.', options:['must','mustn’t','may','are'], skill:'G4-03'},
+      {q:'You ___ draw on the walls!', a:'mustn’t', hint:'Нельзя — mustn’t.', options:['mustn’t','must','can','have'], skill:'G4-03'},
+      {q:'There ___ two plants on the shelf.', a:'are', hint:'Два растения — there are.', options:['are','is','am','be'], skill:'G2-08'},
+    ],
+    reading:{title:'Lisa’s New Room', text:'Lisa has got a new room. The walls are light green and there are yellow curtains on the window. There is a wardrobe, a desk and a big bookcase full of books. On the floor there is a soft red carpet. Lisa has got a poster of her favourite band above her bed and a plant next to the mirror. Her mum has two rules: "You must tidy your room on Saturday, and you mustn’t eat sweets in bed!" Lisa thinks the rules are fair.', questions:[
+      {q:'What colour are the curtains?', a:'yellow', options:['red','yellow','green']},
+      {q:'What is above the bed?', a:'a poster', options:['a mirror','a poster','a plant']},
+      {q:'When must Lisa tidy her room?', a:'on Saturday', options:['every day','on Saturday','on Monday']},
+    ]},
+  },
+  {
+    id:'g4-hare', grade:4, order:14, guide:'owl', module:'M6', topics:['g4-tale'], cefr:'A1',
+    title:'The Hare and the Tortoise!', subtitle:'Сказка: кто победил в гонке',
+    intro:'Быстрый заяц смеялся над медленной черепахой. Но кто же пришёл первым? Читаем сказку в прошедшем времени.',
+    words:[
+      {en:'hare', ru:'заяц', emoji:'🐇'},
+      {en:'tortoise', ru:'черепаха', emoji:'🐢'},
+      {en:'fast', ru:'быстрый', emoji:'💨'},
+      {en:'slow', ru:'медленный', emoji:'🐌'},
+      {en:'race', ru:'гонка, забег', emoji:'🏁'},
+      {en:'finish line', ru:'финиш', emoji:'🎌'},
+      {en:'winner', ru:'победитель', emoji:'🥇'},
+      {en:'laughed', ru:'смеялся (laugh)', emoji:'😂'},
+      {en:'rested', ru:'отдыхал (rest)', emoji:'😴'},
+      {en:'walked', ru:'шёл (walk)', emoji:'🚶'},
+      {en:'started', ru:'начал (start)', emoji:'▶️'},
+      {en:'crossed', ru:'пересёк (cross)', emoji:'✖️'},
+      {en:'keep on', ru:'продолжать', emoji:'🔁'},
+    ],
+    phrases:[
+      'Once upon a time there was a fast hare.',
+      'The hare laughed at the tortoise.',
+      'The tortoise walked and walked.',
+      'Slow and steady wins the race.',
+    ],
+    grammar:[
+      {q:'The hare ___ under a tree. (rest)', a:'rested', hint:'Прошедшее время — добавь -ed.', options:['rested','rests','rest','resting'], skill:'G4-06'},
+      {q:'___ the tortoise win? — Yes, it did.', a:'Did', hint:'Вопрос в прошедшем — Did.', options:['Did','Does','Was','Do'], skill:'G4-06'},
+      {q:'The hare didn’t ___ the race.', a:'win', hint:'После didn’t — глагол без изменений.', options:['win','won','wins','winned'], skill:'G4-06'},
+    ],
+    reading:{title:'Slow and Steady', text:'Once upon a time there was a hare. He was very fast, and he always laughed at the slow tortoise. One day the tortoise said, "Let’s have a race!" All the animals came to watch. The race started. The hare ran very fast and soon he was far away. "The tortoise is so slow," he thought. "I can rest." He lay down under a tree and closed his eyes. The tortoise didn’t stop. She walked and walked and kept on walking. When the hare opened his eyes, the tortoise crossed the finish line! She was the winner. The animals cheered: "Slow and steady wins the race!"', questions:[
+      {q:'Who said "Let’s have a race!"?', a:'the tortoise', options:['the hare','the tortoise','the fox']},
+      {q:'What did the hare do under the tree?', a:'he rested', options:['he ate','he rested','he sang']},
+      {q:'Who was the winner?', a:'the tortoise', options:['the hare','the tortoise','nobody']},
+    ]},
+  },
+  {
+    id:'g4-dayout', grade:4, order:16, guide:'harlow', module:'M7', topics:['g4-holidays', 'g4-friends'], cefr:'A1',
+    title:'A Great Day Out!', subtitle:'Музей, концерт, парк аттракционов',
+    intro:'Где ты был в выходные? В музее, на концерте или в парке аттракционов? Рассказываем о прошлом и выбираем «самое-самое».',
+    words:[
+      {en:'museum', ru:'музей', emoji:'🏛️'},
+      {en:'dinosaur', ru:'динозавр', emoji:'🦕'},
+      {en:'concert', ru:'концерт', emoji:'🎤'},
+      {en:'funfair', ru:'парк аттракционов', emoji:'🎡'},
+      {en:'ride', ru:'аттракцион; кататься', emoji:'🎢'},
+      {en:'fireworks', ru:'фейерверк', emoji:'🎆'},
+      {en:'pretty', ru:'хорошенький', emoji:'🌸'},
+      {en:'shy', ru:'застенчивый', emoji:'🙈'},
+      {en:'strong', ru:'сильный', emoji:'💪'},
+      {en:'loud', ru:'громкий', emoji:'📢'},
+      {en:'best', ru:'лучший', emoji:'🥇'},
+      {en:'weekend', ru:'выходные', emoji:'🗓️'},
+    ],
+    phrases:[
+      'Where did you go last weekend?',
+      'I went to the museum.',
+      'It was the best day ever!',
+      'The fireworks were very loud.',
+    ],
+    grammar:[
+      {q:'Last weekend we ___ to the funfair. (go)', a:'went', hint:'go — went.', options:['went','goed','go','gone'], skill:'G4-07'},
+      {q:'It was the ___ ride in the park. (good)', a:'best', hint:'good — better — the best.', options:['best','goodest','better','most good'], skill:'G4-04'},
+      {q:'We ___ a big dinosaur at the museum. (see)', a:'saw', hint:'see — saw.', options:['saw','seed','see','seen'], skill:'G4-07'},
+    ],
+    reading:{title:'The Best Weekend', text:'Last weekend was great! On Saturday morning Phil and his dad went to the museum. They saw a huge dinosaur. It was the biggest animal in the museum! In the afternoon they went to a concert in the park. The music was very loud, and Phil’s shy sister danced for the first time. On Sunday the whole family went to the funfair. Phil rode on the fastest ride, and his strong uncle won a pretty teddy bear for his sister. In the evening they watched the fireworks. It was the best weekend ever!', questions:[
+      {q:'What did they see at the museum?', a:'a dinosaur', options:['a dinosaur','a car','a whale']},
+      {q:'Who danced for the first time?', a:'Phil’s sister', options:['Phil’s dad','Phil’s sister','Phil’s uncle']},
+      {q:'What did the uncle win?', a:'a teddy bear', options:['a teddy bear','a ball','a ticket']},
+    ]},
+  },
+  {
+    id:'g4-world', grade:4, order:18, guide:'harlow', module:'M8', topics:['g4-countries', 'g4-travel'], cefr:'A1',
+    title:'Around the World!', subtitle:'Страны и планы на каникулы',
+    intro:'Греция, Италия, Испания… Куда ты собираешься поехать летом? Говорим о планах: be going to.',
+    words:[
+      {en:'Greece', ru:'Греция', emoji:'🇬🇷'},
+      {en:'Italy', ru:'Италия', emoji:'🇮🇹'},
+      {en:'Spain', ru:'Испания', emoji:'🇪🇸'},
+      {en:'Portugal', ru:'Португалия', emoji:'🇵🇹'},
+      {en:'Turkey', ru:'Турция', emoji:'🇹🇷'},
+      {en:'Mexico', ru:'Мексика', emoji:'🇲🇽'},
+      {en:'Poland', ru:'Польша', emoji:'🇵🇱'},
+      {en:'passport', ru:'паспорт', emoji:'🛂'},
+      {en:'ticket', ru:'билет', emoji:'🎫'},
+      {en:'journey', ru:'путешествие, поездка', emoji:'🧭'},
+      {en:'go camping', ru:'ходить в поход', emoji:'🏕️'},
+      {en:'seaside', ru:'морское побережье', emoji:'🏖️'},
+    ],
+    phrases:[
+      'I am going to go to Italy.',
+      'Where are you going to go on holiday?',
+      'We are going to go camping.',
+      'Don’t forget your passport!',
+    ],
+    grammar:[
+      {q:'She is ___ to visit Spain.', a:'going', hint:'Собирается — is going to.', options:['going','go','goes','gone'], skill:'G4-08'},
+      {q:'___ are you going to stay? — In a hotel.', a:'Where', hint:'Где? — Where.', options:['Where','When','Who','Why'], skill:'G4-12'},
+      {q:'We ___ going to fly to Greece.', a:'are', hint:'Мы — are going to.', options:['are','is','am','be'], skill:'G4-08'},
+    ],
+    reading:{title:'Summer Plans', text:'The school year is nearly over, and everybody is talking about the summer holidays. Wendy is going to go to Greece with her parents. They are going to stay in a small hotel at the seaside. Tom is going to visit his grandparents in Poland. It is a long journey by train. Mark’s family is going to go camping in the mountains in Spain. "Don’t forget your passport and your ticket!" says Mark’s mum. And what about you? I am going to stay at home and go to the river with my friends.', questions:[
+      {q:'Where is Wendy going to go?', a:'to Greece', options:['to Greece','to Poland','to Spain']},
+      {q:'How is Tom going to travel?', a:'by train', options:['by plane','by train','by car']},
+      {q:'What is Mark’s family going to do?', a:'go camping', options:['go camping','stay at home','visit a museum']},
+    ]},
+  },
+  {
+    id:'g4-packing', grade:4, order:19, guide:'luna', module:'M8', topics:['g4-holidays', 'g4-nature'], cefr:'A1',
+    title:'Pack Your Suitcase!', subtitle:'Что взять в поездку и какая будет погода',
+    intro:'Собираем чемодан! Купальник, солнечные очки, спальный мешок. И узнаем прогноз: какая погода будет завтра.',
+    words:[
+      {en:'swimsuit', ru:'купальник', emoji:'👙'},
+      {en:'swimming trunks', ru:'плавки', emoji:'🩳'},
+      {en:'sunglasses', ru:'солнечные очки', emoji:'🕶️'},
+      {en:'flippers', ru:'ласты', emoji:'🐸'},
+      {en:'tent', ru:'палатка', emoji:'⛺'},
+      {en:'sleeping bag', ru:'спальный мешок', emoji:'🛌'},
+      {en:'boots', ru:'ботинки, сапоги', emoji:'🥾'},
+      {en:'cap', ru:'кепка', emoji:'🧢'},
+      {en:'torch', ru:'фонарик', emoji:'🔦'},
+      {en:'suitcase', ru:'чемодан', emoji:'🧳'},
+      {en:'tomorrow', ru:'завтра', emoji:'⏭️'},
+      {en:'warm', ru:'тёплый', emoji:'🌡️'},
+    ],
+    phrases:[
+      'What will the weather be like tomorrow?',
+      'It will be sunny and warm.',
+      'Don’t forget your sunglasses!',
+      'I will take my tent and my torch.',
+    ],
+    grammar:[
+      {q:'Tomorrow it ___ be cloudy.', a:'will', hint:'Будет — will.', options:['will','is','was','going'], skill:'G4-08'},
+      {q:'It ___ rain tomorrow. Don’t take an umbrella.', a:'won’t', hint:'Не будет — won’t.', options:['won’t','will','isn’t','doesn’t'], skill:'G4-08'},
+      {q:'___ will the weather be like? — Hot!', a:'What', hint:'Какая? — What … like?', options:['What','How','Where','Who'], skill:'G4-12'},
+    ],
+    reading:{title:'Ready for the Trip', text:'Tomorrow Kate and her family are going to the lake for a camping trip. Kate is packing her suitcase. "What will the weather be like?" she asks. Dad looks at the weather forecast. "It will be sunny and warm in the day, but cold at night." So Kate packs her swimsuit, flippers, sunglasses and a cap for the day. For the night she takes a warm sleeping bag and her boots. Dad packs the tent and a torch. "It won’t rain," he says. "We don’t need umbrellas!"', questions:[
+      {q:'Where is the family going?', a:'to the lake', options:['to the lake','to the city','to the mountains']},
+      {q:'What will the weather be like at night?', a:'cold', options:['hot','cold','rainy']},
+      {q:'What does Dad pack?', a:'the tent and a torch', options:['the tent and a torch','umbrellas','a swimsuit']},
     ]},
   },
 ];
@@ -1926,15 +2359,19 @@ const CURRICULUM = {
     { code: 'G3-09', grade: 3, title: 'Время по часам, дни недели', where: 'M8', layer: 'base', error: 'at Monday' },
     { code: 'G3-10', grade: 3, title: 'Past Simple — узнавание', where: '', layer: 'frp', error: 'не узнаёт went как go' },
     { code: 'G3-11', grade: 3, title: 'Притяжательные местоимения his / her / its / their', where: 'M2', layer: 'base', error: 'his вместо her' },
-    { code: 'G4-01', grade: 4, title: 'Present Simple или Continuous', where: 'M1–M2', layer: 'base', error: 'He is play every day' },
+    { code: 'G4-01', grade: 4, title: 'Present Simple или Continuous', where: 'M1–M2, M4', layer: 'base', error: 'He is play every day' },
     { code: 'G4-02', grade: 4, title: 'much / many / a lot of', where: 'M3', layer: 'base', error: 'many milk' },
-    { code: 'G4-03', grade: 4, title: 'must / mustn’t', where: 'M3', layer: 'base', error: 'You must to go' },
+    { code: 'G4-03', grade: 4, title: 'must / mustn’t', where: 'M4', layer: 'base', error: 'You must to go' },
     { code: 'G4-04', grade: 4, title: 'Степени сравнения', where: 'M4', layer: 'base', error: 'more big, gooder' },
     { code: 'G4-05', grade: 4, title: 'was / were, порядковые числа', where: 'M5', layer: 'base', error: 'They was' },
     { code: 'G4-06', grade: 4, title: 'Past Simple правильных глаголов, did', where: 'M6', layer: 'base', error: 'Did you played?' },
     { code: 'G4-07', grade: 4, title: 'Неправильные глаголы', where: 'M7', layer: 'base', error: 'goed' },
     { code: 'G4-08', grade: 4, title: 'be going to, will / won’t', where: 'M8', layer: 'base', error: 'I going to' },
-    { code: 'G4-09', grade: 4, title: 'have to', where: '', layer: 'frp', error: 'He have to' },
+    { code: 'G4-09', grade: 4, title: 'have to', where: 'M2', layer: 'base', error: 'He have to' },
+    // сверено по тематическому планированию Spotlight 4 (в карте модули 1–3 были «по памяти»)
+    { code: 'G4-10', grade: 4, title: 'may / may not (разрешение)', where: 'M3', layer: 'base', error: 'May I to have…' },
+    { code: 'G4-11', grade: 4, title: 'Наречия частотности: always, usually, sometimes, never', where: 'M2', layer: 'base', error: 'I go always to school' },
+    { code: 'G4-12', grade: 4, title: 'Вопросительные слова: who, what, where, when, why, how', where: 'M8', layer: 'base', error: 'Where you go?' },
   ],
   // типы заданий: код → описание и редкость квеста; kinds — какие упражнения Quest уже им соответствуют
   taskTypes: [
@@ -1951,7 +2388,7 @@ const CURRICULUM = {
     { code: '3-F', grade: 3, title: 'Мини-сказка с вопросами', rarity: 'epic', kinds: ['reading'] },
     { code: '4-A', grade: 4, title: 'Текст до 160 слов + вопросы', rarity: 'rare', kinds: ['reading'] },
     { code: '4-B', grade: 4, title: 'Верно / неверно / не сказано', rarity: 'common', kinds: [] },
-    { code: '4-C', grade: 4, title: 'Собрать предложение из слов', rarity: 'common', kinds: [] },
+    { code: '4-C', grade: 4, title: 'Собрать предложение из слов', rarity: 'common', kinds: ['build'] },
     { code: '4-D', grade: 4, title: 'Прочитать таблицу и ответить', rarity: 'rare', kinds: [] },
     { code: '4-E', grade: 4, title: 'Написать слово или фразу самостоятельно', rarity: 'epic', kinds: [] },
     { code: '4-F', grade: 4, title: 'Дописать письмо другу по образцу', rarity: 'legendary', kinds: [] },
@@ -1961,6 +2398,23 @@ const SKILLS = Object.fromEntries(CURRICULUM.skills.map(s => [s.code, s]));
 
 // «Вставь слово» (тип 3-A): из фраз и текста урока — предложения со словом урока; слово пропущено,
 // подсказка — перевод (без неё «My ___ is Anna» подошли бы и mother, и sister). Варианты — другие слова урока.
+// «Собери предложение» (тип 4-C): фразы урока и предложения из грамматики, 4–9 слов; слова перемешаны.
+// skill — если предложение из вопроса грамматики (тогда ответ засчитывается и навыку).
+function buildItemsFor(lesson){
+  const src = [
+    ...lesson.phrases.map(s => ({ s })),
+    ...lesson.grammar.map(q => ({ s: q.q.replace('___', q.a).replace(/\s*\([^)]*\)/g, ''), skill: q.skill })),
+  ];
+  const seen = new Set(), out = [];
+  for (const { s, skill } of src){
+    const text = s.trim();
+    const tokens = text.split(/\s+/);
+    if (tokens.length < 4 || tokens.length > 9 || seen.has(text)) continue;
+    seen.add(text);
+    out.push({ text, tokens, skill });
+  }
+  return out;
+}
 function fillItemsFor(lesson){
   const sentences = [...lesson.phrases, ...lesson.reading.text.split(/(?<=[.!?])\s+/)]
     .map(s => s.trim()).filter(s => s.split(' ').length >= 3 && s.split(' ').length <= 14);
@@ -1996,5 +2450,5 @@ window.EQ = {
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   RANKS, rankFor,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
-  CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor,
+  CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

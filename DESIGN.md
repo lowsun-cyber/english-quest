@@ -4,7 +4,7 @@ Read this before any UI or visual change. It records who the app is for, the loo
 
 ## Product
 
-- **What:** A static web app (`index.html`, `app.js`, `content.js`, `style.css`, `base.css`) for learning English. It follows the Spotlight / «Английский в фокусе» textbooks for grades 2, 3 and 4: 43 topics, 60 levels, with speaking practice through TTS audio in `tts_cache/`.
+- **What:** A static web app (`index.html`, `app.js`, `content.js`, `style.css`, `base.css`) for learning English. It follows the Spotlight / «Английский в фокусе» textbooks for grades 2, 3 and 4: 54 topics, 60 levels, with speaking practice through TTS audio in `tts_cache/`.
 - **Learners:** Russian-speaking children aged about 7–10. Their English is at beginner to early-elementary level.
 - **Interface language:** Russian (`lang="ru"`) for all UI, instructions, and feedback. English appears only in the learning content. Keep the two visibly distinct.
 - **How it's used:**

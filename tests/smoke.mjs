@@ -179,6 +179,26 @@ try {
     if (n !== 5 || p !== 5) throw new Error('ответов ' + n + ', засчитано ' + p);
     return L.title + ': 5 из 5';`)).then(r => load().then(() => r)));
 
+  await test('собери предложение (4-C), 4 класс', () => js(`
+    const st = __ls(); st.settings.unlockAll = true; st.settings.mapGrade = 4;
+    localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
+    const L = window.EQ.LESSONS.filter(l => l.grade === 4).sort((a, b) => a.order - b.order)[0], items = window.EQ.buildItemsFor(L);
+    document.querySelector('.map-node').click(); await __sleep(250);
+    document.querySelector('.hub-ex[data-ex=build]').click(); await __sleep(300);
+    let n = 0, wrongDone = false;
+    while (document.querySelector('.build-pool') && n < 6){
+      const words = [...document.querySelectorAll('.build-pool .build-tile')].map(b => b.textContent);
+      const it = items.find(x => x.tokens.length === words.length && [...x.tokens].sort().join('|') === [...words].sort().join('|'));
+      if (!it) throw new Error('нет задания для слов: ' + words.join(' '));
+      const order = wrongDone ? it.tokens : [...it.tokens].reverse();   // первое — нарочно неверно
+      for (const t of order){ const b = [...document.querySelectorAll('.build-pool .build-tile')].find(x => x.textContent === t); b.click(); await __sleep(30); }
+      document.getElementById('build-check').click(); n++; wrongDone = true; await __sleep(wrongDone && n === 1 ? 2800 : 1700);
+    }
+    const st = __ls(); const p = st.lessonProgress[L.id]?.build; __close();
+    st.settings.unlockAll = false; st.settings.mapGrade = 2; localStorage.setItem('english_quest_v2', JSON.stringify(st));
+    if (n !== 5 || p !== 4) throw new Error('заданий ' + n + ', засчитано ' + p + ' (ждали 4: первое нарочно неверно)');
+    return L.title + ': 4 из 5, неверный порядок не засчитан';`)).then(r => load().then(() => r)));
+
   await test('чтение → тема пройдена → следующая открыта', () => js(`
     const L = window.EQ.LESSONS[0];
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=reading]').click(); await __sleep(300);
