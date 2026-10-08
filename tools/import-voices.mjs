@@ -65,6 +65,8 @@ function speechParts(wav, noise, minPause){
 const batchId = f => /^((?:en|ru|dict|text)-\d+)/i.exec(f)?.[1].toLowerCase();
 for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)])){
   const id = batchId(f), list = batches[id];
+  // уже подключённую пачку не перекодируем заново (иначе файлы меняются без нужды); --force — подключить снова
+  if (!process.argv.includes('--force') && list.every(x => manifest[x.text] && existsSync(join(ROOT, 'tts_cache', manifest[x.text])))){ console.log(`· ${f}: уже подключена`); continue; }
   const wav = join(tmp, id + '.wav');
   ffmpeg(['-i', join(dir, f), '-ac', '1', '-ar', '24000', wav]);
   // подбираем порог тишины и длину паузы, пока кусков не станет столько, сколько фраз
