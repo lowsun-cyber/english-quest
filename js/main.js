@@ -28,6 +28,7 @@ import { renderMistakes } from './mistakes.js';
 import { loadProfiles, loadState, saveState, setProfiles, setState, state, takeDeviceSettings } from './state.js';
 import { multi, openProfileChooser, renderProfileChip } from './profiles.js';
 import { initCloud, linkFromHash, syncNow, viewFromHash } from './cloud.js';
+import { initDictionary } from './dictionary.js';
 import { showGuide, toast } from './ui.js';
 import { pick } from './util.js';
 
@@ -52,6 +53,7 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
 // ---------- INIT ----------
 (async function init(){
   initCloud();
+  initDictionary();
   setProfiles(await loadProfiles());
   setState(takeDeviceSettings(await loadState()));
   saveState(); // PIN из старого места уже перенесён в индекс устройства — пересохраняем без него

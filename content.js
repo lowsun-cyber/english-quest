@@ -1096,5 +1096,5 @@ window.EQ = {
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   RANKS, rankFor,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
-  CURRICULUM, SKILLS, taskTypeFor,
+  CURRICULUM, SKILLS, taskTypeFor, EMOJI: E,
 };

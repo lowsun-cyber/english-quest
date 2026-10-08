@@ -98,7 +98,7 @@ export function closeModal(){
   modalClosedHooks.forEach(fn => fn());
 }
 document.addEventListener('keydown', (e) => {
-  if (!back.classList.contains('open')) return;
+  if (!back.classList.contains('open') || document.body.classList.contains('drawer-open')) return;
   if (e.key === 'Escape'){ closeModal(); return; }
   if (e.key === 'Tab'){
     const f = [...modal.querySelectorAll('button:not([disabled]), [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => x.offsetParent);
@@ -110,3 +110,40 @@ document.addEventListener('keydown', (e) => {
 });
 document.getElementById('modal-close').addEventListener('click', closeModal);
 back.addEventListener('click', (e) => { if (e.target === back) closeModal(); });
+
+// ---------- ВЫЕЗЖАЮЩАЯ ПАНЕЛЬ (вход, словарь) ----------
+// Одна панель справа на всё приложение; owner — кто её сейчас показывает. Открывается поверх урока,
+// поэтому упражнение под ней не закрывается.
+let drawerOpener = null, drawerOwner = null;
+const drawerBack = () => document.getElementById('drawer-back');
+export const drawerShows = owner => { const b = drawerBack(); return !!b && !b.hidden && drawerOwner === owner; };
+export function openDrawer(owner, title, html){
+  const back = drawerBack();
+  if (!back) return null;
+  if (back.hidden) drawerOpener = document.activeElement;
+  drawerOwner = owner;
+  document.getElementById('drawer-title').textContent = title;
+  const body = document.getElementById('drawer-body');
+  body.innerHTML = html;
+  back.hidden = false;
+  requestAnimationFrame(() => back.classList.add('open'));
+  document.body.classList.add('drawer-open');
+  return body;
+}
+export function closeDrawer(){
+  const back = drawerBack();
+  if (!back || back.hidden) return;
+  back.classList.remove('open');
+  document.body.classList.remove('drawer-open');
+  drawerOwner = null;
+  setTimeout(() => { if (!back.classList.contains('open')) back.hidden = true; }, 250);
+  drawerOpener?.focus?.();
+}
+{
+  const back = drawerBack();
+  if (back){
+    back.onclick = (e) => { if (e.target === back) closeDrawer(); };
+    back.querySelector('.drawer-close').onclick = closeDrawer;
+    back.addEventListener('keydown', (e) => { if (e.key === 'Escape'){ e.stopPropagation(); closeDrawer(); } });
+  }
+}

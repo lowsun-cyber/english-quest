@@ -10,7 +10,7 @@ import { applyLoadedState, sanitizeState, stateSummary, viewOtherState } from '.
 import { mergeStates, same } from './merge.js';
 import { activeId, activeProfile, freshState, profiles, readSyncBase, realState, saveProfiles, setOnSaved, setState, state, writeStoredState, writeSyncBase } from './state.js';
 import { createProfile, renderProfileChip, switchProfile } from './profiles.js';
-import { closeModal, modalClosedHooks, modalIsOpen, openModal, toast } from './ui.js';
+import { closeDrawer, closeModal, modalClosedHooks, modalIsOpen, openDrawer, openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
 
 export const cloudOn = () => !!API_BASE;
@@ -314,8 +314,6 @@ function wireCloudSection(reopen, close){
 }
 
 // ---------- кнопка «Войти» в шапке и выезжающая панель ----------
-const drawerBack = () => document.getElementById('drawer-back');
-let drawerOpener = null;
 
 // В шапке видно, кто вошёл: «☁️ Маша» или «🔑 Войти»
 export function renderAccountButton(){
@@ -341,36 +339,19 @@ function accountHtml(){
     ${realState ? '<p class="t-muted">Сейчас открыт чужой прогресс для просмотра — закройте его, чтобы войти.</p>' : cloudSectionHtml()}`;
 }
 function renderDrawer(){
-  document.getElementById('drawer-title').textContent = cloudLink() ? '☁️ Мой вход' : '☁️ Вход ученика';
-  document.getElementById('drawer-body').innerHTML = accountHtml();
+  openDrawer('account', cloudLink() ? '☁️ Мой вход' : '☁️ Вход ученика', accountHtml());
   if (!realState) wireCloudSection(openAccount, closeDrawer);   // ошибка входа — панель откроется снова с сообщением
 }
 export function openAccount(){
-  const back = drawerBack();
-  if (!back) return;
-  if (back.hidden) drawerOpener = document.activeElement;
   renderDrawer();
-  back.hidden = false;
-  requestAnimationFrame(() => back.classList.add('open'));
-  document.body.classList.add('drawer-open');
-  const first = back.querySelector('#cl-login') || back.querySelector('.drawer-close');
+  const back = document.getElementById('drawer-back');
+  const first = back?.querySelector('#cl-login') || back?.querySelector('.drawer-close');
   setTimeout(() => first?.focus(), 50);
 }
-export function closeDrawer(){
-  const back = drawerBack();
-  if (!back || back.hidden) return;
-  back.classList.remove('open');
-  document.body.classList.remove('drawer-open');
-  setTimeout(() => { if (!back.classList.contains('open')) back.hidden = true; }, 250);
-  drawerOpener?.focus?.();
-}
 function initAccount(){
-  const btn = document.getElementById('btn-account'), back = drawerBack();
-  if (!btn || !back) return;
+  const btn = document.getElementById('btn-account');
+  if (!btn) return;
   btn.onclick = openAccount;
-  back.onclick = (e) => { if (e.target === back) closeDrawer(); };
-  back.querySelector('.drawer-close').onclick = closeDrawer;
-  back.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
   // кто вошёл меняется при входе, выходе и смене ученика на устройстве
   document.addEventListener('eq:profile', renderAccountButton);
   renderAccountButton();

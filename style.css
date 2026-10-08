@@ -1428,3 +1428,34 @@ body.drawer-open { overflow: hidden; }
   .account-btn { padding: 4px 10px; font-size: 14px; }
   .account-btn #acc-name { max-width: 6em; }
 }
+
+/* ==== СЛОВАРЬ ==== */
+.lesson-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.lesson-title-row h2 { margin: 0; }
+.lesson-dict { min-width: 40px; min-height: 40px; padding: 4px 8px; font-size: 18px; }
+.dict-form input { width: 100%; box-sizing: border-box; font: inherit; font-size: 18px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+#dict-out { margin-top: 12px; }
+.dict-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dict-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+.dict-em { font-size: 26px; width: 34px; text-align: center; flex: none; }
+.dict-main { flex: 1; min-width: 0; line-height: 1.35; }
+.dict-en { font-size: 17px; }
+.dict-where { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.dict-say { flex: none; min-width: 40px; min-height: 40px; padding: 4px 8px; }
+.dict-gloss { padding: 10px 12px; margin-bottom: 12px; border: 2px dashed var(--line); border-radius: 12px; }
+.dict-gloss-title { font-weight: 800; margin-bottom: 6px; }
+.dict-gloss-list { margin: 0 0 8px; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+.dict-gloss-src { font-weight: 700; }
+.dict-note { font-size: 12px; margin: 8px 0 0; }
+@media (max-width: 720px) {
+  .hud > .icon-btn { min-width: 40px; min-height: 40px; padding: 4px 7px; }
+  .hud .howto-new { display: none; }
+}
+@media (max-width: 420px) {
+  /* на телефоне шапка — значки; надпись «Войти» остаётся, имя ученика короче */
+  .hud .logo .title { display: none; }   /* название есть в заголовке страницы; в шапке — значок и кнопки */
+  .hud .logo svg { width: 28px; height: 28px; flex: none; }
+  .hud { gap: 6px; }
+  .account-btn { padding: 4px 8px; gap: 4px; }
+  .account-btn #acc-name { max-width: 4.5em; }
+}

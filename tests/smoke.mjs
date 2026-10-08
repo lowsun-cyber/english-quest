@@ -232,6 +232,25 @@ try {
     if (!/Грамматика, над чем поработать: Неправильные глаголы/.test(document.getElementById('t-report-out').value)) throw new Error('в отчёте нет слабого навыка');
     __close(); return 'G4-07: 1 верно, 2 ошибки (goed)';`));
 
+  await test('словарь: поиск в обе стороны, фраза, поверх урока', () => js(`
+    const f = id => document.getElementById(id);
+    const ask = async (q) => { const i = f('dict-q'); i.value = q; i.dispatchEvent(new Event('input')); await __sleep(250); return f('dict-out').innerText.replace(/\\s+/g, ' '); };
+    f('btn-dict').click();
+    for (let i = 0; i < 30 && !f('dict-q'); i++) await __sleep(100);
+    for (let i = 0; i < 30 && /Открываю/.test(f('dict-out').innerText); i++) await __sleep(100);
+    let t = await ask('кошка'); if (!/cat — кот/.test(t)) throw new Error('кошка → cat: ' + t.slice(0, 120));
+    t = await ask('went'); if (!/go — идти/.test(t)) throw new Error('went → go: ' + t.slice(0, 120));
+    t = await ask('children'); if (!/child — ребёнок/.test(t)) throw new Error('children: ' + t.slice(0, 120));
+    t = await ask('My brother likes apples'); if (!/brother → брат/.test(t) || !/likes → нравиться/.test(t) || !/apples → яблоко/.test(t)) throw new Error('фраза: ' + t.slice(0, 200));
+    t = await ask('zzzqx'); if (!/пока нет в словаре/.test(t)) throw new Error('нет сообщения «не найдено»');
+    document.querySelector('.drawer-close').click(); await __sleep(350);
+    document.querySelector('.map-node').click(); await __sleep(250);
+    document.querySelector('#modal .lesson-dict').click(); await __sleep(400);
+    if (f('drawer-back').hidden) throw new Error('из урока словарь не открылся');
+    document.getElementById('dict-q').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await __sleep(350);
+    if (!f('drawer-back').hidden || !f('modal-back').classList.contains('open')) throw new Error('Escape должен закрыть только словарь, урок остаётся');
+    __close(); return 'кошка→cat, went→go, фраза по словам, урок не закрылся';`));
+
   await test('лист для печати', () => js(`
     let printed = 0; window.print = () => { printed++; };
     await __gate();

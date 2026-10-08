@@ -214,7 +214,7 @@ export function startExercise(lesson, kind){
 
 export function lessonHeader(lesson, guide, extra=''){
   return `
-    <h2>${lesson.title}</h2>
+    <div class="lesson-title-row"><h2>${lesson.title}</h2><button class="icon-btn lesson-dict" data-open-dict title="Словарь" aria-label="Открыть словарь">📖</button></div>
     <div class="lead">${lesson.subtitle} · ${lesson.grade} класс</div>
     <div class="lead-guide">
       <div class="mini-avatar" style="background:${CHARACTERS.harlow.color}">${CHARACTERS.harlow.emoji}</div>
