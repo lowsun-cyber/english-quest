@@ -115,8 +115,10 @@ for (const [i, { text, speaker, kind }] of items.entries()){
   writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n'); // сохраняем после каждой фразы
 }
 
-// реплики, которых больше нет в контенте
-for (const text of Object.keys(manifest)) if (!lines.includes(text)){
+// реплики, которых больше нет в контенте (слова словаря — не трогаем: их озвучивают отдельно, см. voice-todo.mjs)
+const { DICT } = await import(join(ROOT, 'js/dict-data.js'));
+const dictWords = new Set(DICT.split('\n').filter(l => l && !l.startsWith('#')).map(l => l.split('|')[0].trim()));
+for (const text of Object.keys(manifest)) if (!lines.includes(text) && !dictWords.has(text)){
   const f = manifest[text];
   delete manifest[text];
   if (!Object.values(manifest).includes(f) && existsSync(join(ROOT, 'tts_cache', f))) unlinkSync(join(ROOT, 'tts_cache', f));

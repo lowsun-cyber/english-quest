@@ -41,6 +41,13 @@ const batchesFile = join(dir, 'batches.json');
 const batches = existsSync(batchesFile) ? JSON.parse(readFileSync(batchesFile, 'utf8')) : {};
 const tmp = mkdtempSync(join(tmpdir(), 'eq-import-'));
 const ffmpeg = (args) => execFileSync('ffmpeg', ['-hide_banner', '-nostdin', '-y', ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+// корреляция Пирсона: насколько длина звука следует за длиной текста
+function corr(a, b){
+  const n = a.length, ma = a.reduce((s, x) => s + x, 0) / n, mb = b.reduce((s, x) => s + x, 0) / n;
+  const num = a.reduce((s, x, i) => s + (x - ma) * (b[i] - mb), 0);
+  const den = Math.sqrt(a.reduce((s, x) => s + (x - ma) ** 2, 0) * b.reduce((s, x) => s + (x - mb) ** 2, 0));
+  return den ? num / den : 0;
+}
 // куски речи между паузами: [[начало, конец], …] в секундах
 function speechParts(wav, noise, minPause){
   // отчёт silencedetect ffmpeg пишет в stderr
@@ -54,8 +61,8 @@ function speechParts(wav, noise, minPause){
   if (dur - t > 0.25) parts.push([t, dur]);
   return parts;
 }
-// имя пачки — в начале имени файла: «en-01.mp3» и «en-01 — 5 фраз.mp3» подходят оба
-const batchId = f => /^((?:en|ru)-\d+)/i.exec(f)?.[1].toLowerCase();
+// имя пачки — в начале имени файла: «en-01.mp3», «dict-03.mp3» и «en-01 — 5 фраз.mp3» подходят все
+const batchId = f => /^((?:en|ru|dict)-\d+)/i.exec(f)?.[1].toLowerCase();
 for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)])){
   const id = batchId(f), list = batches[id];
   const wav = join(tmp, id + '.wav');
@@ -69,6 +76,13 @@ for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)
     if (p.length === list.length) parts = p;
   }
   if (!parts){ console.log(`✗ ${f}: фраз в пачке ${list.length}, а в записи нашлось ${[...new Set(tried)].sort((a, b) => a - b).join(' / ')} — пачка пропущена, лучше переозвучить`); continue; }
+  // кусков столько же, но не съехали ли они на одну фразу? Длина куска должна расти вместе с длиной фразы:
+  // без сдвига совпадение должно быть лучше, чем со сдвигом на одну фразу в любую сторону
+  if (list.length >= 8){
+    const chars = list.map(x => x.text.replace(/[^\p{L}]/gu, '').length), secs = parts.map(([a, b]) => b - a);
+    const r0 = corr(chars, secs), r1 = corr(chars.slice(1), secs.slice(0, -1)), r2 = corr(chars.slice(0, -1), secs.slice(1));
+    if (!(r0 > Math.max(r1, r2))){ console.log(`✗ ${f}: куски, похоже, съехали на одну фразу (совпадение ${r0.toFixed(2)}, со сдвигом ${Math.max(r1, r2).toFixed(2)}) — пачка пропущена, лучше переозвучить`); continue; }
+  }
   parts.forEach(([a, b], i) => {
     const seg = join(tmp, `${id}-${i}.wav`);
     ffmpeg(['-i', wav, '-ss', String(Math.max(0, a - 0.08)), '-to', String(b + 0.12), seg]);
