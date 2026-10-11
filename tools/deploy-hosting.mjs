@@ -25,7 +25,7 @@ const env = name => { const v = (process.env[name] || '').trim().replace(/\/+$/,
 const URL_ = env('DEPLOY_URL'), SITE = env('SITE_PATH'), SERVER = env('SERVER_PATH'), STATE = env('STATE_PATH');
 
 // ---------- что выкладываем: локальный путь → путь на сервере ----------
-const SKIP_SITE = /^(tests|tools|server|\.github|\.claude)\/|^(README\.md|DESIGN\.md|phrases\.json|\.gitignore|CNAME)$/;
+const SKIP_SITE = /^(tests|tools|server|\.github|\.claude)\/|^(README\.md|DESIGN\.md|CLAUDE\.md|phrases\.json|\.gitignore|CNAME)$/;
 const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean);
 const files = new Map();
 for (const f of tracked){

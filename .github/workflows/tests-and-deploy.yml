@@ -65,7 +65,7 @@ jobs:
       - name: Собрать сайт (без тестов, инструментов и кода сервера)
         run: |
           mkdir _site
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'server' --exclude '_site' ./ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'server' --exclude '_site' --exclude 'CLAUDE.md' --exclude 'README.md' --exclude 'DESIGN.md' ./ _site/
           node tools/stamp.mjs _site   # версия в адресах скриптов и стилей
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
