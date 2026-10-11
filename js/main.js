@@ -24,8 +24,9 @@ import { CHARACTERS, HARLOW_LINES } from './eq.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';
 import { renderAchievements } from './achievements.js';
 import { renderHUD, renderInventory, renderTeam } from './hud.js';
-import { currentNode, mapGrade, openNode, renderMap } from './map.js';
-import { renderMistakes } from './mistakes.js';
+import { renderMap, runNextStep } from './map.js';
+import { startRevenge } from './revenge.js';
+import { renderMistakes, startReview } from './mistakes.js';
 import { loadProfiles, loadState, saveState, setProfiles, setState, state, takeDeviceSettings } from './state.js';
 import { multi, openProfileChooser, renderProfileChip } from './profiles.js';
 import { initCloud, linkFromHash, syncNow, viewFromHash } from './cloud.js';
@@ -44,11 +45,11 @@ document.getElementById('btn-theme').onclick = () => {
 };
 
 // ---------- CTA ----------
-document.getElementById('btn-hero-start').onclick = () => {
-  const n = currentNode(mapGrade());
-  if (n) openNode(n);
-  else document.getElementById('lessons-sec').scrollIntoView({ behavior: 'smooth' });
-};
+document.getElementById('btn-hero-start').onclick = () => runNextStep();
+// реванш — с карты, из «Моих ошибок» и с кнопки «Продолжить»
+document.addEventListener('click', (e) => { if (e.target.closest('[data-revenge]')) startRevenge(); });
+document.addEventListener('eq:revenge', () => startRevenge());
+document.addEventListener('eq:review', () => startReview());
 document.getElementById('btn-hero-team').onclick = () => document.getElementById('team-sec').scrollIntoView({behavior:'smooth'});
 
 // ---------- INIT ----------

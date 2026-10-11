@@ -153,6 +153,7 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('квест: лучший результат и число прохождений', m.quests['a:vocab'].best === 90 && m.quests['a:vocab'].runs === 4 && m.quests['a:vocab'].passedAt === 200, m.quests['a:vocab']);
   check('квест с другого устройства', m.quests['a:listen']?.best === 100);
   check('достижения: объединение, время — самое раннее', same(m.achievements, { 'first-quest': 150, 'goal-1': 120 }), m.achievements);
+  check('реванши складываются', M(S({ revengeWins: 1 }), S({ revengeWins: 2 }), S({ revengeWins: 3 })).revengeWins === 4);
 }
 
 console.log(`\n${total - fail} из ${total} проверок объединения прошли`);

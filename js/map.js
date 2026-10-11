@@ -8,7 +8,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, questKey, questLock, rarityOf, regionRanks } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, questKey, questLock, questPassed, rarityOf, regionRanks, revengeItems, revengeReady, skillStats } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -75,7 +75,8 @@ export function renderMap(){
       <b>${rr.region.emoji} ${rr.region.name}</b> <span class="t-muted">· Spotlight ${grade}</span>
       <span class="region-rank">${rr.rank ? `${rr.rank.emoji} ${rr.rank.title}` : 'Звания пока нет'}${rr.next ? ` · дальше «${rr.next.title}»: ${rr.nextNeed}` : ' · все звания региона ✓'}</span>
     </div>` : '';
-  wrap.innerHTML = `${head}<ol class="map" role="list">${nodes.map((n, i) => {
+  const revenge = revengeReady(state) ? `<button class="revenge-banner" data-revenge>⚔️ <b>Квест-реванш!</b> ${revengeItems(state).length} самых трудных слов и вопросов — одолей их</button>` : '';
+  wrap.innerHTML = `${revenge}${head}<ol class="map" role="list">${nodes.map((n, i) => {
     const locked = lockReason(n), done = nodeDone(n), isCur = n === cur;
     const st = locked ? 'locked' : done ? 'done' : isCur ? 'current' : 'open';
     const x = MAP_OFFSETS[i % MAP_OFFSETS.length], px = MAP_OFFSETS[(i - 1 + MAP_OFFSETS.length) % MAP_OFFSETS.length];
@@ -105,6 +106,7 @@ export function renderMap(){
       </li>`;
   }).join('')}</ol>`;
   wrap.querySelectorAll('.map-node').forEach(b => b.onclick = () => openNode(nodes[+b.dataset.i]));
+  updateContinue();
 }
 
 export function openNode(n){
@@ -121,6 +123,38 @@ document.querySelectorAll('#grade-tabs .tab').forEach(t => {
     renderMap();
   });
 });
+
+// ---------- «ПРОДОЛЖИТЬ»: ЧТО ДЕЛАТЬ ДАЛЬШЕ ----------
+// Сначала повторение (реванш, затем «Мои ошибки», которым пора), потом незакрытое в текущей теме:
+// грамматика, если её навык слабый, иначе первый открытый непройденный квест; потом следующая тема или босс.
+export function nextStep(){
+  if (revengeReady(state)) return { kind: 'revenge', label: '⚔️ Квест-реванш', hint: 'сначала трудные слова' };
+  const due = mistakeList(state).filter(x => x.m.due <= Date.now()).length;
+  if (due) return { kind: 'review', label: `🔁 Повторить ошибки (${due})`, hint: 'сначала повторение' };
+  const n = currentNode(mapGrade());
+  if (!n) return { kind: 'map', label: '🗺️ К карте', hint: '' };
+  if (n.kind === 'checkpoint') return { kind: 'node', node: n, label: '🐉 На босса!', hint: n.cp.title };
+  const l = n.lesson, open = lessonQuests(l).filter(q => !questLock(l, q.kind, state) && !questPassed(state, l, q.kind));
+  const weak = new Set(skillStats(state).filter(x => x.weak).map(x => x.code));
+  const q = open.find(q => q.kind === 'grammar' && l.grammar.some(g => weak.has(g.skill))) || open.find(q => !state.lessonProgress[l.id]?.[q.kind]) || open[0];
+  if (!q) return { kind: 'node', node: n, label: `▶ ${l.title}`, hint: '' };
+  return { kind: 'quest', lesson: l, quest: q.kind, label: `▶ ${l.title}: ${EX_NAMES[q.kind].split(' ').slice(1).join(' ')}`, hint: '' };
+}
+export function runNextStep(){
+  const s = nextStep();
+  if (s.kind === 'revenge' || s.kind === 'review') document.dispatchEvent(new Event(s.kind === 'revenge' ? 'eq:revenge' : 'eq:review'));
+  else if (s.kind === 'quest') startExercise(s.lesson, s.quest);
+  else if (s.kind === 'node') openNode(s.node);
+  else document.getElementById('lessons-sec')?.scrollIntoView({ behavior: 'smooth' });
+}
+export function updateContinue(){
+  const b = document.getElementById('btn-hero-start');
+  if (!b || !state) return;
+  const s = nextStep();
+  b.textContent = s.label;
+  b.title = s.hint || '';
+}
+document.addEventListener('eq:mistakes', updateContinue);
 
 // ---------- ЭКРАН ТЕМЫ: ДОСКА КВЕСТОВ ----------
 // Каждое упражнение — квест с редкостью (рамка цвета редкости), призом и условием открытия.

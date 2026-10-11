@@ -528,6 +528,11 @@ section { margin-top: 32px; }
 .ach-em { font-size: 30px; line-height: 1.1; }
 .ach small { color: var(--muted); font-size: 12px; }
 #ach-count { font-family: var(--font-body); font-size: 15px; }
+/* квест-реванш */
+.revenge-banner { display: block; width: 100%; margin: 0 0 12px; padding: 12px 14px; text-align: left; font: inherit; font-size: 16px; color: var(--ink); background: var(--surface); border: 3px solid var(--line); border-left: 10px solid var(--violet-2); border-radius: 14px; box-shadow: 0 4px 0 var(--line); cursor: pointer; min-height: 44px; }
+.revenge-banner:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+.revenge-soon { font-size: 13px; align-self: center; }
+.options.options-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 /* ==== КАРТОЧКИ ==== */
 .flash {
