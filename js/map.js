@@ -12,7 +12,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, questIsNew, questKey, questLock, questPassed, questTitle, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillStats } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, prizeLine, questIsNew, questKey, questLock, questPassed, questTitle, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillStats } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -227,7 +227,7 @@ export function openLessonHub(lesson, selected){
     const r = rarityOf(q.rarity), lock = questLock(lesson, q.kind, state), res = state.quests[questKey(lesson, q.kind)], x = extraQuestOf(lesson, q.kind);
     const title = questTitle(lesson, q.kind).split(' ').slice(1).join(' ');
     const what = x ? `Новый квест темы: ${x.title}.` : QUEST_WHAT[q.kind] || '';
-    const prize = passed(q) ? 'награда получена' : (r.coins ? `+${r.xp} XP, +${r.coins} 🪙` : r.prize);
+    const prize = passed(q) ? 'награда получена' : `${r.coins ? `+${r.xp} XP, +${r.coins} 🪙` : r.prize}; для клиники: ${prizeLine(q.rarity, state)}`;
     const action = lock
       ? `<div class="scene-lock"><span aria-hidden="true">🔒</span> ${escapeHtml(lock)}</div>`
       : `<button type="button" class="btn ${passed(q) ? 'secondary' : ''}" id="scene-play">${passed(q) ? `Пройдено ★ · лучший ${res.best}% · ещё раз` : res ? `Играть · лучший ${res.best}%` : 'Играть'}</button>`;

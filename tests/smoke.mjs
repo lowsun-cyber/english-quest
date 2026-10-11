@@ -1020,15 +1020,17 @@ try {
     // шапка: герой в рамке своего цвета, имя, звание, уровень, монеты
     if (!f('pf-avatar').querySelector('.hero-img') || !f('pf-name').textContent || !f('hud-rank').textContent || !/^L\\d+$/.test(f('level-badge').textContent)) throw new Error('шапка игрока');
     if (f('stat-gold').textContent !== String(state.gold)) throw new Error('монеты в шапке');
-    // нижнее меню: четыре раздела, «Сундук» прокручивает к достижениям, «Клиника» пока «скоро»
+    // нижнее меню: четыре раздела, «Сундук» прокручивает к достижениям, «Клиника» — к клинике
     const items = [...document.querySelectorAll('#bottom-nav [data-nav]')].map(x => x.dataset.nav).join(',');
     if (items !== 'map,clinic,chest,mistakes') throw new Error('меню: ' + items);
-    document.querySelector('#bottom-nav [data-nav=chest]').click();
-    for (let i = 0, y = -1; i < 30 && y !== scrollY; i++){ y = scrollY; await __sleep(150); }   // ждём конца плавной прокрутки
+    // ждём конца плавной прокрутки: раздел у верха экрана и прокрутка остановилась
+    const settle = async id => { for (let i = 0, y = -1; i < 40; i++){ const t = f(id).getBoundingClientRect().top; if (y === scrollY && t > -5 && t < innerHeight - 120) break; y = scrollY; await __sleep(150); } };
+    document.querySelector('#bottom-nav [data-nav=chest]').click(); await settle('ach-sec');
     const top = f('ach-sec').getBoundingClientRect().top;
     if (top < -5 || top > innerHeight - 120 || document.querySelector('#bottom-nav [aria-current]')?.dataset.nav !== 'chest') throw new Error('«Сундук»: раздел на ' + Math.round(top) + ' px, подсвечено ' + document.querySelector('#bottom-nav [aria-current]')?.dataset.nav);
-    __toasts.length = 0; document.querySelector('#bottom-nav [data-nav=clinic]').click(); await __sleep(150);
-    if (!__toasts.some(t => /Клиника/.test(t))) throw new Error('«Клиника» молчит');
+    document.querySelector('#bottom-nav [data-nav=clinic]').click(); await settle('clinic-sec');
+    const ctop = f('clinic-sec').getBoundingClientRect().top;
+    if (ctop < -5 || ctop > innerHeight - 120) throw new Error('«Клиника»: раздел на ' + Math.round(ctop) + ' px');
     // значок «Ошибки» — сколько ждут повторения
     const saved = JSON.stringify(state.mistakes), L = window.EQ.LESSONS[0];
     state.mistakes = { ['word:' + L.id + ':' + L.words[0].en]: { type: 'word', lessonId: L.id, ref: L.words[0].en, wrong: 1, box: 0, due: Date.now() - 1000, last: Date.now() } };
@@ -1041,7 +1043,7 @@ try {
     const pill = getComputedStyle(document.querySelector('.scene-card .quest-pill'));
     if (pill.color !== 'rgb(28, 43, 26)' || pill.backgroundColor !== 'rgb(140, 200, 240)') throw new Error('редкий: ' + pill.color + ' на ' + pill.backgroundColor);
     __close();
-    return 'шапка, меню (Сундук, Клиника «скоро», значок ошибок), таблички редкости';`)));
+    return 'шапка, меню (Сундук, Клиника, значок ошибок), таблички редкости';`)));
 
   await test('карта-путь: островки, дорога, «Ты здесь», карточка, регионы', () => load().then(() => js(`
     const f = id => document.getElementById(id);
@@ -1072,6 +1074,36 @@ try {
     if (!document.querySelector('.path.region-4') || state.settings.mapGrade !== 4) throw new Error('не перешли в следующий регион');
     state.settings.mapGrade = 2; await saveState(); map.renderMap();
     return marks.length + ' меток с островками, «Ты здесь», карточка → сцена локации, переход в следующий регион';`)));
+
+  await test('своя клиника: комнаты, стройка, пациенты, приз квеста', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), C = await import('./js/clinic.js'), S = await import('./js/stats.js');
+    const saved = JSON.stringify({ q: state.quests, c: state.clinic || null });
+    // пустая клиника: приёмная построена, остальные — закрыты или секрет
+    state.quests = {}; delete state.clinic; await saveState(); C.renderClinic();
+    const rooms = [...document.querySelectorAll('#clinic .clinic-room')];
+    if (rooms.length !== window.EQ.CLINIC_ROOMS.length || !rooms[0].classList.contains('built') || !rooms[0].querySelector('.hero-img')) throw new Error('комнаты: ' + rooms.map(r => r.className).join());
+    if (!document.querySelector('#clinic .clinic-room.secret') || !document.querySelector('#clinic .clinic-room.locked')) throw new Error('нет закрытых и секретной');
+    if (f('clinic-mats').querySelectorAll('.clinic-mat').length !== 4) throw new Error('счётчики материалов');
+    if (!/Пациенты/.test(f('clinic').innerText) || !/Альбом слов/.test(f('clinic').innerText) || !/Помощники/.test(f('clinic').innerText)) throw new Error('карточки клиники');
+    // эпический квест открывает рецепт, обычные приносят блоки — строим вольер
+    const all = window.EQ.LESSONS.flatMap(l => S.lessonQuests(l).map(q => ({ key: S.questKey(l, q.kind), rarity: q.rarity })));
+    for (const q of [...all.filter(q => q.rarity === 'common').slice(0, 10), ...all.filter(q => q.rarity === 'epic').slice(0, 1)]) state.quests[q.key] = { best: 100, runs: 1, at: Date.now(), passedAt: Date.now() };
+    await saveState(); C.renderClinic();
+    const btn = document.querySelector('#clinic .clinic-build[data-room=aviary]');
+    if (!btn || btn.getAttribute('aria-disabled')) throw new Error('кнопка «Строить» у вольера: ' + (btn?.outerHTML || 'нет'));
+    const blocks = S.clinicState(state).have.blocks;
+    btn.click(); await __sleep(100);
+    if (!state.clinic?.aviary || !document.querySelector('#clinic .clinic-room.built [class]') || S.clinicState(state).have.blocks !== blocks - 10) throw new Error('не построили: ' + JSON.stringify(state.clinic));
+    if (document.querySelectorAll('#clinic .clinic-room.built').length !== 2) throw new Error('построенных комнат не две');
+    // карточка квеста показывает приз для клиники
+    (await import('./js/map.js')).openLessonHub(window.EQ.LESSONS[5]); await __sleep(200);
+    document.querySelector('.scene-mark[data-ex=listen]').click(); await __sleep(40);
+    if (!/для клиники/.test(document.querySelector('.scene-card').textContent)) throw new Error('нет приза для клиники: ' + document.querySelector('.scene-card').textContent);
+    __close(); await __sleep(100);
+    const back = JSON.parse(saved); state.quests = back.q; if (back.c) state.clinic = back.c; else delete state.clinic;
+    await saveState(); C.renderClinic();
+    return 'комнаты по эскизу, рецепт за эпический квест, стройка списывает материалы, приз на карточке';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {

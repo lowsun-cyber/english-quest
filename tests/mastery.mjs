@@ -145,5 +145,46 @@ check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g
   check('Шахты: места не считаются обычными квестами', S.questCounts(fresh({ quests: three })).quests === 0);
 }
 
+// своя клиника (итерация 4): материалы — из пройденных квестов, построенное — в st.clinic
+{
+  const { LESSONS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, SECRET_REGIONS } = ctx.window.EQ;
+  const all = LESSONS.flatMap(l => S.lessonQuests(l).map(q => ({ key: S.questKey(l, q.kind), rarity: q.rarity })));
+  const passedOf = (rarity, n) => Object.fromEntries(all.filter(q => q.rarity === rarity).slice(0, n).map(q => [q.key, { best: 100, runs: 1, passedAt: 1 }]));
+  const empty = S.clinicState(fresh());
+  check('клиника: у нового игрока материалов нет', Object.values(empty.have).every(v => v === 0), empty.have);
+  check('клиника: приёмная построена с начала', empty.rooms[0].state === 'built' && empty.built === 1);
+  check('клиника: остальные закрыты, секретная — «Шахты»', empty.rooms.slice(1, -1).every(r => r.state === 'locked') && empty.rooms.at(-1).state === 'secret');
+  check('клиника: старый прогресс без поля clinic', S.clinicState({ quests: passedOf('common', 2) }).have.blocks === 2 * CLINIC_PRIZE.common.blocks);
+  const st = fresh({ quests: { ...passedOf('common', 4), ...passedOf('rare', 3), ...passedOf('epic', 1) } });
+  const cs = S.clinicState(st);
+  check('клиника: материалы по редкости', cs.have.blocks === 4 * CLINIC_PRIZE.common.blocks && cs.have.boards === 4 * CLINIC_PRIZE.common.boards + 3 * CLINIC_PRIZE.rare.boards
+    && cs.have.glass === 3 * CLINIC_PRIZE.rare.glass + CLINIC_PRIZE.epic.glass, cs.have);
+  check('клиника: мебель за редкие квесты', cs.furniture.length === 3 && cs.furniture[0].id === CLINIC_FURNITURE[0].id);
+  const aviary = cs.rooms.find(r => r.room.id === 'aviary');
+  check('клиника: эпический квест открыл рецепт', aviary.state === 'building' && aviary.recipe);
+  const poor = fresh({ quests: { ...passedOf('common', 2), ...passedOf('epic', 1) } });
+  check('клиника: не хватает блоков — строить нельзя', !S.clinicState(poor).rooms.find(r => r.room.id === 'aviary').canBuild && S.buildRoom(poor, 'aviary') === null);
+  check('клиника: закрытую комнату построить нельзя', S.buildRoom(st, 'surgery') === null);
+  const rich = fresh({ quests: { ...passedOf('common', 10), ...passedOf('epic', 1) } });
+  const built = S.buildRoom(rich, 'aviary', 777);
+  check('клиника: хватает материалов — комната строится', built?.aviary === 777, built);
+  const after = S.clinicState({ ...rich, clinic: built });
+  const cost = CLINIC_ROOMS.find(r => r.id === 'aviary').cost;
+  check('клиника: материалы списаны по рецепту', after.have.blocks === 10 * CLINIC_PRIZE.common.blocks - cost.blocks && after.built === 2, after.have);
+  check('клиника: повторно ту же комнату не построить', S.buildRoom({ ...rich, clinic: built }, 'aviary') === null);
+  const mines = SECRET_REGIONS.find(r => r.id === 'mines');
+  const cr = S.clinicState(fresh({ quests: { ...passedOf('rare', 10), 'mines:entry': { best: 90, passedAt: 1 }, 'mines:deep': { best: 90, passedAt: 1 } } }));
+  check('клиника: кристаллы — за места Шахт', cr.have.crystals === mines.locations.find(l => l.id === 'entry').crystals + mines.locations.find(l => l.id === 'deep').crystals, cr.have);
+  check('клиника: Шахты открыты — секретная комната строится', cr.rooms.at(-1).state === 'building');
+  check('клиника: помощник за босса Шахт', cr.helpers.find(h => h.minesBoss).got);
+  const g2 = LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order);
+  const pt = S.clinicState(fresh({ lessonProgress: { [g2[0].id]: Object.fromEntries(S.PARTS.map(k => [k, 3])) }, checkpoints: { 'g2-p1': { best: 8, passedAt: 1 } } }));
+  check('клиника: пройденная тема — вылеченный пациент', pt.cured >= 1 && pt.patients.find(p => p.grade === 2).list[0].cured);
+  check('клиника: помощник Луна за первого босса', pt.helpers[0].got && !pt.helpers[1].got);
+  check('клиника: приз квеста называет мебель', S.prizeLine('rare', fresh()).includes(CLINIC_FURNITURE[0].title.toLowerCase()));
+  check('клиника: приз эпического — к рецепту', S.prizeLine('epic', fresh()).includes('рецепт'));
+  check('клиника: строка для родителя', /Клиника: комнат 1 из \d+/.test(S.clinicLine(fresh())) && S.reportText(fresh()).includes('Клиника:'));
+}
+
 console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);
 process.exit(fail ? 1 : 0);

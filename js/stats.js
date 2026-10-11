@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { ACHIEVEMENTS, CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { ACHIEVEMENTS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS, CLINIC_PRIZE, CLINIC_ROOMS, CHARACTERS, CURRICULUM, MATERIALS, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -133,6 +133,76 @@ export function secretRegionState(region, st){
     return { loc, res, passed: passed(loc), lock };
   });
   return { region, open, have: Math.min(have, need), need, pool, locations };
+}
+
+// ---------- своя клиника (итерация 4) ----------
+// Всё заработанное считается из прогресса: первое прохождение квеста на 80% даёт материалы по редкости
+// (CLINIC_PRIZE), испытание — блоки и помощника, места «Шахт» — кристаллы. В прогрессе хранится только
+// st.clinic = { комната: когда построена } — поэтому слияние устройств безопасно, а старый прогресс сразу при деле.
+export const clinicPrize = rarity => CLINIC_PRIZE[rarity] || CLINIC_PRIZE.common;
+// Подпись приза для карточек квестов: «🧱 3 · 🪵 1» и т. п.
+export const MAT_EMOJI = { blocks: '🧱', boards: '🪵', glass: '🪟', crystals: '💠' };
+// st — чтобы назвать предмет мебели и комнату, к рецепту которой ведёт квест
+export function prizeLine(rarity, st = null){
+  const p = clinicPrize(rarity), parts = MATERIALS.filter(m => p[m.id]).map(m => `${MAT_EMOJI[m.id]} ${p[m.id]}`);
+  const c = st && questCounts(st);
+  if (p.furniture){ const f = c && CLINIC_FURNITURE[c.rare]; parts.push(f ? `${f.emoji} ${f.title.toLowerCase()}` : '🛋️ мебель'); }
+  if (p.recipe){
+    const room = c && CLINIC_ROOMS.find(r => r.recipe && r.recipe > c.epic);
+    parts.push(room ? `📜 к рецепту «${room.title}» (${c.epic + 1} из ${room.recipe})` : '📜 рецепт комнаты');
+  }
+  if (p.helper) parts.push('🤝 помощник');
+  return parts.join(' · ');
+}
+const minesPassed = (st, loc) => (st.quests?.[`mines:${loc.id}`]?.best ?? -1) >= QUEST_PASS_PCT;
+export function clinicState(st){
+  const c = questCounts(st), earned = { blocks: 0, boards: 0, glass: 0, crystals: 0 };
+  const addP = (p, k = 1) => { for (const m of MATERIALS) earned[m.id] += (p[m.id] || 0) * k; };
+  addP(CLINIC_PRIZE.common, c.common); addP(CLINIC_PRIZE.rare, c.rare); addP(CLINIC_PRIZE.epic, c.epic);
+  addP(CLINIC_PRIZE.boss, c.bosses);
+  const mines = SECRET_REGIONS.find(r => r.id === 'mines');
+  for (const loc of mines?.locations || []) if (minesPassed(st, loc)) earned.crystals += loc.crystals || 0;
+  const minesOpen = !!mines && secretRegionState(mines, st).open;
+  const built = st.clinic || {};
+  const spent = { blocks: 0, boards: 0, glass: 0, crystals: 0 };
+  const rooms = CLINIC_ROOMS.map(room => {
+    const isBuilt = !!room.built || !!built[room.id];
+    if (isBuilt && !room.built) for (const [k, v] of Object.entries(room.cost || {})) spent[k] += v;
+    const recipe = room.built || (room.mines ? minesOpen : c.epic >= (room.recipe || 0)) || !!st.settings?.unlockAll;
+    return { room, built: isBuilt, recipe, host: CHARACTERS[room.host] || null };
+  });
+  const have = Object.fromEntries(MATERIALS.map(m => [m.id, Math.max(0, earned[m.id] - spent[m.id])]));
+  for (const r of rooms){
+    const cost = Object.entries(r.room.cost || {});
+    r.need = cost.map(([k, v]) => ({ id: k, need: v, have: Math.min(v, have[k]) }));
+    r.canBuild = !r.built && r.recipe && cost.every(([k, v]) => have[k] >= v);
+    r.state = r.built ? 'built' : r.room.mines && !r.recipe ? 'secret' : !r.recipe ? 'locked' : 'building';
+  }
+  const furniture = CLINIC_FURNITURE.slice(0, c.rare);
+  const minesBoss = !!st.quests?.['mines:deep']?.passedAt;
+  const helpers = CLINIC_HELPERS.map(h => ({ ...h, hero: CHARACTERS[h.hero], got: h.minesBoss ? minesBoss : c.bosses >= h.bosses }));
+  // пациенты: одна пройденная тема — один вылеченный, по регионам (классам)
+  const patients = GRADES.map(g => {
+    const ls = lessonsOf(g);
+    return { grade: g, total: ls.length, list: ls.map((l, i) => ({ lesson: l, animal: CLINIC_PATIENTS[i % CLINIC_PATIENTS.length], cured: isLessonComplete(l, st) })) };
+  });
+  // альбом слов: освоенные слова из всех тем; по регионам — сколько слов в темах класса
+  const mastered = new Set(wordStats(st).filter(w => w.level === 'mastered').map(w => w.en));
+  const album = GRADES.map(g => { const ws = [...lessonWords().values()].filter(w => w.grade === g); return { grade: g, total: ws.length, got: ws.filter(w => mastered.has(w.en)).length }; });
+  return { counts: c, earned, spent, have, rooms, furniture, helpers, patients, album, minesOpen,
+    cured: patients.reduce((n, p) => n + p.list.filter(x => x.cured).length, 0),
+    built: rooms.filter(r => r.built).length };
+}
+// Построить комнату: возвращает новое st.clinic или null, если нельзя
+export function buildRoom(st, roomId, now = Date.now()){
+  const r = clinicState(st).rooms.find(x => x.room.id === roomId);
+  if (!r?.canBuild) return null;
+  return { ...(st.clinic || {}), [roomId]: now };
+}
+// Строка для родителя
+export function clinicLine(st, cs = clinicState(st)){
+  const rooms = cs.rooms.filter(r => r.built).map(r => r.room.title);
+  return `Клиника: комнат ${cs.built} из ${cs.rooms.length} (${rooms.join(', ')}), вылечено пациентов ${cs.cured}, мебели ${cs.furniture.length}, помощников ${cs.helpers.filter(h => h.got).length}`;
 }
 
 // ---------- квест-реванш ----------
@@ -377,7 +447,7 @@ export function studentStats(st, n = 7){
     lessonsDone: lessons.filter(x => x.done).length,
     xp, level, maxLevel: MAX_LEVEL, rank: topRank(st), regions: regionRanks(st), gold: st.gold || 0, mastered: st.mastered || 0,
     collected: Object.keys(st.inventory || {}).length,
-    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st),
+    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st), clinic: clinicLine(st),
     allTime: { days: all, sec: allSec, min: minutes(allSec), ok: allOk, bad: allBad, pct: pctOf(allOk, allBad),
       activeDays: all.filter(d => d.sec > 0 || (d.ok || 0) + (d.bad || 0) > 0).length, first: allKeys[0] || null, last: allKeys[allKeys.length - 1] || null },
   };
@@ -403,6 +473,7 @@ export function reportText(st, who = '', s = studentStats(st), extra = []){
     lines.push(`Слова: освоено ${s.mastery.levels.mastered} из ${s.mastery.seen} встреченных${hardW.length ? `; трудные: ${hardW.join(', ')}` : ''}`);
   }
   if (st.mastered) lines.push(`Выучено после ошибок: ${st.mastered}`);
+  lines.push(s.clinic || clinicLine(st));
   lines.push(...extra);
   const cpsDone = CHECKPOINTS.filter(cp => st.checkpoints?.[cp.id]?.passedAt);
   if (cpsDone.length) lines.push(`Сданы проверки: ${cpsDone.map(cp => `${cp.grade} кл. ч.${cp.part} (${st.checkpoints[cp.id].best}/${CHECKPOINT_SIZE})`).join(', ')}`);
