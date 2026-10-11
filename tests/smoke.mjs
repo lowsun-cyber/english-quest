@@ -938,6 +938,10 @@ try {
     const fog = document.querySelector('.secret-fog')?.innerText || '';
     const have = Math.min(St.questCounts(state).rare, 10);
     if (!fog.includes('Редких квестов: ' + have + ' из 10') || /Шахт/.test(fog)) throw new Error('туман: ' + fog);
+    // под туманом — рисунки мест; чем больше редких квестов, тем реже туман
+    const fogImgs = [...document.querySelectorAll('.fog-scene .fog-isl')];
+    if (fogImgs.length !== 3 || fogImgs.some(i => !i.complete || !i.naturalWidth)) throw new Error('под туманом нет рисунков');
+    if (Math.abs(+document.querySelector('.secret-fog').style.getPropertyValue('--reveal') - have / 10) > 0.01) throw new Error('туман не зависит от прогресса');
     // 10 редких квестов и две пройденные темы — регион открывается
     const g2 = window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order);
     g2.slice(0, 5).forEach(l => ['spell', 'grammar'].forEach(k => state.quests[l.id + ':' + k] = { best: 100, last: 100, at: Date.now(), runs: 1, passedAt: Date.now() }));
@@ -963,7 +967,7 @@ try {
     if (!document.querySelector('.secret-loc[data-loc="0"]').classList.contains('done') || !document.querySelector('.secret-loc[data-loc="3"]').classList.contains('locked')) throw new Error('после прохождения: места не обновились');
     const back = JSON.parse(saved); state.quests = back.q; state.lessonProgress = back.lp; state.crystals = back.c; state.settings.mapView = back.v || null;
     await saveState(); map.renderMap();
-    return 'туман и счётчик ' + have + ' из 10, открытие после 10 редких, «Входная штольня» 8/8 → 💠 +3, босс закрыт до трёх мест';`)));
+    return 'туман с рисунками и счётчик ' + have + ' из 10, открытие после 10 редких, «Входная штольня» 8/8 → 💠 +3, босс закрыт до трёх мест';`)));
 
   await test('пакет локации: новый квест в старой теме', () => load().then(() => js(`
     const f = id => document.getElementById(id);

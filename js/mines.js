@@ -10,20 +10,36 @@ import { closeModal, confetti, openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
 
 let rerender = () => {};
+// туман плывёт, только пока сцена на экране (и не плывёт, если анимации отключены в системе)
+let fogObserver = null;
+function pauseOffscreen(el){
+  if (!el || !('IntersectionObserver' in window)) return;
+  fogObserver?.disconnect();
+  fogObserver = new IntersectionObserver(([e]) => el.classList.toggle('fog-paused', !e.isIntersecting));
+  fogObserver.observe(el);
+}
 // wrap — место карты; onChange — перерисовать карту после квеста
 export function renderSecret(wrap, region, onChange){
   rerender = onChange || rerender;
   const S = secretRegionState(region, state);
   if (!S.open){
     // до открытия — только силуэт и счётчик: цель для редких квестов, а сюрприз сохраняется
+    // под туманом проступают места региона: чем больше редких квестов, тем реже туман (--reveal 0…1)
+    const reveal = Math.min(1, S.have / S.need).toFixed(2);
+    const pics = region.locations.filter(l => !l.boss).map(l => l.img).filter(Boolean);
     wrap.innerHTML = `
-      <div class="secret-fog" role="img" aria-label="Тайное место скрыто туманом. Редких квестов пройдено ${S.have} из ${S.need}.">
-        <span class="fog-q" aria-hidden="true">❔</span>
+      <div class="secret-fog" style="--reveal:${reveal}" role="img" aria-label="Тайное место скрыто густым туманом, сквозь него едва что-то видно. Редких квестов пройдено ${S.have} из ${S.need}.">
+        <div class="fog-scene" aria-hidden="true">
+          ${pics.map((src, i) => `<img class="fog-isl fog-isl-${i}" src="${src}" alt="" draggable="false">`).join('')}
+          <span class="fog-cloud fc1"></span><span class="fog-cloud fc2"></span><span class="fog-cloud fc3"></span>
+          <span class="fog-q">❔</span>
+        </div>
         <h3>Тайное место</h3>
         <p>Где-то здесь, под туманом, что-то спрятано… Проходи <b>редкие квесты</b> на ${QUEST_PASS_PCT}% в любых регионах.</p>
         <div class="fog-bar" aria-hidden="true"><span style="width:${Math.round(S.have * 100 / S.need)}%"></span></div>
         <p class="fog-count">Редких квестов: <b>${S.have} из ${S.need}</b></p>
       </div>`;
+    pauseOffscreen(wrap.querySelector('.secret-fog'));
     return;
   }
   const guide = CHARACTERS[region.guide] || CHARACTERS.harlow;

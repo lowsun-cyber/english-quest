@@ -2489,15 +2489,15 @@ function taskTypeFor(kind, grade){
 // Описаны данными: название, условие открытия, локации. До открытия на карте — туман, «???» и счётчик.
 // Квесты локаций — смешанные вопросы по пройденным темам (mix: сколько вопросов каждого вида),
 // все эпические и легендарные; награда — кристаллы для клиники (итерация 4) и опыт с монетами — один раз.
-// Названия локаций — предложение для обсуждения с сыном, менять можно здесь же.
+// Названия локаций — предложение для обсуждения с сыном, менять можно здесь же. img — рисунок места (под туманом до открытия).
 const SECRET_REGIONS = [
   { id: 'mines', name: 'Шахты', emoji: '⛏️', color: '#4a5a68', guide: 'max',
     unlock: { rare: 10 },   // 10 редких квестов на 80% в любых регионах
     intro: 'Тайный вход открыт! Здесь, под землёй, прячутся кристаллы. Ответь на мои вопросы по всем пройденным темам — и они твои.',
     locations: [
-      { id: 'entry', title: 'Входная штольня', emoji: '🔦', rarity: 'epic', size: 8, mix: { word: 4, listen: 4 }, crystals: 3 },
-      { id: 'cave', title: 'Кристальная пещера', emoji: '💎', rarity: 'epic', size: 8, mix: { word: 4, grammar: 4 }, crystals: 3 },
-      { id: 'lake', title: 'Подземное озеро', emoji: '🌊', rarity: 'epic', size: 8, mix: { listen: 6, grammar: 2 }, crystals: 3 },
+      { id: 'entry', title: 'Входная штольня', emoji: '🔦', img: 'assets/locations/mines-1-adit.svg', rarity: 'epic', size: 8, mix: { word: 4, listen: 4 }, crystals: 3 },
+      { id: 'cave', title: 'Кристальная пещера', emoji: '💎', img: 'assets/locations/mines-2-crystals.svg', rarity: 'epic', size: 8, mix: { word: 4, grammar: 4 }, crystals: 3 },
+      { id: 'lake', title: 'Подземное озеро', emoji: '🌊', img: 'assets/locations/mines-3-lake.svg', rarity: 'epic', size: 8, mix: { listen: 6, grammar: 2 }, crystals: 3 },
       { id: 'deep', title: 'Глубокий забой', emoji: '⛏️', rarity: 'legendary', size: 12, mix: { word: 4, listen: 4, grammar: 4 }, crystals: 10, boss: true },
     ] },
 ];
