@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { CURRICULUM, LESSONS, MAX_LEVEL, SKILLS, buildItemsFor, fillItemsFor, levelFromXp, rankFor } from './eq.js';
+import { CURRICULUM, LESSONS, MAX_LEVEL, RANK_STEPS, REGIONS, SKILLS, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -37,6 +37,25 @@ export function isLessonComplete(l, st){
   if (!p) return false;
   return (p.vocab||0) >= 3 && (p.listen||0) >= 3 && (p.grammar||0) >= 2 && (p.reading||0) >= 1;
 }
+// ---------- ранги регионов ----------
+// Ранг идёт по шагам подряд: 1 — пройдена хотя бы одна тема региона, 2 — сдана хотя бы одна проверка,
+// 3 — сданы все проверки, 4 — пройдены все темы. Считается из прогресса, поэтому старый прогресс
+// открывает ранги сам, а синхронизация ничего нового не хранит.
+export function regionRanks(st){
+  return REGIONS.map(region => {
+    const ls = lessonsOf(region.grade), cps = checkpointsOf(region.grade);
+    const done = ls.filter(l => isLessonComplete(l, st)).length;
+    const passed = cps.filter(cp => st.checkpoints?.[cp.id]?.passedAt).length;
+    const conds = [done > 0, passed > 0, cps.length > 0 && passed === cps.length, ls.length > 0 && done === ls.length];
+    let step = 0;
+    while (step < conds.length && conds[step]) step++;
+    return { region, step, rank: rankOf(region.id, step), next: rankOf(region.id, step + 1), nextNeed: RANK_STEPS[step] || null,
+      done, lessons: ls.length, passed, checkpoints: cps.length };
+  });
+}
+// Звание для шапки и отчётов — самый высокий ранг в самом дальнем регионе, где он есть (null — пока ни одного)
+export function topRank(st){ return [...regionRanks(st)].reverse().find(r => r.rank)?.rank || null; }
+
 export const goalOf = st => GOAL_OPTIONS.includes(st.settings?.dailyGoal) ? st.settings.dailyGoal : 10;
 export function homeworkDone(st, hw, ex){ return (st.lessonProgress?.[hw.lessonId]?.[ex] || 0) > (hw.baseline?.[ex] || 0); }
 
@@ -124,7 +143,7 @@ export function studentStats(st, n = 7){
     sec, min: minutes(sec), ok, bad, total: ok + bad, pct: pctOf(ok, bad), active, lessons, hard,
     checkpoints: CHECKPOINTS.map(cp => ({ cp, r: st.checkpoints?.[cp.id] || null })),
     lessonsDone: lessons.filter(x => x.done).length,
-    xp, level, maxLevel: MAX_LEVEL, rank: rankFor(level), gold: st.gold || 0, mastered: st.mastered || 0,
+    xp, level, maxLevel: MAX_LEVEL, rank: topRank(st), regions: regionRanks(st), gold: st.gold || 0, mastered: st.mastered || 0,
     collected: Object.keys(st.inventory || {}).length,
     skills: skillStats(st), coverage: curriculumCoverage(st),
     allTime: { days: all, sec: allSec, min: minutes(allSec), ok: allOk, bad: allBad, pct: pctOf(allOk, allBad),

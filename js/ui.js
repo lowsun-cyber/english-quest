@@ -1,6 +1,7 @@
 // English Quest — Всплывающие сообщения, конфетти, пузырь гида и окно урока.
 import { endView } from './backup.js';
 import { CHARACTERS } from './eq.js';
+import { heroPic } from './heroes.js';
 import { speak, stopSpeech } from './tts.js';
 
 // ---------- TOAST / CONFETTI ----------
@@ -36,8 +37,8 @@ export function showGuide(name, text, character=null){
   const c = character || CHARACTERS.harlow;
   g.hidden = false;
   const av = document.getElementById('guide-avatar');
-  av.textContent = c.emoji;
-  av.style.background = c.color;
+  av.innerHTML = heroPic(c, 'happy');
+  av.style.setProperty('--hero-color', c.color);
   av.style.boxShadow = `0 6px 0 ${c.accent}`;
   document.getElementById('guide-name').textContent = name;
   document.getElementById('guide-name').style.setProperty('--guide-accent', c.accent);

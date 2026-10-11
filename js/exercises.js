@@ -2,6 +2,7 @@
 import { PASS_SCORE, candidatesFromResults, phraseWords, scoreSpeech } from './speech.js';
 import { logAnswer } from './activity.js';
 import { CHARACTERS, LESSONS, buildItemsFor, fillItemsFor, lessonStartLine } from './eq.js';
+import { heroPic, nextScreenMood, setHeroMood, takeScreenMood } from './heroes.js';
 import { checkHomework } from './homework.js';
 import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
 import { renderMap } from './map.js';
@@ -46,7 +47,7 @@ export function exCards(lesson, guide){
     markProgress(lesson.id, 'cards');
     saveState();
     openModal(`
-      ${lessonHeader(lesson, guide)}
+      ${lessonHeader(lesson, guide, '', 'praise')}
       <div class="question">
         <h3>Все слова темы</h3>
         <p class="t-muted">Нажми на карточку, чтобы услышать слово.</p>
@@ -74,7 +75,7 @@ export function exSpell(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Написано верно: ${right} из ${list.length}</h3><p>${right === list.length ? 'Ни одной ошибки — супер!' : 'Слова с ошибками попали в «Мои ошибки».'}</p></div>
         <div class="controls"><button class="btn" id="next-grammar">🧩 Дальше: грамматика</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -162,7 +163,7 @@ export function exSpell(lesson, guide){
 
     tileEls.forEach((el, k) => el.onclick = () => add(k));
     document.getElementById('sp-back').onclick = back;
-    document.getElementById('sp-hint').onclick = hint;
+    document.getElementById('sp-hint').onclick = () => { setHeroMood('hint'); hint(); };
     document.getElementById('sp-hear').onclick = () => speak(w.en);
     modal.onkeydown = (e) => {
       if (e.key === 'Backspace'){ e.preventDefault(); back(); return; }
@@ -197,6 +198,7 @@ export function startExercise(lesson, kind){
   const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
   const harlowLine = lessonStartLine(lesson);
   showGuide('Dr. Harlow', harlowLine, CHARACTERS.harlow);
+  nextScreenMood('happy');
   // Упражнения, которые сами сразу озвучивают слово, не перебиваем приветствием
   if (!['cards', 'vocab', 'listen', 'spell', 'speak'].includes(kind)) setTimeout(() => speak('Let us start!'), 400);
 
@@ -215,17 +217,20 @@ export function startExercise(lesson, kind){
   }
 }
 
-export function lessonHeader(lesson, guide, extra=''){
+// mood — эмоция гида темы: thinking (ждёт ответа, по умолчанию), praise (конец задания),
+// happy / hint (экран с разбором ответа). Начало урока — «рад» (startExercise → nextScreenMood).
+export function lessonHeader(lesson, guide, extra='', mood='thinking'){
+  const m = takeScreenMood(mood), harlow = CHARACTERS.harlow;
   return `
     <div class="lesson-title-row"><h2>${lesson.title}</h2><button class="icon-btn lesson-dict" data-open-dict title="Словарь" aria-label="Открыть словарь">📖</button></div>
     <div class="lead">${lesson.subtitle} · ${lesson.grade} класс</div>
     <div class="lead-guide">
-      <div class="mini-avatar" style="background:${CHARACTERS.harlow.color}">${CHARACTERS.harlow.emoji}</div>
+      <div class="mini-avatar" style="--hero-color:${harlow.color}">${heroPic(harlow, guide.id === 'harlow' ? m : 'happy', { live: guide.id === 'harlow' })}</div>
       <div class="txt"><strong>Dr. Harlow:</strong> ${lesson.intro}</div>
     </div>
     ${guide.id !== 'harlow' ? `
     <div class="lead-guide">
-      <div class="mini-avatar" style="background:${guide.color}">${guide.emoji}</div>
+      <div class="mini-avatar" style="--hero-color:${guide.color}">${heroPic(guide, m, { live: true })}</div>
       <div class="txt"><strong>${guide.name}:</strong> ${guide.role}</div>
     </div>` : ''}
     ${extra}
@@ -241,7 +246,7 @@ export function exVocab(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Отлично! Слова изучены.</h3><p>+${list.length*10} XP получено.</p></div>
         <div class="controls"><button class="btn" id="next-listen">🎧 Дальше: слушай</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -301,7 +306,7 @@ export function exListen(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Great listening!</h3><p>+${list.length*12} XP.</p></div>
         <div class="controls"><button class="btn" id="next-match">🎯 Дальше: пара</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -389,7 +394,7 @@ export function exMatch(lesson, guide){
             toast('🎉 Все пары собраны!');
             afterFeedback(() => {
               openModal(`
-                ${lessonHeader(lesson, guide)}
+                ${lessonHeader(lesson, guide, '', 'praise')}
                 <div class="question"><h3>Все пары собраны! 🎯</h3></div>
                 <div class="controls"><button class="btn" id="next-spell">✍️ Дальше: напиши</button><button class="btn secondary" id="next-close">Закрыть</button></div>
               `);
@@ -423,7 +428,7 @@ export function exGrammar(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Grammar power! 💪</h3><p>Prof. Owl гордится тобой.</p></div>
         <div class="controls"><button class="btn" id="next-read">📖 Дальше: чтение</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -474,7 +479,7 @@ export function exBuild(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Собрано верно: ${right} из ${list.length} 🧱</h3><p>${right === list.length ? 'Отличный порядок слов!' : 'Порядок слов в английском строгий — потренируемся ещё.'}</p></div>
         <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -502,7 +507,7 @@ export function exBuild(lesson, guide){
       `);
       document.querySelectorAll('.build-tile[data-p]').forEach(b => b.onclick = () => { picked.push(pool[+b.dataset.p]); draw(); });
       document.querySelectorAll('.build-tile[data-j]').forEach(b => b.onclick = () => { picked.splice(+b.dataset.j, 1); draw(); });
-      document.getElementById('build-hear').onclick = () => speak(it.text);
+      document.getElementById('build-hear').onclick = () => { setHeroMood('hint'); speak(it.text); };
       document.getElementById('build-check').onclick = check;
     }
     function check(){
@@ -511,7 +516,7 @@ export function exBuild(lesson, guide){
       if (ok){ right++; reward(15, 3); markProgress(lesson.id, 'build'); toast('✅ +15 XP'); }
       else { penalty(); }
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', ok ? 'happy' : 'hint')}
         <div class="question">
           <div class="q-text pixel">${ok ? 'Верно! 🎉' : 'Почти! Правильно так:'}</div>
           <div class="q-text q-sentence build-result ${ok ? 'ok' : 'bad'}">${escapeHtml(it.text)}</div>
@@ -531,7 +536,7 @@ export function exFill(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Верно: ${right} из ${list.length} 🔤</h3><p>${right === list.length ? 'Все слова на своих местах!' : 'Слова с ошибками попали в «Мои ошибки».'}</p></div>
         <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -578,7 +583,7 @@ export function exPicture(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Верно: ${right} из ${list.length} 🖼️</h3><p>${right === list.length ? 'Ты всё понял(а) по картинкам!' : 'Ошибки попали в «Мои ошибки» — повторим.'}</p></div>
         <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -644,7 +649,7 @@ export function exReading(lesson, guide){
       markProgress(lesson.id, 'reading');
       toast('📖 +20 XP');
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Прочитано!</h3><p>+20 XP за понимание текста.</p></div>
         <div class="controls"><button class="btn" id="next-speak">🎤 Дальше: говори</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
@@ -714,7 +719,7 @@ export function exSpeak(lesson, guide){
   function render(){
     if (idx >= list.length){
       openModal(`
-        ${lessonHeader(lesson, guide)}
+        ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Great speaking! 🎤</h3><p>DJ Robo проверил — звучишь отлично.</p></div>
         <div class="controls"><button class="btn secondary" id="close-btn">Закрыть</button></div>
       `);

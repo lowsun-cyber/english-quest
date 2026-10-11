@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>English Quest — английский для детей 2–4 класса по Spotlight в игре</title>
-  <meta name="description" content="Бесплатный игровой тренажёр английского для младших школьников: темы учебника Spotlight и программы ФРП (2, 3 и 4 класс), словарь, озвучка носителем, произношение, домашние задания и режим для родителей и репетиторов." />
+  <meta name="description" content="Бесплатный игровой тренажёр английского для младших школьников: темы учебника Spotlight и программы ФРП (2, 3 и 4 класс), словарь, чёткая озвучка медленным мужским голосом, произношение, домашние задания и режим для родителей и репетиторов." />
   <link rel="canonical" href="https://quest.logiqa.ru/" />
   <!-- подтверждение сайта в Яндекс Вебмастере и Google Search Console -->
   <meta name="yandex-verification" content="dbf4da6b1d09657b" />
@@ -13,7 +13,7 @@
   <meta property="og:site_name" content="English Quest" />
   <meta property="og:locale" content="ru_RU" />
   <meta property="og:title" content="English Quest — английский для детей 2–4 класса по Spotlight в игре" />
-  <meta property="og:description" content="Бесплатный игровой тренажёр английского для младших школьников: темы учебника Spotlight и программы ФРП (2, 3 и 4 класс), словарь, озвучка носителем, произношение, домашние задания и режим для родителей и репетиторов." />
+  <meta property="og:description" content="Бесплатный игровой тренажёр английского для младших школьников: темы учебника Spotlight и программы ФРП (2, 3 и 4 класс), словарь, чёткая озвучка медленным мужским голосом, произношение, домашние задания и режим для родителей и репетиторов." />
   <meta property="og:url" content="https://quest.logiqa.ru/" />
   <meta property="og:image" content="https://quest.logiqa.ru/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -41,7 +41,7 @@
       "@type": "WebApplication",
       "name": "English Quest",
       "url": "https://quest.logiqa.ru/",
-      "description": "Бесплатный игровой тренажёр английского для младших школьников: темы учебника Spotlight и программы ФРП (2, 3 и 4 класс), словарь, озвучка носителем, произношение, домашние задания и режим для родителей и репетиторов.",
+      "description": "Бесплатный игровой тренажёр английского для младших школьников: темы учебника Spotlight и программы ФРП (2, 3 и 4 класс), словарь, чёткая озвучка медленным мужским голосом, произношение, домашние задания и режим для родителей и репетиторов.",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Any",
       "browserRequirements": "Современный браузер: Chrome, Safari, Edge, Firefox",
@@ -97,7 +97,7 @@
         </svg>
         <div>
           <div class="title">ENGLISH QUEST</div>
-          <div class="sub">Госпиталь · Крафт-мир · Roblox-школа</div>
+          <div class="sub">Госпиталь · Крафт-мир · Приключения</div>
         </div>
       </div>
       <button class="profile-chip" id="btn-profile" hidden><span id="pf-avatar" aria-hidden="true">🦊</span><span id="pf-name">Ученик</span><span aria-hidden="true">▾</span></button>
@@ -116,7 +116,7 @@
     <div class="level-bar">
       <div class="level-badge" id="level-badge">L0</div>
       <div class="level-info">
-        <div class="rank" id="rank-title">🌱 Rookie Explorer</div>
+        <button type="button" class="rank" id="rank-title">🌱 Новичок</button>
         <div class="progress"><span id="level-progress" style="width:0%"></span></div>
         <div class="xp-text" id="xp-text">0 / 52 XP до уровня 1</div>
       </div>
@@ -131,7 +131,7 @@
 
     <noscript>
       <section class="section-head">
-        <p>Для уроков нужен JavaScript. English Quest — бесплатный игровой тренажёр английского для 2–4 класса по учебнику «Английский в фокусе» (Spotlight): слова, аудирование, грамматика, чтение и произношение с озвучкой носителем.</p>
+        <p>Для уроков нужен JavaScript. English Quest — бесплатный игровой тренажёр английского для 2–4 класса по учебнику «Английский в фокусе» (Spotlight): слова, аудирование, грамматика, чтение и произношение с чёткой озвучкой медленным мужским голосом.</p>
         <ul>
 <li><b>2 класс:</b> My Letters!, Hello!, My Family!, My Home!, My Birthday!, My Animals!, My Toys!, My Holidays!</li>
 <li><b>3 класс:</b> School Days!, Family Moments!, All the Things I Like!, Come in and Play!, Furry Friends!, Home, Sweet Home!, A Day Off!, Day by Day!</li>
@@ -143,7 +143,7 @@
     <!-- Hero -->
     <section class="hero">
       <div>
-        <h1>Учи английский, как в Minecraft и Roblox</h1>
+        <h1>Учи английский в блочном мире приключений</h1>
         <p id="hero-p">
           Три класса Spotlight (2, 3, 4), 54 темы, 60 уровней. Лечи животных в госпитале, крафти
           блоки в шахте, читай сказки с профессором Совой. Каждый правильный ответ приносит опыт,
@@ -158,7 +158,7 @@
         <div class="cloud" style="left:10%"></div>
         <div class="cloud c2"></div>
         <div class="sun"></div>
-        <!-- house (Minecraft) -->
+        <!-- сцена: блоки, дерево, герои -->
         <svg viewBox="0 0 400 300" style="position:absolute; inset:0; width:100%; height:100%; z-index:2;">
           <!-- diamond block -->
           <g transform="translate(280,140)">
@@ -173,167 +173,9 @@
             <rect x="8" y="8" width="8" height="8" fill="#61d074"/>
             <rect x="24" y="20" width="8" height="8" fill="#2e8a3d"/>
           </g>
-          <!-- Dr. Harlow (deer doctor — Animal Hospital style, redrawn v2) -->
-          <g transform="translate(160,100) scale(0.85)" id="hero-deer">
-            <!-- shadow -->
-            <ellipse cx="36" cy="152" rx="42" ry="7" fill="rgba(0,0,0,0.25)"/>
-
-            <!-- back legs -->
-            <rect x="14" y="128" width="12" height="22" fill="#c88a4a" stroke="#000" stroke-width="3"/>
-            <rect x="46" y="128" width="12" height="22" fill="#c88a4a" stroke="#000" stroke-width="3"/>
-            <!-- hooves -->
-            <rect x="12" y="146" width="16" height="6" fill="#3a2412" stroke="#000" stroke-width="2"/>
-            <rect x="44" y="146" width="16" height="6" fill="#3a2412" stroke="#000" stroke-width="2"/>
-            <!-- little white sock accents -->
-            <rect x="14" y="140" width="12" height="4" fill="#fff2e0"/>
-            <rect x="46" y="140" width="12" height="4" fill="#fff2e0"/>
-
-            <!-- body (fur peeking under coat) -->
-            <rect x="10" y="64" width="52" height="66" rx="6" fill="#c88a4a" stroke="#000" stroke-width="3"/>
-            <!-- fawn spots on body -->
-            <circle cx="18" cy="124" r="2" fill="#fff2e0"/>
-            <circle cx="54" cy="126" r="2" fill="#fff2e0"/>
-
-            <!-- lab coat (open V collar) -->
-            <path d="M 10 70 L 62 70 L 62 128 L 10 128 Z" fill="#fff" stroke="#000" stroke-width="3"/>
-            <!-- V neck -->
-            <path d="M 26 70 L 36 88 L 46 70 Z" fill="#c88a4a" stroke="#000" stroke-width="2"/>
-            <!-- coat center placket + buttons -->
-            <rect x="35" y="90" width="2" height="38" fill="#000"/>
-            <circle cx="36" cy="100" r="2" fill="#000"/>
-            <circle cx="36" cy="114" r="2" fill="#000"/>
-            <circle cx="36" cy="126" r="2" fill="#000"/>
-            <!-- pocket with red medical cross -->
-            <rect x="14" y="104" width="16" height="18" fill="#fff" stroke="#000" stroke-width="2"/>
-            <rect x="20" y="108" width="4" height="12" fill="#e53935"/>
-            <rect x="16" y="112" width="12" height="4" fill="#e53935"/>
-            <!-- name badge -->
-            <rect x="44" y="92" width="14" height="8" fill="#ffe66b" stroke="#000" stroke-width="2"/>
-            <text x="51" y="98" font-family="'Press Start 2P', monospace" font-size="5" text-anchor="middle" fill="#000">DR.H</text>
-
-            <!-- arms -->
-            <rect x="-2" y="78" width="14" height="38" rx="3" fill="#fff" stroke="#000" stroke-width="3"/>
-            <rect x="60" y="78" width="14" height="38" rx="3" fill="#fff" stroke="#000" stroke-width="3"/>
-            <!-- hooves at arm ends -->
-            <rect x="-2" y="114" width="14" height="8" rx="2" fill="#c88a4a" stroke="#000" stroke-width="2"/>
-            <rect x="60" y="114" width="14" height="8" rx="2" fill="#c88a4a" stroke="#000" stroke-width="2"/>
-
-            <!-- clipboard in right hand -->
-            <g transform="translate(62,116)">
-              <rect x="0" y="0" width="18" height="22" fill="#a86a2a" stroke="#000" stroke-width="2"/>
-              <rect x="2" y="3" width="14" height="17" fill="#fff" stroke="#000" stroke-width="1"/>
-              <rect x="7" y="-2" width="4" height="4" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
-              <rect x="4" y="6" width="10" height="1" fill="#666"/>
-              <rect x="4" y="10" width="8" height="1" fill="#666"/>
-              <rect x="4" y="14" width="9" height="1" fill="#666"/>
-            </g>
-
-            <!-- stethoscope (draped over neck) -->
-            <path d="M 22 74 Q 18 90 22 106 Q 30 116 42 108 Q 52 100 48 84 Q 46 76 42 74" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <circle cx="42" cy="110" r="6" fill="#d8d8d8" stroke="#000" stroke-width="2"/>
-            <circle cx="42" cy="110" r="3" fill="#8a8a8a"/>
-            <!-- ear tips of stethoscope -->
-            <circle cx="22" cy="72" r="2.5" fill="#111"/>
-            <circle cx="46" cy="72" r="2.5" fill="#111"/>
-
-            <!-- neck -->
-            <rect x="26" y="56" width="20" height="14" fill="#c88a4a" stroke="#000" stroke-width="3"/>
-
-            <!-- antlers (bigger + branchier) -->
-            <g stroke="#000" stroke-width="3" fill="#8b5a2b">
-              <!-- left antler -->
-              <rect x="12" y="-2" width="6" height="14"/>
-              <rect x="4" y="-10" width="10" height="6"/>
-              <rect x="-2" y="-18" width="8" height="8"/>
-              <rect x="14" y="-16" width="8" height="6"/>
-              <rect x="8" y="-26" width="6" height="8"/>
-              <!-- right antler (mirrored) -->
-              <rect x="54" y="-2" width="6" height="14"/>
-              <rect x="58" y="-10" width="10" height="6"/>
-              <rect x="66" y="-18" width="8" height="8"/>
-              <rect x="50" y="-16" width="8" height="6"/>
-              <rect x="58" y="-26" width="6" height="8"/>
-            </g>
-
-            <!-- ears -->
-            <ellipse cx="10" cy="22" rx="7" ry="11" fill="#c88a4a" stroke="#000" stroke-width="3" transform="rotate(-18 10 22)"/>
-            <ellipse cx="62" cy="22" rx="7" ry="11" fill="#c88a4a" stroke="#000" stroke-width="3" transform="rotate(18 62 22)"/>
-            <ellipse cx="10" cy="22" rx="3" ry="6" fill="#ffd0aa" transform="rotate(-18 10 22)"/>
-            <ellipse cx="62" cy="22" rx="3" ry="6" fill="#ffd0aa" transform="rotate(18 62 22)"/>
-
-            <!-- head (rounded, wider at top) -->
-            <path d="M 12 12 Q 12 4 22 4 L 50 4 Q 60 4 60 12 L 60 40 Q 60 50 50 52 L 22 52 Q 12 50 12 40 Z" fill="#c88a4a" stroke="#000" stroke-width="3"/>
-            <!-- doctor's headband mirror -->
-            <rect x="28" y="6" width="16" height="6" fill="#fff" stroke="#000" stroke-width="2"/>
-            <circle cx="36" cy="9" r="4" fill="#c0c0c0" stroke="#000" stroke-width="2"/>
-            <circle cx="36" cy="9" r="2" fill="#7bb7e0"/>
-
-            <!-- white muzzle -->
-            <path d="M 20 34 Q 36 30 52 34 L 50 50 Q 36 54 22 50 Z" fill="#fff2e0" stroke="#000" stroke-width="3"/>
-            <!-- fawn spots on head -->
-            <circle cx="18" cy="20" r="2" fill="#fff2e0"/>
-            <circle cx="54" cy="22" r="2" fill="#fff2e0"/>
-
-            <!-- eyes (big Roblox-style with eyelashes) -->
-            <rect x="18" y="18" width="10" height="10" rx="1" fill="#fff" stroke="#000" stroke-width="2"/>
-            <rect x="44" y="18" width="10" height="10" rx="1" fill="#fff" stroke="#000" stroke-width="2"/>
-            <rect x="21" y="20" width="5" height="6" fill="#2b2b2b"/>
-            <rect x="47" y="20" width="5" height="6" fill="#2b2b2b"/>
-            <rect x="22" y="21" width="2" height="2" fill="#fff"/>
-            <rect x="48" y="21" width="2" height="2" fill="#fff"/>
-            <!-- eyelashes -->
-            <path d="M 18 18 L 15 15 M 22 17 L 21 14 M 26 17 L 27 14" stroke="#000" stroke-width="1.5" fill="none"/>
-            <path d="M 54 18 L 57 15 M 50 17 L 51 14 M 46 17 L 45 14" stroke="#000" stroke-width="1.5" fill="none"/>
-            <!-- eyebrows -->
-            <rect x="18" y="14" width="10" height="2" fill="#5a3818"/>
-            <rect x="44" y="14" width="10" height="2" fill="#5a3818"/>
-
-            <!-- pink nose -->
-            <path d="M 30 36 L 42 36 L 40 42 L 32 42 Z" fill="#ff7bb0" stroke="#000" stroke-width="2"/>
-            <rect x="34" y="37" width="2" height="2" fill="#ffb6d1"/>
-            <!-- mouth (open smile) -->
-            <path d="M 30 46 Q 36 52 42 46" stroke="#000" stroke-width="2" fill="#fff"/>
-            <path d="M 32 48 Q 36 50 40 48" stroke="#ff7bb0" stroke-width="1.5" fill="none"/>
-            <!-- cheeks -->
-            <ellipse cx="20" cy="36" rx="3" ry="2" fill="#ff9fbf" opacity="0.55"/>
-            <ellipse cx="52" cy="36" rx="3" ry="2" fill="#ff9fbf" opacity="0.55"/>
-
-            <!-- bow tie -->
-            <path d="M 26 60 L 32 56 L 32 66 Z" fill="#e53935" stroke="#000" stroke-width="2"/>
-            <path d="M 46 60 L 40 56 L 40 66 Z" fill="#e53935" stroke="#000" stroke-width="2"/>
-            <rect x="32" y="58" width="8" height="6" fill="#c62828" stroke="#000" stroke-width="2"/>
-            <rect x="35" y="60" width="2" height="2" fill="#fff"/>
-
-            <!-- floating heart particle (kindness) -->
-            <g transform="translate(74,26)" opacity="0.9">
-              <path d="M 0 4 C 0 0 6 0 6 4 C 6 0 12 0 12 4 C 12 8 6 12 6 12 C 6 12 0 8 0 4 Z" fill="#ff5c8a" stroke="#000" stroke-width="1.5"/>
-            </g>
-            <!-- sparkle -->
-            <g transform="translate(-6,30)" fill="#ffe66b" stroke="#000" stroke-width="1">
-              <rect x="0" y="2" width="6" height="2"/>
-              <rect x="2" y="0" width="2" height="6"/>
-            </g>
-          </g>
-          <!-- Roblox-style character (Miner Max) -->
-          <g transform="translate(90,155)" id="hero-max">
-            <ellipse cx="24" cy="82" rx="24" ry="5" fill="rgba(0,0,0,0.2)"/>
-            <!-- body -->
-            <rect x="8" y="34" width="32" height="34" fill="#3a9fe0" stroke="#000" stroke-width="3"/>
-            <!-- head (blocky) -->
-            <rect x="6" y="4" width="36" height="30" fill="#f5c078" stroke="#000" stroke-width="3"/>
-            <!-- helmet -->
-            <rect x="4" y="0" width="40" height="10" fill="#a2812a" stroke="#000" stroke-width="3"/>
-            <rect x="18" y="-4" width="12" height="6" fill="#ffcf3d" stroke="#000" stroke-width="3"/>
-            <!-- eyes -->
-            <rect x="14" y="14" width="6" height="6" fill="#000"/>
-            <rect x="28" y="14" width="6" height="6" fill="#000"/>
-            <!-- pickaxe -->
-            <rect x="38" y="28" width="4" height="24" fill="#7a4b1c" stroke="#000" stroke-width="2"/>
-            <polygon points="34,26 46,26 42,22 38,22" fill="#7a7a7a" stroke="#000" stroke-width="2"/>
-            <!-- feet -->
-            <rect x="10" y="68" width="12" height="10" fill="#000"/>
-            <rect x="26" y="68" width="12" height="10" fill="#000"/>
-          </g>
+          <!-- герои — рисунки из assets/heroes (как в «Команде»); если не загрузятся, сцена остаётся без них -->
+          <image href="assets/heroes/harlow.svg" x="150" y="78" width="125" height="150" />
+          <image href="assets/heroes/max.svg" x="62" y="128" width="95" height="114" />
         </svg>
         <div class="stud-floor"></div>
       </div>
@@ -369,13 +211,13 @@
     <!-- Lessons -->
     <section id="lessons-sec">
       <div class="section-head">
-        <h2>Уроки по учебнику Spotlight</h2>
-        <p>Проходи темы по порядку учебника. Каждые 4 темы — проверка с наградой.</p>
+        <h2>Карта мира</h2>
+        <p>Три региона — по одному на учебник Spotlight. Проходи темы по порядку, каждые 4 темы — проверка с наградой. За темы и проверки открываются звания.</p>
       </div>
       <div class="grade-tabs" id="grade-tabs">
-        <button class="tab active" data-grade="2">2 класс</button>
-        <button class="tab" data-grade="3">3 класс</button>
-        <button class="tab" data-grade="4">4 класс</button>
+        <button class="tab active" data-grade="2">🌳 Зелёная долина <small>2 класс</small></button>
+        <button class="tab" data-grade="3">🏰 Город мастеров <small>3 класс</small></button>
+        <button class="tab" data-grade="4">🧭 Большая экспедиция <small>4 класс</small></button>
       </div>
       <div class="lessons" id="lessons"></div>
     </section>
