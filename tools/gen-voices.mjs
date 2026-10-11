@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import vm from 'node:vm';
+import { loadContent } from './packs.mjs';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-pro-preview-tts'; // та же линейка, что у английской озвучки
@@ -29,8 +29,8 @@ const VOICES = {
 const MANIFEST = join(ROOT, 'tts_voices.json');
 
 // content.js написан для браузера — выполняем его с «пустым» window
-const sandbox = { window: {} };
-vm.runInNewContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), sandbox);
+// контент и все пакеты локаций (packs/*.json): новые пакеты озвучиваются до подключения
+const sandbox = { window: { EQ: loadContent({ packs: 'all' }) } };
 const items = sandbox.window.EQ.voiceLines();
 const lines = items.map(x => x.text);
 const FORCE = process.argv.includes('--force');

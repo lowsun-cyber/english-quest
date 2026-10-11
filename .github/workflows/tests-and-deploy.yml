@@ -42,6 +42,8 @@ jobs:
         run: node tests/curriculum.mjs
       - name: Типы ошибок, мастерство, квесты и достижения
         run: node tests/mastery.mjs
+      - name: Пакеты локаций (формат, озвучка подключённых, packs.js)
+        run: node tests/packs.mjs
       - name: Сервер учителя (API) на SQLite
         run: node tests/api.mjs
       - name: Сервер учителя (API) на MySQL 8, как на хостинге
@@ -67,7 +69,7 @@ jobs:
       - name: Собрать сайт (без тестов, инструментов и кода сервера)
         run: |
           mkdir _site
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'server' --exclude '_site' --exclude 'CLAUDE.md' --exclude 'README.md' --exclude 'DESIGN.md' ./ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'packs' --exclude 'server' --exclude '_site' --exclude 'CLAUDE.md' --exclude 'README.md' --exclude 'DESIGN.md' ./ _site/
           node tools/stamp.mjs _site   # версия в адресах скриптов и стилей
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

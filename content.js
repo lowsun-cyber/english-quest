@@ -2297,6 +2297,11 @@ function voiceLines(){
     ...(l.pics || []).map(p => p.right), l.reading.text,
     ...(l.grade >= 3 ? fillItemsFor(l).map(f => f.q.replace('___', f.a)) : []),
   ]) if (!seen.has(text)){ seen.add(text); out.push({ speaker: 'harlow', lang: 'en', kind: 'lesson', text }); }
+  // квесты из пакетов локаций — их слова, фразы, грамматика, картинки и тексты
+  for (const l of LESSONS) for (const q of l.extraQuests || []) for (const text of [
+    ...(q.words || []).map(w => w.en), ...(q.phrases || []), ...(q.grammar || []).map(g => g.q.replace('___', g.a)),
+    ...(q.pics || []).map(p => p.right), ...(q.reading ? [q.reading.text] : []),
+  ]) if (!seen.has(text)){ seen.add(text); out.push({ speaker: 'harlow', lang: 'en', kind: 'lesson', text }); }
   return out;
 }
 // Отдельные буквы и слова из фраз «Говори», у которых нет своей записи (по нажатию на красное слово).
@@ -2536,6 +2541,40 @@ const ACHIEVEMENTS = [
   { id: 'rare-10', title: 'Кристальный ключ', emoji: '💠', rarity: 'legendary', text: 'Пройди 10 редких квестов — откроется тайное место', when: { rare: 10 }, secret: true },
 ];
 
+// ---------- ПАКЕТЫ ЛОКАЦИЙ ----------
+// Дополнение без правки кода игры: packs/<id>.json → проверка и сборка (node tools/packs.mjs) → packs.js,
+// который подключается после content.js и вызывает addPacks. Формат и шаблон — packs/README.md.
+//   type 'location' — новая тема в конце региона своего класса (уже пройденные темы и проверки не сдвигаются);
+//   type 'quests'   — новые квесты в существующей теме (lessonId). Квест — упражнение (kind) на своих словах,
+//                      вопросах или тексте; ключ результата — 'x:<id>', прогресс остальных квестов не меняется.
+// addedAt — дата подключения: 14 дней у новой темы и непройденного квеста метка «Новое».
+const PACKS = [];
+const PACK_NEW_DAYS = 14;
+const EXTRA_KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'picture', 'speak'];
+const extraQuestOf = (lesson, kind) => kind?.startsWith('x:') ? (lesson.extraQuests || []).find(q => `x:${q.id}` === kind) || null : null;
+// Тема, на которой идёт квест: у квеста из пакета — те же поля темы с его словами, вопросами, текстом
+function questLesson(lesson, kind){
+  const q = extraQuestOf(lesson, kind);
+  if (!q) return lesson;
+  const pick = k => (q[k] && (!Array.isArray(q[k]) || q[k].length)) ? q[k] : lesson[k];
+  return { ...lesson, words: pick('words'), phrases: pick('phrases'), grammar: pick('grammar'), reading: pick('reading'), pics: pick('pics'), questKind: kind };
+}
+function addPacks(packs){
+  for (const p of packs){
+    if (PACKS.some(x => x.id === p.id)) continue;
+    PACKS.push(p);
+    const stamp = q => ({ ...q, pack: p.id, addedAt: p.addedAt });
+    if (p.type === 'location'){
+      const order = Math.max(0, ...LESSONS.filter(l => l.grade === p.lesson.grade).map(l => l.order)) + 1;
+      LESSONS.push({ ...p.lesson, id: p.id, order, layer: p.layer, pack: p.id, addedAt: p.addedAt, extraQuests: (p.quests || []).map(stamp) });
+    } else if (p.type === 'quests'){
+      const l = LESSONS.find(x => x.id === p.lessonId);
+      if (l) l.extraQuests = [...(l.extraQuests || []), ...p.quests.map(stamp)];
+    }
+  }
+}
+const isNewItem = (addedAt, now = Date.now()) => !!addedAt && now - Date.parse(addedAt) < PACK_NEW_DAYS * 864e5 && now >= Date.parse(addedAt);
+
 // экспорт в глобальную область
 window.EQ = {
   CHARACTERS, HERO_MOODS, DEFAULT_HERO: 'harlow',
@@ -2543,6 +2582,7 @@ window.EQ = {
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES,
   QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, SECRET_REGIONS,
+  PACKS, addPacks, EXTRA_KINDS, extraQuestOf, questLesson, isNewItem,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

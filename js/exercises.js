@@ -1,7 +1,7 @@
 // English Quest — Упражнения: карточки, слова, слушай, пары, напиши, грамматика, чтение, говори.
 import { PASS_SCORE, candidatesFromResults, phraseWords, scoreSpeech } from './speech.js';
 import { logAnswer } from './activity.js';
-import { CHARACTERS, LESSONS, buildItemsFor, fillItemsFor, lessonStartLine } from './eq.js';
+import { CHARACTERS, LESSONS, buildItemsFor, extraQuestOf, fillItemsFor, lessonStartLine, questLesson } from './eq.js';
 import { heroPic, nextScreenMood, setHeroMood, takeScreenMood } from './heroes.js';
 import { checkHomework } from './homework.js';
 import { isLessonComplete, lastXp, penalty, renderHUD, reward } from './hud.js';
@@ -16,7 +16,7 @@ import { WHY_MS, whyWrong } from './why.js';
 
 // === Карточки: слово за словом, потом все слова сеткой ===
 export function exCards(lesson, guide){
-  if (!startQuest(lesson, 'cards')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'cards')) return openLessonHub(lesson);
   const words = lesson.words;
   let i = 0;
   render();
@@ -47,7 +47,7 @@ export function exCards(lesson, guide){
     afterFeedback(() => speak(w.en), 300);
   }
   function overview(){
-    markProgress(lesson.id, 'cards');
+    markProgress(lesson.id, lesson.questKind || 'cards');
     saveState();
     openModal(`
       ${lessonHeader(lesson, guide, '', 'praise')}
@@ -60,19 +60,19 @@ export function exCards(lesson, guide){
         </div>
       </div>
       <div class="controls">
-        <button class="btn" id="next-vocab">📚 Проверим себя</button>
+        ${lesson.questKind ? '' : '<button class="btn" id="next-vocab">📚 Проверим себя</button>'}
         <button class="btn secondary" id="fc-again">🔁 Смотреть снова</button>
       </div>
     `);
     document.querySelectorAll('.word-tile').forEach(t => t.onclick = () => speak(t.dataset.en));
-    document.getElementById('next-vocab').onclick = () => exVocab(lesson, guide);
+    onClick('next-vocab', () => exVocab(lesson, guide));
     document.getElementById('fc-again').onclick = () => { i = 0; render(); };
   }
 }
 
 // === Напиши: собрать слово из букв ===
 export function exSpell(lesson, guide){
-  if (!startQuest(lesson, 'spell')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'spell')) return openLessonHub(lesson);
   const pool = lesson.words.filter(w => /^[a-z' ]+$/i.test(w.en) && w.en.replace(/[ ']/g, '').length <= 10);
   const list = shuffle(pool).slice(0, 5);
   let idx = 0, right = 0;
@@ -83,9 +83,9 @@ export function exSpell(lesson, guide){
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Написано верно: ${right} из ${list.length}</h3><p>${right === list.length ? 'Ни одной ошибки — супер!' : 'Слова с ошибками попали в «Мои ошибки».'}</p></div>
         ${questResult()}
-        <div class="controls"><button class="btn" id="next-grammar">🧩 Дальше: грамматика</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+        <div class="controls">${lesson.questKind ? '' : '<button class="btn" id="next-grammar">🧩 Дальше: грамматика</button>'}<button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
-      document.getElementById('next-grammar').onclick = () => exGrammar(lesson, guide);
+      onClick('next-grammar', () => exGrammar(lesson, guide));
       document.getElementById('next-close').onclick = closeModal;
       return;
     }
@@ -156,7 +156,7 @@ export function exSpell(lesson, guide){
         right++;
         logWord(w.en, true);
         reward(12, 3, { item: w.en });
-        markProgress(lesson.id, 'spell');
+        markProgress(lesson.id, lesson.questKind || 'spell');
         toast(`✅ +${lastXp} XP · ${w.en}`);
       } else {
         const ans = document.getElementById('sp-answer');
@@ -184,6 +184,9 @@ export function exSpell(lesson, guide){
   }
 }
 
+// Кнопка «Дальше: …» есть не всегда (у квестов из пакета её нет) — обработчик ставим, только если она на экране
+const onClick = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
+
 // ---------- EXERCISES ----------
 export function markProgress(lessonId, ex){
   const lesson = LESSONS.find(l => l.id === lessonId);
@@ -201,6 +204,9 @@ export function markProgress(lessonId, ex){
 }
 
 export function startExercise(lesson, kind){
+  // квест из пакета локации — то же упражнение на его словах, вопросах или тексте (questLesson в content.js)
+  const extra = extraQuestOf(lesson, kind);
+  if (extra){ lesson = questLesson(lesson, kind); kind = extra.kind; }
   // intro от Dr. Harlow + гида темы
   const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
   const harlowLine = lessonStartLine(lesson);
@@ -247,7 +253,7 @@ export function lessonHeader(lesson, guide, extra='', mood='thinking'){
 
 // === Vocab: emoji -> English word (4 opts) ===
 export function exVocab(lesson, guide){
-  if (!startQuest(lesson, 'vocab')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'vocab')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.words).slice(0, 6);
   render();
@@ -257,9 +263,9 @@ export function exVocab(lesson, guide){
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Отлично! Слова изучены.</h3></div>
         ${questResult()}
-        <div class="controls"><button class="btn" id="next-listen">🎧 Дальше: слушай</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+        <div class="controls">${lesson.questKind ? '' : '<button class="btn" id="next-listen">🎧 Дальше: слушай</button>'}<button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
-      document.getElementById('next-listen').onclick = () => exListen(lesson, guide);
+      onClick('next-listen', () => exListen(lesson, guide));
       document.getElementById('next-close').onclick = closeModal;
       return;
     }
@@ -289,7 +295,7 @@ export function exVocab(lesson, guide){
           speak(w.en);
           logWord(w.en, true);
           reward(10, 2, { item: w.en });
-          markProgress(lesson.id, 'vocab');
+          markProgress(lesson.id, lesson.questKind || 'vocab');
           toast(`✅ +${lastXp} XP · ${w.en}`);
           afterFeedback(() => { idx++; render(); }, 800);
         } else {
@@ -310,7 +316,7 @@ export function exVocab(lesson, guide){
 
 // === Listen: hear the word -> pick emoji ===
 export function exListen(lesson, guide){
-  if (!startQuest(lesson, 'listen')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'listen')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.words).slice(0, 5);
   render();
@@ -320,9 +326,9 @@ export function exListen(lesson, guide){
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Great listening!</h3></div>
         ${questResult()}
-        <div class="controls"><button class="btn" id="next-match">🎯 Дальше: пара</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+        <div class="controls">${lesson.questKind ? '' : '<button class="btn" id="next-match">🎯 Дальше: пара</button>'}<button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
-      document.getElementById('next-match').onclick = () => exMatch(lesson, guide);
+      onClick('next-match', () => exMatch(lesson, guide));
       document.getElementById('next-close').onclick = closeModal;
       return;
     }
@@ -348,7 +354,7 @@ export function exListen(lesson, guide){
           btn.classList.add('correct');
           logWord(w.en, true);
           reward(12, 2, { item: w.en });
-          markProgress(lesson.id, 'listen');
+          markProgress(lesson.id, lesson.questKind || 'listen');
           toast(`✅ +${lastXp} XP`);
           afterFeedback(() => { idx++; render(); }, 700);
         } else {
@@ -367,7 +373,7 @@ export function exListen(lesson, guide){
 
 // === Match: two columns (word ↔ emoji) ===
 export function exMatch(lesson, guide){
-  if (!startQuest(lesson, 'match')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'match')) return openLessonHub(lesson);
   const pairs = uniqueByEmoji(shuffle(lesson.words)).slice(0, 6);
   const left = shuffle(pairs.map(p => ({key:p.en, label:p.en, kind:'en'})));
   const right = shuffle(pairs.map(p => ({key:p.en, label:p.emoji, kind:'em'})));
@@ -403,7 +409,7 @@ export function exMatch(lesson, guide){
           selL.disabled = true; selR.disabled = true;
           logWord(selL.dataset.k, true);
           reward(14, 3, { item: selL.dataset.k });
-          markProgress(lesson.id, 'match');
+          markProgress(lesson.id, lesson.questKind || 'match');
           speak(selL.dataset.k);
           doneCount++;
           if (doneCount === pairs.length){
@@ -413,9 +419,9 @@ export function exMatch(lesson, guide){
                 ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Все пары собраны! 🎯</h3></div>
                 ${questResult()}
-                <div class="controls"><button class="btn" id="next-spell">✍️ Дальше: напиши</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+                <div class="controls">${lesson.questKind ? '' : '<button class="btn" id="next-spell">✍️ Дальше: напиши</button>'}<button class="btn secondary" id="next-close">Закрыть</button></div>
               `);
-              document.getElementById('next-spell').onclick = () => exSpell(lesson, guide);
+              onClick('next-spell', () => exSpell(lesson, guide));
               document.getElementById('next-close').onclick = closeModal;
             }, 1200);
           }
@@ -439,7 +445,7 @@ export function exMatch(lesson, guide){
 
 // === Grammar: fill in blank ===
 export function exGrammar(lesson, guide){
-  if (!startQuest(lesson, 'grammar')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'grammar')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.grammar);
   render();
@@ -449,9 +455,9 @@ export function exGrammar(lesson, guide){
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Grammar power! 💪</h3><p>Prof. Owl гордится тобой.</p></div>
         ${questResult()}
-        <div class="controls"><button class="btn" id="next-read">📖 Дальше: чтение</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+        <div class="controls">${lesson.questKind ? '' : '<button class="btn" id="next-read">📖 Дальше: чтение</button>'}<button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
-      document.getElementById('next-read').onclick = () => exReading(lesson, guide);
+      onClick('next-read', () => exReading(lesson, guide));
       document.getElementById('next-close').onclick = closeModal;
       return;
     }
@@ -474,7 +480,7 @@ export function exGrammar(lesson, guide){
         if (btn.dataset.o === q.a){
           btn.classList.add('correct');
           reward(15, 3);
-          markProgress(lesson.id, 'grammar');
+          markProgress(lesson.id, lesson.questKind || 'grammar');
           speak(q.q.replace('___', q.a));
           toast(`✅ +${lastXp} XP`);
           afterFeedback(() => { idx++; render(); }, 900);
@@ -493,7 +499,7 @@ export function exGrammar(lesson, guide){
 
 // === Собери предложение (тип 4-C): слова фразы перемешаны — нажимать по порядку ===
 export function exBuild(lesson, guide){
-  if (!startQuest(lesson, 'build')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'build')) return openLessonHub(lesson);
   const list = shuffle(buildItemsFor(lesson)).slice(0, 5);
   let idx = 0, right = 0;
   render();
@@ -535,7 +541,7 @@ export function exBuild(lesson, guide){
     function check(){
       const ok = picked.map(x => x.t).join(' ') === it.text;
       logSkill(it, ok, ok ? null : picked.map(x => x.t).join(' '));
-      if (ok){ right++; reward(15, 3); markProgress(lesson.id, 'build'); toast(`✅ +${lastXp} XP`); }
+      if (ok){ right++; reward(15, 3); markProgress(lesson.id, lesson.questKind || 'build'); toast(`✅ +${lastXp} XP`); }
       else { countError('form'); penalty(); }
       openModal(`
         ${lessonHeader(lesson, guide, '', ok ? 'happy' : 'hint')}
@@ -552,7 +558,7 @@ export function exBuild(lesson, guide){
 
 // === Вставь слово (тип 3-A): фраза урока с пропуском, подсказка — перевод, варианты — слова урока ===
 export function exFill(lesson, guide){
-  if (!startQuest(lesson, 'fill')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'fill')) return openLessonHub(lesson);
   const list = shuffle(fillItemsFor(lesson)).slice(0, 5);
   let idx = 0, right = 0;
   render();
@@ -584,7 +590,7 @@ export function exFill(lesson, guide){
       btn.onclick = () => {
         document.querySelectorAll('.opt').forEach(b => b.disabled = true);
         const ok = btn.dataset.o === it.a;
-        if (ok){ btn.classList.add('correct'); right++; logWord(it.word, true); reward(10, 2); markProgress(lesson.id, 'fill'); }
+        if (ok){ btn.classList.add('correct'); right++; logWord(it.word, true); reward(10, 2); markProgress(lesson.id, lesson.questKind || 'fill'); }
         else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(it.a)}"]`)?.classList.add('correct');
@@ -602,7 +608,7 @@ export function exFill(lesson, guide){
 // === Что на картинке? (тип 2-E): картинка и две короткие фразы — выбрать верную ===
 // pics: [{ emoji, right, wrong, word?, skill? }] — word: слово урока для «Моих ошибок», skill: навык грамматики
 export function exPicture(lesson, guide){
-  if (!startQuest(lesson, 'picture')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'picture')) return openLessonHub(lesson);
   const list = shuffle(lesson.pics || []).slice(0, 5);
   let idx = 0, right = 0;
   render();
@@ -639,7 +645,7 @@ export function exPicture(lesson, guide){
           right++;
           if (it.word && lesson.words.some(w => w.en === it.word)) logWord(it.word, true);
           reward(10, 2);
-          markProgress(lesson.id, 'picture');
+          markProgress(lesson.id, lesson.questKind || 'picture');
         } else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(it.right)}"]`)?.classList.add('correct');
@@ -656,7 +662,7 @@ export function exPicture(lesson, guide){
 
 // === Reading: passage + 2-3 comprehension Q ===
 export function exReading(lesson, guide){
-  if (!startQuest(lesson, 'reading')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'reading')) return openLessonHub(lesson);
   const r = lesson.reading;
   let idx = 0;
   openModal(`
@@ -676,15 +682,15 @@ export function exReading(lesson, guide){
   function renderQ(){
     if (idx >= r.questions.length){
       reward(20, 5, { bonus: true });
-      markProgress(lesson.id, 'reading');
+      markProgress(lesson.id, lesson.questKind || 'reading');
       toast('📖 +20 XP');
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Прочитано!</h3><p>+20 XP за понимание текста.</p></div>
         ${questResult()}
-        <div class="controls"><button class="btn" id="next-speak">🎤 Дальше: говори</button><button class="btn secondary" id="next-close">Закрыть</button></div>
+        <div class="controls">${lesson.questKind ? '' : '<button class="btn" id="next-speak">🎤 Дальше: говори</button>'}<button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
-      document.getElementById('next-speak').onclick = () => exSpeak(lesson, guide);
+      onClick('next-speak', () => exSpeak(lesson, guide));
       document.getElementById('next-close').onclick = closeModal;
       return;
     }
@@ -744,7 +750,7 @@ const SPEECH_ERRORS = {
 };
 
 export function exSpeak(lesson, guide){
-  if (!startQuest(lesson, 'speak')) return openLessonHub(lesson);
+  if (!startQuest(lesson, lesson.questKind || 'speak')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.phrases);
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -791,7 +797,7 @@ export function exSpeak(lesson, guide){
       if (done) return;
       done = true;
       reward(8, 2);
-      markProgress(lesson.id, 'speak');
+      markProgress(lesson.id, lesson.questKind || 'speak');
       toast(`✅ +${lastXp} XP`);
       afterFeedback(() => { idx++; render(); }, 700);
     };
@@ -856,7 +862,7 @@ export function exSpeak(lesson, guide){
           done = true;
           resEl.innerHTML = `Ты сказал: <em>«${escapeHtml(r.said)}»</em> · <b>${r.score}%</b> ${r.score === 100 ? '🌟' : '✅'}`;
           reward(18, 4);
-          markProgress(lesson.id, 'speak');
+          markProgress(lesson.id, lesson.questKind || 'speak');
           toast(`✅ +${lastXp} XP · ${r.score}%`);
           afterFeedback(() => { idx++; render(); }, 1600);
         } else {

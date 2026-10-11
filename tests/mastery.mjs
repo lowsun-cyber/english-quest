@@ -2,7 +2,7 @@
 // Типы ошибок, мастерство, квесты и достижения (js/stats.js) без браузера: классификация ответа, похожие слова,
 // уровень освоения с учётом давности, старый прогресс без новых полей.
 //   node tests/mastery.mjs
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import vm from 'node:vm';
 
@@ -10,6 +10,7 @@ const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const ctx = { window: {} };
 vm.createContext(ctx);
 vm.runInContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), ctx);
+if (existsSync(join(ROOT, 'packs.js'))) vm.runInContext(readFileSync(join(ROOT, 'packs.js'), 'utf8'), ctx);   // подключённые пакеты локаций — как на сайте
 globalThis.window = ctx.window;   // js/eq.js берёт контент из window.EQ
 const S = await import(join(ROOT, 'js/stats.js'));
 const { DEFAULT_STATE } = await import(join(ROOT, 'js/state.js'));

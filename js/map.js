@@ -1,6 +1,6 @@
 // English Quest — Карта уровней и экран темы.
 import { startCheckpoint } from './checkpoint.js';
-import { CHARACTERS, LESSONS, QUEST_PASS_PCT, SECRET_REGIONS, regionOfGrade } from './eq.js';
+import { CHARACTERS, LESSONS, QUEST_PASS_PCT, SECRET_REGIONS, isNewItem, regionOfGrade } from './eq.js';
 import { lessonHeader, startExercise } from './exercises.js';
 import { renderSecret } from './mines.js';
 import { EX_NAMES } from './homework.js';
@@ -9,7 +9,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, questKey, questLock, questPassed, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillStats } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, questIsNew, questKey, questLock, questPassed, questTitle, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillStats } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -87,6 +87,8 @@ export function renderMap(){
   const revenge = revengeReady(state) ? `<button class="revenge-banner" data-revenge>⚔️ <b>Квест-реванш!</b> ${revengeItems(state).length} самых трудных слов и вопросов — одолей их</button>` : '';
   wrap.innerHTML = `${revenge}${head}<ol class="map" role="list">${nodes.map((n, i) => {
     const locked = lockReason(n), done = nodeDone(n), isCur = n === cur;
+    // «Новое»: тема из пакета или новые квесты в теме (пакеты локаций, 14 дней)
+    const fresh = n.kind === 'lesson' && ((isNewItem(n.lesson.addedAt) && !partsDone(n.lesson) && !state.lessonProgress[n.lesson.id]) || lessonQuests(n.lesson).some(q => questIsNew(n.lesson, q.kind, state)));
     const st = locked ? 'locked' : done ? 'done' : isCur ? 'current' : 'open';
     const x = MAP_OFFSETS[i % MAP_OFFSETS.length], px = MAP_OFFSETS[(i - 1 + MAP_OFFSETS.length) % MAP_OFFSETS.length];
     let emoji, title, sub, label;
@@ -95,7 +97,7 @@ export function renderMap(){
       emoji = n.lesson.words[0]?.emoji || '📘';
       title = escapeHtml(n.lesson.title);
       sub = `${pd}/${PARTS.length}`;
-      label = `${n.lesson.title}, ${n.lesson.subtitle}. ${locked ? 'Закрыто. ' + locked : done ? 'Тема пройдена.' : `Сделано ${pd} из ${PARTS.length}.`}`;
+      label = `${fresh ? 'Новое! ' : ''}${n.lesson.title}, ${n.lesson.subtitle}. ${locked ? 'Закрыто. ' + locked : done ? 'Тема пройдена.' : `Сделано ${pd} из ${PARTS.length}.`}`;
     } else {
       const best = state.checkpoints[n.cp.id]?.best;
       emoji = n.cp.emoji;
@@ -109,6 +111,7 @@ export function renderMap(){
         <button class="map-node ${n.kind} ${st}" data-i="${i}" aria-label="${escapeHtml(label)}">
           <span class="mn-block" aria-hidden="true">${emoji}${done ? '<span class="mn-badge">✓</span>' : ''}${locked ? '<span class="mn-lock">🔒</span>' : ''}</span>
           ${isCur ? '<span class="mn-now" aria-hidden="true">Сейчас</span>' : ''}
+          ${fresh ? '<span class="new-badge mn-new" aria-hidden="true">Новое</span>' : ''}
           <span class="mn-title" aria-hidden="true">${title}</span>
           <span class="mn-sub" aria-hidden="true">${sub}</span>
         </button>
@@ -149,7 +152,7 @@ export function nextStep(){
   const weak = new Set(skillStats(state).filter(x => x.weak).map(x => x.code));
   const q = open.find(q => q.kind === 'grammar' && l.grammar.some(g => weak.has(g.skill))) || open.find(q => !state.lessonProgress[l.id]?.[q.kind]) || open[0];
   if (!q) return { kind: 'node', node: n, label: `▶ ${l.title}`, hint: '' };
-  return { kind: 'quest', lesson: l, quest: q.kind, label: `▶ ${l.title}: ${EX_NAMES[q.kind].split(' ').slice(1).join(' ')}`, hint: '' };
+  return { kind: 'quest', lesson: l, quest: q.kind, label: `▶ ${l.title}: ${questTitle(l, q.kind).split(' ').slice(1).join(' ')}`, hint: '' };
 }
 export function runNextStep(){
   const s = nextStep();
@@ -177,12 +180,12 @@ export function openLessonHub(lesson){
   const card = q => {
     const r = rarityOf(q.rarity), lock = questLock(lesson, q.kind, state), res = state.quests[questKey(lesson, q.kind)];
     const passed = (res?.best ?? -1) >= QUEST_PASS_PCT;
-    const [em, ...rest] = EX_NAMES[q.kind].split(' ');
+    const [em, ...rest] = questTitle(lesson, q.kind).split(' '), fresh = questIsNew(lesson, q.kind, state);
     const status = lock ? `🔒 ${lock}` : passed ? `✓ пройден · лучший ${res.best}%` : res ? `лучший ${res.best}% · нужно ${QUEST_PASS_PCT}%` : p[q.kind] ? '✓ сделано' : q === next ? 'начни здесь' : '';
     const prize = passed ? 'награда получена' : `приз: ${r.coins ? `+${r.xp} XP, +${r.coins} 🪙` : r.prize}`;
     return `<button class="hub-ex quest-card rarity-${q.rarity}${passed || p[q.kind] ? ' done' : ''}${q === next ? ' next' : ''}${lock ? ' locked' : ''}" data-ex="${q.kind}" style="--rarity:${r.color}"
-        aria-label="${escapeHtml(`${rest.join(' ')}. ${r.title} квест. ${status || prize}`)}">
-      <span class="quest-rarity">${r.title}</span>
+        aria-label="${escapeHtml(`${rest.join(' ')}. ${fresh ? 'Новое! ' : ''}${r.title} квест. ${status || prize}`)}">
+      <span class="quest-rarity">${r.title}</span>${fresh ? '<span class="new-badge">Новое</span>' : ''}
       <span class="hub-em" aria-hidden="true">${lock ? '🔒' : em}</span>
       <span class="hub-name">${rest.join(' ')}</span>
       <span class="hub-state">${escapeHtml(status)}</span>

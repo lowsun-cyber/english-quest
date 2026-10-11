@@ -9,14 +9,14 @@
 // запись режется по паузам, кусков должно быть столько же, сколько фраз в пачке.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
-import vm from 'node:vm';
+import { loadContent } from './packs.mjs';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const dir = resolve((process.argv[2] || join(process.env.HOME, 'Downloads', 'quest-voice')).replace(/^~/, process.env.HOME));
 const BATCH = 20, WORD_BATCH = 40, TEXT_BATCH = 5;   // слова режутся по паузам надёжнее всего, длинные тексты — хуже
 
-const sandbox = { window: {} };
-vm.runInNewContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), sandbox);
+// контент и все пакеты локаций (packs/*.json): новые пакеты озвучиваются до подключения
+const sandbox = { window: { EQ: loadContent({ packs: 'all' }) } };
 const items = sandbox.window.EQ.voiceLines();
 // слова словаря (js/dict-data.js): тот же голос, звучат по кнопке 🔊 в словаре
 const { DICT } = await import(join(ROOT, 'js/dict-data.js'));

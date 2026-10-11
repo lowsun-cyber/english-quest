@@ -1,0 +1,44 @@
+{
+  "id": "example-g4-space",
+  "type": "location",
+  "title": "Новая локация: Космос",
+  "addedAt": "2026-10-11",
+  "layer": "ext",
+  "lesson": {
+    "grade": 4,
+    "guide": "robo",
+    "module": "ext",
+    "topics": ["g4-nature"],
+    "cefr": "A1",
+    "title": "Space Trip!",
+    "subtitle": "Космос",
+    "intro": "DJ Robo зовёт в космос! Узнаем, как по-английски планета, ракета и космонавт.",
+    "words": [
+      { "en": "planet", "ru": "планета", "emoji": "🪐" },
+      { "en": "rocket", "ru": "ракета", "emoji": "🚀" },
+      { "en": "moon", "ru": "луна", "emoji": "🌙" },
+      { "en": "astronaut", "ru": "космонавт", "emoji": "🧑‍🚀" },
+      { "en": "Earth", "ru": "Земля", "emoji": "🌍" },
+      { "en": "comet", "ru": "комета", "emoji": "☄️" },
+      { "en": "telescope", "ru": "телескоп", "emoji": "🔭" },
+      { "en": "alien", "ru": "инопланетянин", "emoji": "👽" }
+    ],
+    "phrases": ["The rocket is going to the Moon.", "I can see a planet in my telescope."],
+    "grammar": [
+      { "skill": "G4-04", "q": "The Sun is ___ than the Moon.", "a": "bigger", "hint": "big — bigger.", "options": ["bigger", "biggest", "more big"] },
+      { "skill": "G4-08", "q": "We are ___ to fly to the Moon.", "a": "going", "hint": "be going to — собираться.", "options": ["going", "go", "went"] }
+    ],
+    "reading": {
+      "title": "A Trip to the Moon",
+      "text": "Tom is an astronaut. Tomorrow he is going to fly to the Moon in a big rocket. The Moon is smaller than the Earth. From the Moon, Tom is going to see the blue Earth and many stars. He is going to take photos for his family.",
+      "questions": [
+        { "q": "Who is Tom?", "a": "an astronaut", "options": ["an astronaut", "a teacher", "an alien"] },
+        { "q": "Is the Moon bigger than the Earth?", "a": "No, it isn't.", "options": ["Yes, it is.", "No, it isn't."] }
+      ]
+    }
+  },
+  "quests": [],
+  "scene": null,
+  "patient": null,
+  "reward": null
+}

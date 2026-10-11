@@ -1,9 +1,9 @@
 // English Quest — Квесты: упражнение темы как квест — счёт ответов, результат в %, награда за редкость.
 // Редкость и условия открытия — questRarity (content.js) и questLock (stats.js).
-import { QUEST_PASS_PCT, questRarity } from './eq.js';
+import { QUEST_PASS_PCT } from './eq.js';
 import { reward } from './hud.js';
 import { saveState, state } from './state.js';
-import { questKey, questLock, rarityOf } from './stats.js';
+import { questKey, questLock, questRarityOf, rarityOf } from './stats.js';
 import { confetti, modalClosedHooks, toast } from './ui.js';
 import { escapeHtml } from './util.js';
 
@@ -32,7 +32,7 @@ export function questResult(){
   const pct = ok + bad ? Math.round(ok * 100 / (ok + bad)) : 100;
   const q = state.quests[key] || { best: 0, runs: 0 };
   q.best = Math.max(q.best || 0, pct); q.last = pct; q.at = Date.now(); q.runs = (q.runs || 0) + 1;
-  const rarity = rarityOf(questRarity(kind, lesson.grade));
+  const rarity = rarityOf(questRarityOf(lesson, kind));
   const first = pct >= QUEST_PASS_PCT && !q.passedAt;
   if (first) q.passedAt = Date.now();
   state.quests[key] = q;

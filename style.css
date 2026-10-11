@@ -517,6 +517,10 @@ section { margin-top: 32px; }
 .quest-card.locked .hub-name, .quest-card.locked .hub-em { opacity: .6; }
 .quest-card.locked .hub-state { color: var(--ink-2); }
 .quest-legend { margin-top: 10px; font-size: 13px; }
+/* «Новое» — тема или квест из пакета локации (14 дней) */
+.new-badge { position: absolute; top: -10px; right: -6px; padding: 2px 8px; border: 2px solid var(--line); border-radius: var(--radius-pill); background: var(--lava); color: #1c2b1a; font-size: 12px; font-weight: 800; transform: rotate(4deg); }
+.map-node { position: relative; }
+.mn-new { top: -6px; right: 4px; }
 @media (max-width: 480px){ .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .quest-card { padding-left: 4px; padding-right: 4px; } .hub-name { font-size: 15px; } }
 .quest-result { margin: 6px 0 0; padding: 8px 12px; border: 3px solid var(--rarity, var(--line)); border-radius: 12px; background: var(--surface); }
 /* боссы на месте проверок — легендарная рамка */

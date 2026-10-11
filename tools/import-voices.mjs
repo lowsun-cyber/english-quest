@@ -15,14 +15,14 @@ import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { join, dirname, resolve } from 'node:path';
-import vm from 'node:vm';
+import { loadContent } from './packs.mjs';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const dir = process.argv[2] && resolve(process.argv[2].replace(/^~/, process.env.HOME));
 if (!dir || !existsSync(dir)){ console.error('Укажите папку с файлами: node tools/import-voices.mjs <папка>'); process.exit(1); }
 
-const sandbox = { window: {} };
-vm.runInNewContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), sandbox);
+// контент и все пакеты локаций (packs/*.json): новые пакеты озвучиваются до подключения
+const sandbox = { window: { EQ: loadContent({ packs: 'all' }) } };
 const items = sandbox.window.EQ.voiceLines();
 const lines = items.map(x => x.text);
 const MANIFEST = join(ROOT, 'tts_voices.json');

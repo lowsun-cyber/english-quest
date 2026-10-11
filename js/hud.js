@@ -69,6 +69,11 @@ function celebrateRanks(){
     }
   }
   seenRanks = { who, steps: rr.map(r => r.step) };
+  // запоминаем полученные звания: новые темы в регионе их не отнимут
+  if (!state._viewMeta && rr.some(r => r.step > (state.rankSteps?.[r.region.id] || 0))){
+    state.rankSteps = { ...(state.rankSteps || {}), ...Object.fromEntries(rr.map(r => [r.region.id, Math.max(r.step, state.rankSteps?.[r.region.id] || 0)])) };
+    saveState();
+  }
 }
 // «Мои звания»: по 4 ранга в каждом регионе и что нужно для следующего
 export function openRanks(){
