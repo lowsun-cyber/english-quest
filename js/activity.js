@@ -1,5 +1,6 @@
 // English Quest — Учёт времени и ответов по дням; цель дня и серия дней.
 import { renderHUD, reward } from './hud.js';
+import { noteAnswer } from './quests.js';
 import { realState, saveState, state } from './state.js';
 import { back, closeModal, confetti, modal, openModal, toast } from './ui.js';
 import { dayKey, plural, shiftDay } from './util.js';
@@ -17,7 +18,7 @@ export function todayActivity(){
   const k = dayKey();
   return state.activity[k] || (state.activity[k] = { sec: 0, ok: 0, bad: 0 });
 }
-export function logAnswer(ok){ todayActivity()[ok ? 'ok' : 'bad'] += 1; }
+export function logAnswer(ok){ todayActivity()[ok ? 'ok' : 'bad'] += 1; noteAnswer(ok); }
 
 export let _ticks = 0;
 setInterval(() => {

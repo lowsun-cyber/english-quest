@@ -1,6 +1,6 @@
 // English Quest — Карта уровней и экран темы.
 import { startCheckpoint } from './checkpoint.js';
-import { CHARACTERS, LESSONS, regionOfGrade } from './eq.js';
+import { CHARACTERS, LESSONS, QUEST_PASS_PCT, regionOfGrade } from './eq.js';
 import { lessonHeader, startExercise } from './exercises.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
@@ -8,7 +8,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonExercises, lessonsOf, regionRanks } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, questKey, questLock, rarityOf, regionRanks } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -89,7 +89,7 @@ export function renderMap(){
     } else {
       const best = state.checkpoints[n.cp.id]?.best;
       emoji = n.cp.emoji;
-      title = 'Проверка';
+      title = 'Босс';
       sub = best != null ? `лучший: ${best}/${CHECKPOINT_SIZE}` : `${CHECKPOINT_SIZE} вопросов`;
       label = `${n.cp.title}. ${locked ? 'Закрыто. ' + locked : done ? `Сдана, лучший результат ${best} из ${CHECKPOINT_SIZE}.` : `Нужно ${CHECKPOINT_PASS} из ${CHECKPOINT_SIZE}.`}`;
     }
@@ -122,25 +122,37 @@ document.querySelectorAll('#grade-tabs .tab').forEach(t => {
   });
 });
 
-// ---------- ЭКРАН ТЕМЫ ----------
+// ---------- ЭКРАН ТЕМЫ: ДОСКА КВЕСТОВ ----------
+// Каждое упражнение — квест с редкостью (рамка цвета редкости), призом и условием открытия.
 export function openLessonHub(lesson){
   const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
   const p = state.lessonProgress[lesson.id] || {};
-  const exs = lessonExercises(lesson);
-  const next = exs.find(ex => !p[ex]);
+  const qs = lessonQuests(lesson);
+  const next = qs.find(q => !p[q.kind] && !questLock(lesson, q.kind, state));
+  const card = q => {
+    const r = rarityOf(q.rarity), lock = questLock(lesson, q.kind, state), res = state.quests[questKey(lesson, q.kind)];
+    const passed = (res?.best ?? -1) >= QUEST_PASS_PCT;
+    const [em, ...rest] = EX_NAMES[q.kind].split(' ');
+    const status = lock ? `🔒 ${lock}` : passed ? `✓ пройден · лучший ${res.best}%` : res ? `лучший ${res.best}% · нужно ${QUEST_PASS_PCT}%` : p[q.kind] ? '✓ сделано' : q === next ? 'начни здесь' : '';
+    const prize = passed ? 'награда получена' : `приз: ${r.coins ? `+${r.xp} XP, +${r.coins} 🪙` : r.prize}`;
+    return `<button class="hub-ex quest-card rarity-${q.rarity}${passed || p[q.kind] ? ' done' : ''}${q === next ? ' next' : ''}${lock ? ' locked' : ''}" data-ex="${q.kind}" style="--rarity:${r.color}"
+        aria-label="${escapeHtml(`${rest.join(' ')}. ${r.title} квест. ${status || prize}`)}">
+      <span class="quest-rarity">${r.title}</span>
+      <span class="hub-em" aria-hidden="true">${lock ? '🔒' : em}</span>
+      <span class="hub-name">${rest.join(' ')}</span>
+      <span class="hub-state">${escapeHtml(status)}</span>
+      <span class="quest-prize">${escapeHtml(prize)}</span>
+    </button>`;
+  };
   openModal(`
     ${lessonHeader(lesson, guide, '', 'happy')}
-    <div class="hub-progress">Сделано ${partsDone(lesson)} из ${PARTS.length}${isLessonComplete(lesson) ? ' · тема пройдена ✓' : ''}</div>
-    <div class="hub-grid">
-      ${exs.map(ex => {
-        const [em, ...rest] = EX_NAMES[ex].split(' ');
-        return `<button class="hub-ex${p[ex] ? ' done' : ''}${ex === next ? ' next' : ''}" data-ex="${ex}">
-          <span class="hub-em" aria-hidden="true">${em}</span>
-          <span class="hub-name">${rest.join(' ')}</span>
-          <span class="hub-state">${p[ex] ? '✓ сделано' : ex === next ? 'начни здесь' : ''}</span>
-        </button>`;
-      }).join('')}
-    </div>
+    <div class="hub-progress">Сделано ${partsDone(lesson)} из ${PARTS.length}${isLessonComplete(lesson) ? ' · тема пройдена ✓' : ''} · квестов пройдено на ${QUEST_PASS_PCT}%: ${qs.filter(q => (state.quests[questKey(lesson, q.kind)]?.best ?? -1) >= QUEST_PASS_PCT).length} из ${qs.length}</div>
+    <div class="hub-grid">${qs.map(card).join('')}</div>
+    <p class="t-muted quest-legend">Редкие квесты открываются, когда два обычных пройдены на ${QUEST_PASS_PCT}%, эпические — после редких. Награда за редкость — один раз.</p>
   `);
-  document.querySelectorAll('.hub-ex').forEach(b => b.onclick = () => startExercise(lesson, b.dataset.ex));
+  document.querySelectorAll('.hub-ex').forEach(b => b.onclick = () => {
+    const why = questLock(lesson, b.dataset.ex, state);
+    if (why){ toast(`🔒 ${why}`); return; }
+    startExercise(lesson, b.dataset.ex);
+  });
 }

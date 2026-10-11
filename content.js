@@ -2479,12 +2479,51 @@ function taskTypeFor(kind, grade){
   return CURRICULUM.taskTypes.find(t => t.grade === grade && t.kinds.includes(kind))?.code || null;
 }
 
+// ---------- КВЕСТЫ: РЕДКОСТЬ И ДОСТИЖЕНИЯ ----------
+// Квест — упражнение темы. Редкость — по типу задания из карты программы (CURRICULUM.taskTypes),
+// а если тип для упражнения в этом классе не задан — по формату (концепция v2): узнавание — обычный,
+// слово в контексте и меньше подсказок — редкий, текст и самостоятельный ответ — эпический.
+// Открывается квест по мастерству (questLock в js/stats.js); награда за редкость — один раз, при первом прохождении на 80%.
+const QUEST_RARITY = [
+  { id: 'common', title: 'Обычный', color: '#5d6b5b', coins: 5, xp: 10, prize: 'монеты' },
+  { id: 'rare', title: 'Редкий', color: '#2a7cb4', coins: 15, xp: 25, prize: 'монеты и опыт' },
+  { id: 'epic', title: 'Эпический', color: '#7c4bd6', coins: 30, xp: 50, prize: 'большой сундук монет' },
+  { id: 'legendary', title: 'Легендарный', color: '#d69f0a', coins: 0, xp: 0, prize: 'кубок' },
+];
+const QUEST_PASS_PCT = 80;
+const KIND_RARITY = { cards: 'common', vocab: 'common', listen: 'common', match: 'common', fill: 'common', build: 'common',
+  spell: 'rare', grammar: 'rare', picture: 'rare', reading: 'epic', speak: 'epic' };
+function questRarity(kind, grade){
+  const code = taskTypeFor(kind, grade);
+  return (code && CURRICULUM.taskTypes.find(t => t.code === code).rarity) || KIND_RARITY[kind] || 'common';
+}
+// Достижения — данными: условие (when) проверяет achievementsOf() в js/stats.js. Выдаются один раз и навсегда.
+// rarity — рамка карточки; secret — до получения видно только силуэт. Надевать на героя — позже, с рисунками предметов.
+const ACHIEVEMENTS = [
+  { id: 'first-quest', title: 'Первый квест', emoji: '🎒', rarity: 'common', text: 'Пройди любой квест на 80%', when: { quests: 1 } },
+  { id: 'quests-10', title: 'Искатель приключений', emoji: '🧭', rarity: 'common', text: 'Пройди 10 квестов на 80%', when: { quests: 10 } },
+  { id: 'goal-1', title: 'Цель дня', emoji: '🎯', rarity: 'common', text: 'Выполни цель дня', when: { goalDays: 1 } },
+  { id: 'streak-3', title: 'Три дня подряд', emoji: '🔥', rarity: 'common', text: 'Выполняй цель дня 3 дня подряд', when: { streak: 3 } },
+  { id: 'first-rare', title: 'Редкая находка', emoji: '🔷', rarity: 'rare', text: 'Пройди редкий квест на 80%', when: { rare: 1 } },
+  { id: 'skill-1', title: 'Мастер правила', emoji: '🛠️', rarity: 'rare', text: 'Освой грамматический навык', when: { skills: 1 } },
+  { id: 'mistake-1', title: 'Победитель ошибки', emoji: '🧹', rarity: 'rare', text: 'Выучи до конца слово из «Моих ошибок»', when: { mastered: 1 } },
+  { id: 'words-50', title: 'Знаток слов', emoji: '📚', rarity: 'rare', text: 'Освой 50 слов', when: { words: 50 } },
+  { id: 'first-epic', title: 'Эпический подвиг', emoji: '🟣', rarity: 'epic', text: 'Пройди эпический квест на 80%', when: { epic: 1 } },
+  { id: 'cloak-valley', title: 'Плащ Зелёной долины', emoji: '🌳', rarity: 'epic', text: 'Получи звание «Хранитель долины»', when: { rank: ['valley', 4] } },
+  { id: 'cloak-city', title: 'Плащ Города мастеров', emoji: '🏰', rarity: 'epic', text: 'Получи звание «Хранитель города»', when: { rank: ['city', 4] } },
+  { id: 'cloak-expedition', title: 'Плащ Большой экспедиции', emoji: '🧭', rarity: 'epic', text: 'Получи звание «Легенда English Quest»', when: { rank: ['expedition', 4] } },
+  { id: 'first-boss', title: 'Победитель босса', emoji: '🐉', rarity: 'legendary', text: 'Победи босса региона', when: { bosses: 1 } },
+  { id: 'bosses-all', title: 'Гроза боссов', emoji: '👑', rarity: 'legendary', text: 'Победи всех боссов во всех регионах', when: { bosses: 'all' } },
+  { id: 'rare-10', title: 'Кристальный ключ', emoji: '💠', rarity: 'legendary', text: 'Пройди 10 редких квестов — откроется тайное место', when: { rare: 10 }, secret: true },
+];
+
 // экспорт в глобальную область
 window.EQ = {
   CHARACTERS, HERO_MOODS, DEFAULT_HERO: 'harlow',
   LESSONS,
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES,
+  QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

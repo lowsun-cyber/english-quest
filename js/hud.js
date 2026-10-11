@@ -2,6 +2,8 @@
 import { logAnswer, streakInfo } from './activity.js';
 import { CHARACTERS, HARLOW_LINES, LESSONS, MAX_LEVEL, RANKS, RANK_STEPS, heroIntro, levelFromXp, totalXpForLevel } from './eq.js';
 import { heroPic, playerHero, setHeroMood } from './heroes.js';
+import { checkAchievements } from './achievements.js';
+import { isReplay } from './quests.js';
 import { CHECKPOINTS } from './map.js';
 import { activeId, saveState, state } from './state.js';
 import { speak } from './tts.js';
@@ -40,6 +42,7 @@ export function renderHUD(){
   rt.style.setProperty('--rank-color', rk ? rk.color : 'var(--grass-3)');
   rt.setAttribute('aria-label', `${rk ? `Звание: ${rk.title}` : 'Звания пока нет'}. Показать все звания`);
   celebrateRanks();
+  checkAchievements();
   document.getElementById('level-progress').style.width = pct + '%';
   document.getElementById('xp-text').textContent = lvl >= MAX_LEVEL
     ? `Максимум! ${state.xp} XP`
@@ -168,8 +171,12 @@ export function addItem(word, n=1){
 }
 
 // ---------- REWARD ----------
+// Сколько опыта дал последний верный ответ (с учётом повтора квеста) — для всплывающих «+N XP»
+export let lastXp = 0;
 export function reward(xp, gold, opts={}){
   if (!opts.bonus) logAnswer(true);
+  if (!opts.bonus && isReplay()) xp = Math.ceil(xp / 2);   // повтор пройденного квеста — половина опыта
+  if (!opts.bonus) lastXp = xp;
   const prevLvl = levelFromXp(state.xp);
   state.xp += xp;
   state.gold += gold;

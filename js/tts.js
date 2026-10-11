@@ -32,6 +32,22 @@ export async function loadManifest(){
 }
 loadManifest(); // прогреваем сразу
 
+// Говорит ли сейчас что-нибудь (запись или голос устройства)
+export function speaking(){
+  const a = _currentAudio;
+  return !!(a && a.paused === false && !a.ended) || !!(typeof window !== 'undefined' && window.speechSynthesis?.speaking);
+}
+// Дождаться, пока договорит (не дольше maxMs). true — если пришлось ждать.
+export function speechDone(maxMs = 4000){
+  const t0 = Date.now();
+  return new Promise(resolve => {
+    (function tick(){
+      if (!speaking() || Date.now() - t0 >= maxMs) resolve(Date.now() - t0 > 0 && Date.now() - t0 >= 100);
+      else setTimeout(tick, 100);
+    })();
+  });
+}
+
 export function stopSpeech(){
   if (_currentAudio){
     try { _currentAudio.pause(); _currentAudio.currentTime = 0; } catch(e){}

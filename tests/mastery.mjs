@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Типы ошибок и мастерство (js/stats.js) без браузера: классификация ответа, похожие слова,
+// Типы ошибок, мастерство, квесты и достижения (js/stats.js) без браузера: классификация ответа, похожие слова,
 // уровень освоения с учётом давности, старый прогресс без новых полей.
 //   node tests/mastery.mjs
 import { readFileSync } from 'node:fs';
@@ -69,5 +69,41 @@ check('навык: слабый и трудный', g407.weak && g407.level === 
 check('навык: опоры с их уровнем', g407.needs.some(n => n.code === 'G4-06' && n.level === 'mastered') && g407.needs.some(n => n.code === 'G3-10' && n.level === 'new'), g407.needs);
 check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g407)), S.needsLine(g407));
 
-console.log(`\n${total - fail} из ${total} проверок мастерства прошли`);
+// квесты: редкость, открытие по мастерству, достижения
+{
+  const { LESSONS, questRarity, QUEST_RARITY, ACHIEVEMENTS } = ctx.window.EQ;
+  const L = LESSONS.find(l => l.id === 'g2-letters'), L3 = LESSONS.find(l => l.grade === 3);
+  check('редкость по карте программы: 2-E — эпический, 2-C — редкий, 3-A — обычный, 4-A — редкий',
+    questRarity('picture', 2) === 'epic' && questRarity('spell', 2) === 'rare' && questRarity('fill', 3) === 'common' && questRarity('reading', 4) === 'rare');
+  check('редкость по формату, если в карте нет: слова — обычный, грамматика — редкий, «Говори» — эпический',
+    questRarity('vocab', 3) === 'common' && questRarity('grammar', 2) === 'rare' && questRarity('speak', 4) === 'epic');
+  check('у каждого квеста — известная редкость', LESSONS.every(l => S.lessonQuests(l).every(q => QUEST_RARITY.some(r => r.id === q.rarity))));
+  const pass = (...kinds) => Object.fromEntries(kinds.map(k => [`g2-letters:${k}`, { best: 100, runs: 1, passedAt: 1 }]));
+  check('обычный открыт всегда', S.questLock(L, 'vocab', fresh()) === null);
+  check('редкий закрыт без обычных', S.questLock(L, 'spell', fresh()) !== null);
+  check('редкий: один обычный на 80% — мало', S.questLock(L, 'spell', fresh({ quests: pass('vocab') })) !== null);
+  check('редкий: «Карточки» не считаются', S.questLock(L, 'spell', fresh({ quests: pass('cards', 'vocab') })) !== null);
+  check('редкий: два обычных на 80% — открыт', S.questLock(L, 'spell', fresh({ quests: pass('vocab', 'listen') })) === null);
+  check('79% — не пройден', S.questLock(L, 'spell', fresh({ quests: { ...pass('vocab'), 'g2-letters:listen': { best: 79 } } })) !== null);
+  check('эпический закрыт, пока редкие не пройдены', S.questLock(L, 'reading', fresh({ quests: pass('vocab', 'listen') })) !== null);
+  check('эпический открыт после редких', S.questLock(L, 'reading', fresh({ quests: pass('vocab', 'listen', 'spell', 'grammar') })) === null);
+  const LS = LESSONS.find(l => l.grade === 2 && l.grammar.some(q => q.skill));
+  const skills = Object.fromEntries([...new Set(LS.grammar.map(q => q.skill).filter(Boolean))].map(c => [c, { ok: 5, bad: 0, last: Date.now() }]));
+  const passLS = Object.fromEntries(['vocab', 'listen'].map(k => [`${LS.id}:${k}`, { best: 100, runs: 1, passedAt: 1 }]));
+  check('эпический открыт, если навыки темы освоены', S.questLock(LS, 'reading', fresh({ quests: passLS, skills })) === null);
+  check('…и закрыт, если навыки не освоены', S.questLock(LS, 'reading', fresh({ quests: passLS })) !== null);
+  check('начатое не закрывается', S.questLock(L, 'reading', fresh({ lessonProgress: { 'g2-letters': { reading: 1 } } })) === null);
+  check('домашнее задание открыто', S.questLock(L, 'reading', fresh({ homework: { lessonId: 'g2-letters', tasks: ['reading'] } })) === null);
+  check('репетитор открыл всё', S.questLock(L, 'reading', fresh({ settings: { unlockAll: true } })) === null);
+  check('другая тема — свои замки', S.questLock(L3, 'grammar', fresh({ quests: pass('vocab', 'listen') })) !== null);
+  const c = S.questCounts(fresh({ quests: pass('vocab', 'listen', 'spell'), checkpoints: { 'g2-p1': { best: 8, passedAt: 1 } } }));
+  check('счёт квестов по редкости и боссы', c.quests === 3 && c.common === 2 && c.rare === 1 && c.bosses === 1 && c.legendary === 1, c);
+  check('проверки только по полным блокам из 4 тем', S.CHECKPOINTS.every(cp => cp.lessons.length === 4) && c.bossesTotal === 12, c.bossesTotal);
+  const ach = S.achievementsOf(fresh({ quests: pass('vocab', 'listen', 'spell'), checkpoints: { 'g2-p1': { best: 8, passedAt: 1 } }, mastered: 1 }));
+  check('достижения по прогрессу', ['first-quest', 'first-rare', 'first-boss', 'mistake-1'].every(id => ach.includes(id)) && !ach.includes('first-epic') && !ach.includes('bosses-all'), ach);
+  check('достижения: id уникальны, редкость известна', new Set(ACHIEVEMENTS.map(a => a.id)).size === ACHIEVEMENTS.length && ACHIEVEMENTS.every(a => QUEST_RARITY.some(r => r.id === a.rarity)));
+  check('пустой прогресс — без достижений', S.achievementsOf(fresh()).length === 0);
+}
+
+console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);
 process.exit(fail ? 1 : 0);

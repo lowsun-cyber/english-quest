@@ -98,7 +98,7 @@ export function startCheckpoint(cp){
       ${header}
       <div class="question checkpoint-result ${passed ? 'pass' : 'fail'}">
         <span class="cp-big" aria-hidden="true">${passed ? cp.emoji : '💪'}</span>
-        <h3>${passed ? 'Проверка сдана!' : 'Почти получилось'}</h3>
+        <h3>${passed ? 'Босс побеждён! Проверка сдана!' : 'Почти получилось'}</h3>
         <p>Верно: <b>${right}</b> из ${queue.length}.${passed ? '' : ` Нужно ${CHECKPOINT_PASS}.`}</p>
         ${firstPass ? `<p>Награда: ${cp.emoji} в инвентаре и +50 XP.${nextLesson ? ` Открыта тема «${escapeHtml(nextLesson.title)}».` : ''}</p>` : ''}
         ${!passed ? '<p>Ошибки попали в «Мои ошибки» — повтори их и попробуй снова.</p>' : ''}

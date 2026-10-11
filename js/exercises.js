@@ -4,8 +4,9 @@ import { logAnswer } from './activity.js';
 import { CHARACTERS, LESSONS, buildItemsFor, fillItemsFor, lessonStartLine } from './eq.js';
 import { heroPic, nextScreenMood, setHeroMood, takeScreenMood } from './heroes.js';
 import { checkHomework } from './homework.js';
-import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
-import { renderMap } from './map.js';
+import { isLessonComplete, lastXp, penalty, renderHUD, reward } from './hud.js';
+import { openLessonHub, renderMap } from './map.js';
+import { questResult, startQuest } from './quests.js';
 import { countError, logSkill, logWord, recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak, speakWordOrPhrase, stopSpeech } from './tts.js';
@@ -15,6 +16,7 @@ import { WHY_MS, whyWrong } from './why.js';
 
 // === Карточки: слово за словом, потом все слова сеткой ===
 export function exCards(lesson, guide){
+  if (!startQuest(lesson, 'cards')) return openLessonHub(lesson);
   const words = lesson.words;
   let i = 0;
   render();
@@ -49,6 +51,7 @@ export function exCards(lesson, guide){
     saveState();
     openModal(`
       ${lessonHeader(lesson, guide, '', 'praise')}
+      ${questResult()}
       <div class="question">
         <h3>Все слова темы</h3>
         <p class="t-muted">Нажми на карточку, чтобы услышать слово.</p>
@@ -69,6 +72,7 @@ export function exCards(lesson, guide){
 
 // === Напиши: собрать слово из букв ===
 export function exSpell(lesson, guide){
+  if (!startQuest(lesson, 'spell')) return openLessonHub(lesson);
   const pool = lesson.words.filter(w => /^[a-z' ]+$/i.test(w.en) && w.en.replace(/[ ']/g, '').length <= 10);
   const list = shuffle(pool).slice(0, 5);
   let idx = 0, right = 0;
@@ -78,6 +82,7 @@ export function exSpell(lesson, guide){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Написано верно: ${right} из ${list.length}</h3><p>${right === list.length ? 'Ни одной ошибки — супер!' : 'Слова с ошибками попали в «Мои ошибки».'}</p></div>
+        ${questResult()}
         <div class="controls"><button class="btn" id="next-grammar">🧩 Дальше: грамматика</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-grammar').onclick = () => exGrammar(lesson, guide);
@@ -152,7 +157,7 @@ export function exSpell(lesson, guide){
         logWord(w.en, true);
         reward(12, 3, { item: w.en });
         markProgress(lesson.id, 'spell');
-        toast(`✅ +12 XP · ${w.en}`);
+        toast(`✅ +${lastXp} XP · ${w.en}`);
       } else {
         const ans = document.getElementById('sp-answer');
         ans.hidden = false;
@@ -242,6 +247,7 @@ export function lessonHeader(lesson, guide, extra='', mood='thinking'){
 
 // === Vocab: emoji -> English word (4 opts) ===
 export function exVocab(lesson, guide){
+  if (!startQuest(lesson, 'vocab')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.words).slice(0, 6);
   render();
@@ -249,7 +255,8 @@ export function exVocab(lesson, guide){
     if (idx >= list.length){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
-        <div class="question"><h3>Отлично! Слова изучены.</h3><p>+${list.length*10} XP получено.</p></div>
+        <div class="question"><h3>Отлично! Слова изучены.</h3></div>
+        ${questResult()}
         <div class="controls"><button class="btn" id="next-listen">🎧 Дальше: слушай</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-listen').onclick = () => exListen(lesson, guide);
@@ -283,7 +290,7 @@ export function exVocab(lesson, guide){
           logWord(w.en, true);
           reward(10, 2, { item: w.en });
           markProgress(lesson.id, 'vocab');
-          toast(`✅ +10 XP · ${w.en}`);
+          toast(`✅ +${lastXp} XP · ${w.en}`);
           afterFeedback(() => { idx++; render(); }, 800);
         } else {
           btn.classList.add('wrong');
@@ -303,6 +310,7 @@ export function exVocab(lesson, guide){
 
 // === Listen: hear the word -> pick emoji ===
 export function exListen(lesson, guide){
+  if (!startQuest(lesson, 'listen')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.words).slice(0, 5);
   render();
@@ -310,7 +318,8 @@ export function exListen(lesson, guide){
     if (idx >= list.length){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
-        <div class="question"><h3>Great listening!</h3><p>+${list.length*12} XP.</p></div>
+        <div class="question"><h3>Great listening!</h3></div>
+        ${questResult()}
         <div class="controls"><button class="btn" id="next-match">🎯 Дальше: пара</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-match').onclick = () => exMatch(lesson, guide);
@@ -340,7 +349,7 @@ export function exListen(lesson, guide){
           logWord(w.en, true);
           reward(12, 2, { item: w.en });
           markProgress(lesson.id, 'listen');
-          toast(`✅ +12 XP`);
+          toast(`✅ +${lastXp} XP`);
           afterFeedback(() => { idx++; render(); }, 700);
         } else {
           btn.classList.add('wrong');
@@ -358,6 +367,7 @@ export function exListen(lesson, guide){
 
 // === Match: two columns (word ↔ emoji) ===
 export function exMatch(lesson, guide){
+  if (!startQuest(lesson, 'match')) return openLessonHub(lesson);
   const pairs = uniqueByEmoji(shuffle(lesson.words)).slice(0, 6);
   const left = shuffle(pairs.map(p => ({key:p.en, label:p.en, kind:'en'})));
   const right = shuffle(pairs.map(p => ({key:p.en, label:p.emoji, kind:'em'})));
@@ -401,7 +411,8 @@ export function exMatch(lesson, guide){
             afterFeedback(() => {
               openModal(`
                 ${lessonHeader(lesson, guide, '', 'praise')}
-                <div class="question"><h3>Все пары собраны! 🎯</h3></div>
+        <div class="question"><h3>Все пары собраны! 🎯</h3></div>
+                ${questResult()}
                 <div class="controls"><button class="btn" id="next-spell">✍️ Дальше: напиши</button><button class="btn secondary" id="next-close">Закрыть</button></div>
               `);
               document.getElementById('next-spell').onclick = () => exSpell(lesson, guide);
@@ -428,6 +439,7 @@ export function exMatch(lesson, guide){
 
 // === Grammar: fill in blank ===
 export function exGrammar(lesson, guide){
+  if (!startQuest(lesson, 'grammar')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.grammar);
   render();
@@ -436,6 +448,7 @@ export function exGrammar(lesson, guide){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Grammar power! 💪</h3><p>Prof. Owl гордится тобой.</p></div>
+        ${questResult()}
         <div class="controls"><button class="btn" id="next-read">📖 Дальше: чтение</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-read').onclick = () => exReading(lesson, guide);
@@ -463,7 +476,7 @@ export function exGrammar(lesson, guide){
           reward(15, 3);
           markProgress(lesson.id, 'grammar');
           speak(q.q.replace('___', q.a));
-          toast('✅ +15 XP');
+          toast(`✅ +${lastXp} XP`);
           afterFeedback(() => { idx++; render(); }, 900);
         } else {
           btn.classList.add('wrong');
@@ -480,6 +493,7 @@ export function exGrammar(lesson, guide){
 
 // === Собери предложение (тип 4-C): слова фразы перемешаны — нажимать по порядку ===
 export function exBuild(lesson, guide){
+  if (!startQuest(lesson, 'build')) return openLessonHub(lesson);
   const list = shuffle(buildItemsFor(lesson)).slice(0, 5);
   let idx = 0, right = 0;
   render();
@@ -488,6 +502,7 @@ export function exBuild(lesson, guide){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Собрано верно: ${right} из ${list.length} 🧱</h3><p>${right === list.length ? 'Отличный порядок слов!' : 'Порядок слов в английском строгий — потренируемся ещё.'}</p></div>
+        ${questResult()}
         <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-close').onclick = closeModal;
@@ -520,7 +535,7 @@ export function exBuild(lesson, guide){
     function check(){
       const ok = picked.map(x => x.t).join(' ') === it.text;
       logSkill(it, ok, ok ? null : picked.map(x => x.t).join(' '));
-      if (ok){ right++; reward(15, 3); markProgress(lesson.id, 'build'); toast('✅ +15 XP'); }
+      if (ok){ right++; reward(15, 3); markProgress(lesson.id, 'build'); toast(`✅ +${lastXp} XP`); }
       else { countError('form'); penalty(); }
       openModal(`
         ${lessonHeader(lesson, guide, '', ok ? 'happy' : 'hint')}
@@ -537,6 +552,7 @@ export function exBuild(lesson, guide){
 
 // === Вставь слово (тип 3-A): фраза урока с пропуском, подсказка — перевод, варианты — слова урока ===
 export function exFill(lesson, guide){
+  if (!startQuest(lesson, 'fill')) return openLessonHub(lesson);
   const list = shuffle(fillItemsFor(lesson)).slice(0, 5);
   let idx = 0, right = 0;
   render();
@@ -545,6 +561,7 @@ export function exFill(lesson, guide){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Верно: ${right} из ${list.length} 🔤</h3><p>${right === list.length ? 'Все слова на своих местах!' : 'Слова с ошибками попали в «Мои ошибки».'}</p></div>
+        ${questResult()}
         <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-close').onclick = closeModal;
@@ -585,6 +602,7 @@ export function exFill(lesson, guide){
 // === Что на картинке? (тип 2-E): картинка и две короткие фразы — выбрать верную ===
 // pics: [{ emoji, right, wrong, word?, skill? }] — word: слово урока для «Моих ошибок», skill: навык грамматики
 export function exPicture(lesson, guide){
+  if (!startQuest(lesson, 'picture')) return openLessonHub(lesson);
   const list = shuffle(lesson.pics || []).slice(0, 5);
   let idx = 0, right = 0;
   render();
@@ -593,6 +611,7 @@ export function exPicture(lesson, guide){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Верно: ${right} из ${list.length} 🖼️</h3><p>${right === list.length ? 'Ты всё понял(а) по картинкам!' : 'Ошибки попали в «Мои ошибки» — повторим.'}</p></div>
+        ${questResult()}
         <div class="controls"><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-close').onclick = closeModal;
@@ -637,6 +656,7 @@ export function exPicture(lesson, guide){
 
 // === Reading: passage + 2-3 comprehension Q ===
 export function exReading(lesson, guide){
+  if (!startQuest(lesson, 'reading')) return openLessonHub(lesson);
   const r = lesson.reading;
   let idx = 0;
   openModal(`
@@ -661,6 +681,7 @@ export function exReading(lesson, guide){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Прочитано!</h3><p>+20 XP за понимание текста.</p></div>
+        ${questResult()}
         <div class="controls"><button class="btn" id="next-speak">🎤 Дальше: говори</button><button class="btn secondary" id="next-close">Закрыть</button></div>
       `);
       document.getElementById('next-speak').onclick = () => exSpeak(lesson, guide);
@@ -723,6 +744,7 @@ const SPEECH_ERRORS = {
 };
 
 export function exSpeak(lesson, guide){
+  if (!startQuest(lesson, 'speak')) return openLessonHub(lesson);
   let idx = 0;
   const list = shuffle(lesson.phrases);
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -732,6 +754,7 @@ export function exSpeak(lesson, guide){
       openModal(`
         ${lessonHeader(lesson, guide, '', 'praise')}
         <div class="question"><h3>Great speaking! 🎤</h3><p>DJ Robo проверил — звучишь отлично.</p></div>
+        ${questResult()}
         <div class="controls"><button class="btn secondary" id="close-btn">Закрыть</button></div>
       `);
       document.getElementById('close-btn').onclick = closeModal;
@@ -769,7 +792,7 @@ export function exSpeak(lesson, guide){
       done = true;
       reward(8, 2);
       markProgress(lesson.id, 'speak');
-      toast('✅ +8 XP');
+      toast(`✅ +${lastXp} XP`);
       afterFeedback(() => { idx++; render(); }, 700);
     };
     afterFeedback(() => speak(phrase), 400);
@@ -834,7 +857,7 @@ export function exSpeak(lesson, guide){
           resEl.innerHTML = `Ты сказал: <em>«${escapeHtml(r.said)}»</em> · <b>${r.score}%</b> ${r.score === 100 ? '🌟' : '✅'}`;
           reward(18, 4);
           markProgress(lesson.id, 'speak');
-          toast(`✅ +18 XP · ${r.score}%`);
+          toast(`✅ +${lastXp} XP · ${r.score}%`);
           afterFeedback(() => { idx++; render(); }, 1600);
         } else {
           logAnswer(false);                           // для статистики; без штрафа
