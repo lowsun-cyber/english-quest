@@ -12,7 +12,7 @@ import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
 import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
 import { cloudOn, cloudPanelHtml, wireCloudPanel } from './cloud.js';
-import { lastDaysOf, reportText, studentStats } from './stats.js';
+import { errorsLine, lastDaysOf, levelTitle, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, plural } from './util.js';
 
 // ---------- РЕЖИМ РЕПЕТИТОРА ----------
@@ -149,12 +149,22 @@ export function openTutorPanel(){
       }).join('')}
     </ul>
 
+    <h3 class="t-h">Слова: освоение</h3>
+    ${s.mastery.seen ? `
+      <p>Встречалось <b>${s.mastery.seen}</b> из ${s.mastery.total} слов: освоено <b>${s.mastery.levels.mastered}</b>, учим <b>${s.mastery.levels.learning}</b>, трудных <b>${s.mastery.levels.weak}</b>.</p>
+      ${s.mastery.errors.length ? `<p class="t-muted">Типы ошибок: ${escapeHtml(errorsLine(s.mastery.errors))}</p>` : ''}
+      <ul class="t-hard" role="list">
+        ${s.mastery.words.filter(w => w.level !== 'mastered').slice(0, 10).map(w => `
+          <li><span class="t-hard-main">${w.word.emoji} <b>${escapeHtml(w.en)}</b> — ${escapeHtml(w.word.ru)}</span>
+          <span class="t-muted">${levelTitle(w.level)} · ${w.ok} верно, ${w.bad} ошибок${wordErrNote(w) ? ` · ${escapeHtml(wordErrNote(w))}` : ''}</span></li>`).join('')}
+      </ul>` : '<p class="t-muted">Пока нет — слова появятся после упражнений.</p>'}
+
     <h3 class="t-h">Грамматика по навыкам</h3>
     ${s.skills.length ? `
       <ul class="t-hard" role="list">
         ${s.skills.map(x => `
           <li><span class="t-hard-main">${x.weak ? '⚠️' : '✅'} ${escapeHtml(x.skill.title)} <span class="t-muted">${x.code}</span></span>
-          <span class="t-muted">${x.pct}% верно из ${x.ok + x.bad}${x.wrong[0] ? ` · путает: <b>${escapeHtml(x.wrong[0][0])}</b>` : ''}</span></li>`).join('')}
+          <span class="t-muted">${levelTitle(x.level)} · ${x.pct}% верно из ${x.ok + x.bad}${x.wrong[0] ? ` · путает: <b>${escapeHtml(x.wrong[0][0])}</b>` : ''}${x.weak && x.needs.length ? ` · опора: ${escapeHtml(needsLine(x))}` : ''}</span></li>`).join('')}
       </ul>` : '<p class="t-muted">Пока нет — навыки появятся после упражнений «Грамматика».</p>'}
 
     <h3 class="t-h">Трудные слова и вопросы</h3>

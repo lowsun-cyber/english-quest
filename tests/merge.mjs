@@ -130,5 +130,19 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('герой: нет в прогрессе по умолчанию', !('hero' in DEFAULT_STATE));
 }
 
+// ответы по словам и типы ошибок (итерация 2): складываются, как навыки
+{
+  const base = S({ words: { cat: { ok: 2, bad: 1, last: 100, err: { similar: 1 }, with: { cap: 1 } } }, errorTypes: { similar: 1 } });
+  const tablet = S({ words: { cat: { ok: 3, bad: 2, last: 200, err: { similar: 2 }, with: { cap: 2 } } }, errorTypes: { similar: 2 } });
+  const phone = S({ words: { cat: { ok: 4, bad: 1, last: 300, err: { similar: 1 }, with: { cap: 1 } }, dog: { ok: 1, bad: 0, last: 250 } }, errorTypes: { similar: 1, unknown: 3 } });
+  const m = M(base, tablet, phone);
+  check('слова: ответы с обоих устройств складываются', m.words.cat.ok === 5 && m.words.cat.bad === 2 && m.words.cat.last === 300, m.words.cat);
+  check('слова: тип ошибки и с чем спутал складываются', m.words.cat.err.similar === 2 && m.words.cat.with.cap === 2, m.words.cat);
+  check('слова: новое слово с другого устройства', m.words.dog?.ok === 1);
+  check('типы ошибок складываются', same(m.errorTypes, { similar: 2, unknown: 3 }), m.errorTypes);
+  const old = { ...S({ xp: 5 }) }; delete old.words; delete old.errorTypes;   // прогресс до обновления
+  check('старый прогресс на сервере не стирает новые ответы', M(old, S({ words: { cat: { ok: 1, bad: 0, last: 5 } } }), old).words.cat?.ok === 1);
+}
+
 console.log(`\n${total - fail} из ${total} проверок объединения прошли`);
 process.exit(fail ? 1 : 0);

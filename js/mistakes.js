@@ -1,12 +1,13 @@
 // English Quest — «Мои ошибки»: интервальное повторение трудных слов и вопросов.
 import { logAnswer } from './activity.js';
-import { LESSONS } from './eq.js';
+import { ERROR_TYPES, LESSONS } from './eq.js';
 import { reward } from './hud.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, closeModal, openModal, toast } from './ui.js';
 import { DAY, daysLabel, distractors, escapeHtml, shuffle, startOfDay } from './util.js';
-import { mistakeList, resolveMistake } from './stats.js';
+import { WHY_MS, whyWrong } from './why.js';
+import { classifyError, mistakeList, resolveMistake } from './stats.js';
 
 // ---------- МОИ ОШИБКИ (интервальное повторение) ----------
 // Каждая ошибка — карточка в «коробке» 0..3. Верный ответ при повторении двигает её дальше,
@@ -17,17 +18,43 @@ export const REVIEW_SESSION_SIZE = 10;
 
 export function dueFor(box){ return box === 0 ? Date.now() : startOfDay(Date.now()) + REVIEW_INTERVALS[box] * DAY; }
 
-export function recordMistake(type, lesson, ref){
+// info: { exercise, chosen, skill } — где ошиблись и что выбрали (нет chosen — пропуск). Возвращает тип ошибки.
+export function recordMistake(type, lesson, ref, info = {}){
   const key = `${type}:${lesson.id}:${ref}`;
   const m = state.mistakes[key] || { type, lessonId: lesson.id, ref, wrong: 0 };
   m.box = 0;
   m.due = dueFor(0);
   m.wrong += 1;
   m.last = Date.now();
+  const error = noteError(m, type, ref, info);
   state.mistakes[key] = m;
   state.lessonWrong[lesson.id] = (state.lessonWrong[lesson.id] || 0) + 1;
   saveState();
   renderMistakes();
+  return error;
+}
+// Тип ошибки — в карточку «Моих ошибок», в общий счёт типов и (для слов) в ответы по слову
+const WITH_KEEP = 5;
+function noteError(m, type, ref, { exercise, chosen, skill } = {}){
+  const error = classifyError({ type, exercise, answer: ref, chosen, skill });
+  m.err = { ...(m.err || {}), [error]: (m.err?.[error] || 0) + 1 };
+  m.lastErr = error;
+  if (chosen && chosen !== ref) m.with = topCounts({ ...(m.with || {}), [chosen]: (m.with?.[chosen] || 0) + 1 }, 3);
+  countError(error);
+  if (type === 'word') logWord(ref, false, { error, chosen });
+  return error;
+}
+export function countError(error){ state.errorTypes[error] = (state.errorTypes[error] || 0) + 1; }
+const topCounts = (obj, n) => Object.fromEntries(Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n));
+
+// Ответ по слову (для мастерства): верно / неверно, тип ошибки и с чем спутал. Сохраняет вызывающий код.
+export function logWord(en, ok, { error, chosen } = {}){
+  if (!en) return;
+  const w = state.words[en] || (state.words[en] = { ok: 0, bad: 0, last: 0 });
+  w[ok ? 'ok' : 'bad'] += 1;
+  w.last = Date.now();
+  if (!ok && error) w.err = { ...(w.err || {}), [error]: (w.err?.[error] || 0) + 1 };
+  if (!ok && chosen && chosen !== en) w.with = topCounts({ ...(w.with || {}), [chosen]: (w.with?.[chosen] || 0) + 1 }, WITH_KEEP);
 }
 
 // Грамматический навык вопроса (q.skill, коды из карты программы): верно/неверно и какой неверный вариант
@@ -53,6 +80,14 @@ export { resolveMistake };
 export function mistakeEntries(){ return mistakeList(state); }
 
 
+
+// Чип типа последней ошибки: «перепутал(а) с cap», «ошибка в буквах»…
+function errChip(m){
+  const t = ERROR_TYPES.find(x => x.id === m.lastErr);
+  if (!t) return '';
+  const w = Object.keys(m.with || {})[0];
+  return `<span class="mi-err">${escapeHtml(t.child)}${m.lastErr === 'similar' && w ? ` с <span lang="en">${escapeHtml(w)}</span>` : ''}</span>`;
+}
 
 export function renderMistakes(){
   const wrap = document.getElementById('mistakes');
@@ -80,10 +115,10 @@ export function renderMistakes(){
     const when = m.due <= now ? '<span class="when now">повторить</span>' : `<span class="when">${daysLabel(m.due)}</span>`;
     let main;
     if (m.type === 'word'){
-      main = `<span class="mi-em" aria-hidden="true">${data.word.emoji}</span><span class="mi-text"><span class="mi-en">${escapeHtml(data.word.en)}</span><span class="mi-ru">${escapeHtml(data.word.ru)}</span></span>`;
+      main = `<span class="mi-em" aria-hidden="true">${data.word.emoji}</span><span class="mi-text"><span class="mi-en">${escapeHtml(data.word.en)}</span><span class="mi-ru">${escapeHtml(data.word.ru)}</span>${errChip(m)}</span>`;
     } else {
       const label = m.type === 'grammar' ? 'Грамматика' : 'Чтение';
-      main = `<span class="mi-em" aria-hidden="true">${m.type === 'grammar' ? '🧩' : '📖'}</span><span class="mi-text"><span class="mi-en mi-sentence">${escapeHtml(data.q.q)}</span><span class="mi-ru">${label} · ${escapeHtml(data.lesson.title)}</span></span>`;
+      main = `<span class="mi-em" aria-hidden="true">${m.type === 'grammar' ? '🧩' : '📖'}</span><span class="mi-text"><span class="mi-en mi-sentence">${escapeHtml(data.q.q)}</span><span class="mi-ru">${label} · ${escapeHtml(data.lesson.title)}</span>${errChip(m)}</span>`;
     }
     return `<li class="mistake-item">${main}<span class="mi-meta"><span class="pips" title="Верных повторений: ${m.box} из 3" aria-label="Верных повторений: ${m.box} из 3">${pips}</span>${when}</span></li>`;
   };
@@ -185,6 +220,7 @@ export function startReview(){
         const ok = btn.dataset.o === answer;
         const stored = state.mistakes[entry.key];
         if (m.type === 'grammar') logSkill(data.q, ok, btn.dataset.o);
+        if (ok && m.type === 'word') logWord(answer, true);
         if (ok){
           btn.classList.add('correct');
           right++;
@@ -206,12 +242,13 @@ export function startReview(){
           stored.due = dueFor(0);
           stored.wrong += 1;
           stored.last = Date.now();
+          const error = noteError(stored, m.type, m.ref, { exercise: 'review', chosen: btn.dataset.o, skill: data.q?.skill });
           logAnswer(false);
-          toast(`Правильно: ${answer}`);
           saveState();
+          whyWrong({ lesson: data.lesson, error, answer, chosen: btn.dataset.o, q: data.q });
         }
         if (sayOnAnswer) speak(sayOnAnswer);
-        afterFeedback(() => { idx++; render(); }, ok ? 900 : 1600);
+        afterFeedback(() => { idx++; render(); }, ok ? 900 : WHY_MS);
       };
     });
   }

@@ -2,11 +2,12 @@
 import { logAnswer } from './activity.js';
 import { addItem, renderHUD, renderInventory, reward } from './hud.js';
 import { BLOCK, CHECKPOINT_PASS, CHECKPOINT_SIZE, lessonsOf, renderMap } from './map.js';
-import { logSkill, recordMistake } from './mistakes.js';
+import { logSkill, logWord, recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, closeModal, confetti, openModal } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle } from './util.js';
+import { WHY_MS, whyWrong } from './why.js';
 
 // === Проверка после части: 10 вопросов по 4 темам ===
 export function startCheckpoint(cp){
@@ -67,15 +68,17 @@ export function startCheckpoint(cp){
         const ok = btn.dataset.o === answer;
         logAnswer(ok);
         if (item.type === 'grammar') logSkill(item.q, ok, btn.dataset.o);
-        if (ok){ btn.classList.add('correct'); right++; }
+        if (ok){ btn.classList.add('correct'); right++; if (item.w) logWord(item.w.en, true); }
         else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(answer)}"]`)?.classList.add('correct');
-          if (item.type === 'grammar') recordMistake('grammar', item.l, item.q.q);
-          else recordMistake('word', item.l, item.w.en);
+          const error = item.type === 'grammar'
+            ? recordMistake('grammar', item.l, item.q.q, { exercise: 'checkpoint', chosen: btn.dataset.o, skill: item.q.skill })
+            : recordMistake('word', item.l, item.w.en, { exercise: 'checkpoint', chosen: btn.dataset.o });
+          whyWrong({ lesson: item.l, error, answer, chosen: btn.dataset.o, q: item.q });
         }
         if (say) speak(say);
-        afterFeedback(() => { idx++; render(); }, ok ? 800 : 1500);
+        afterFeedback(() => { idx++; render(); }, ok ? 800 : WHY_MS);
       };
     });
   }

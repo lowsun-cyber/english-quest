@@ -2,7 +2,7 @@
 // Собирается прямо в браузере библиотекой pdfmake (шрифт Roboto с кириллицей): данные никуда не отправляются.
 // Библиотека загружается только при первой выгрузке.
 import { LESSONS } from './eq.js';
-import { CHECKPOINT_SIZE, EX_NAMES, PARTS, homeworkDone, reportText, studentStats } from './stats.js';
+import { CHECKPOINT_SIZE, EX_NAMES, PARTS, errorsLine, homeworkDone, levelTitle, reportText, studentStats, wordErrNote } from './stats.js';
 import { fmtDay } from './util.js';
 
 const PDFMAKE = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/';
@@ -103,8 +103,13 @@ function studentContent({ student, state: st, updated, devices }, meta){
       S.checkpoints.map(({ cp, r }) => [plain(cp.title), r ? `${r.best} из ${CHECKPOINT_SIZE}` : '—', r?.passedAt ? date(r.passedAt) : (r ? 'не сдана' : 'не начата')])),
 
     h2('Грамматика по навыкам'),
-    S.skills.length ? table(['*', 40, 50, 50, 110], ['Навык', 'Код', 'Верно', 'Ответов', 'Чаще всего путает'],
-      S.skills.map(x => [(x.weak ? '! ' : '') + plain(x.skill.title), x.code, `${x.pct}%`, String(x.ok + x.bad), x.wrong.slice(0, 3).map(([o, n]) => `${plain(o)} ×${n}`).join(', ') || '—'])) : { text: 'Пока нет — навыки появятся после упражнений «Грамматика».', color: MUTED, margin: [0, 2, 0, 10] },
+    S.skills.length ? table(['*', 40, 56, 40, 44, 100], ['Навык', 'Код', 'Освоение', 'Верно', 'Ответов', 'Чаще всего путает'],
+      S.skills.map(x => [(x.weak ? '! ' : '') + plain(x.skill.title), x.code, levelTitle(x.level), `${x.pct}%`, String(x.ok + x.bad), x.wrong.slice(0, 3).map(([o, n]) => `${plain(o)} ×${n}`).join(', ') || '—'])) : { text: 'Пока нет — навыки появятся после упражнений «Грамматика».', color: MUTED, margin: [0, 2, 0, 10] },
+
+    h2('Слова: освоение'),
+    { text: S.mastery.seen ? `Встречалось ${S.mastery.seen} из ${S.mastery.total} слов: освоено ${S.mastery.levels.mastered}, учим ${S.mastery.levels.learning}, трудных ${S.mastery.levels.weak}.${S.mastery.errors.length ? ` Типы ошибок: ${errorsLine(S.mastery.errors)}.` : ''}` : 'Пока нет — слова появятся после упражнений.', margin: [0, 2, 0, 6] },
+    ...(S.mastery.words.some(w => w.level !== 'mastered') ? [table(['*', 60, 36, 40, 110], ['Слово', 'Освоение', 'Верно', 'Ошибок', 'Тип ошибки'],
+      S.mastery.words.filter(w => w.level !== 'mastered').slice(0, 15).map(w => [`${w.en} — ${plain(w.word.ru)}`, levelTitle(w.level), String(w.ok), String(w.bad), plain(wordErrNote(w)) || '—']))] : []),
 
     h2(`Трудные слова и вопросы (${S.hard.length})`),
     S.hard.length ? table(['*', 90, 60, 36, 70], ['Слово или вопрос', 'Тема', 'Тип', 'Ошиб.', 'Повтор'],

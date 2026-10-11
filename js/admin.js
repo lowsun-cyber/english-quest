@@ -4,7 +4,7 @@
 import { api, ApiError, deviceLabel } from './api.js';
 import { API_BASE, TEACHER_KEY } from './config.js';
 import { LESSONS, levelFromXp } from './eq.js';
-import { CHECKPOINT_SIZE, EX_NAMES, EX_ORDER, GRADES, PARTS, homeworkDone, makeHomeworkFor, reportText, studentStats } from './stats.js';
+import { CHECKPOINT_SIZE, EX_NAMES, EX_ORDER, GRADES, PARTS, errorsLine, homeworkDone, levelTitle, makeHomeworkFor, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { WEEKDAYS, fmtDay } from './util.js';
 
 const main = document.getElementById('adm-main');
@@ -465,10 +465,21 @@ async function renderStudent(id){
     <section class="adm-card">
       <h2 class="adm-h2">Грамматика по навыкам <span class="t-muted">встречалось ${S.coverage.skills} из ${S.coverage.skillsTotal} · темы ${S.coverage.topics} из ${S.coverage.topicsTotal}</span></h2>
       ${S.skills.length ? `<div class="t-table-wrap"><table class="t-table adm-table">
-        <thead><tr><th>Навык</th><th>Класс</th><th>Верно</th><th>Ответов</th><th>Чаще всего путает</th></tr></thead>
-        <tbody>${S.skills.map(x => `<tr><td>${x.weak ? '⚠️' : '✅'} ${esc(x.skill.title)} <span class="t-muted">${x.code}</span></td><td>${x.skill.grade}</td><td>${x.pct}%</td><td>${x.ok + x.bad}</td>
-          <td>${x.wrong.length ? x.wrong.slice(0, 3).map(([o, n]) => `${esc(o)} ×${n}`).join(', ') : '<span class="t-muted">—</span>'}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>Навык</th><th>Класс</th><th>Освоение</th><th>Верно</th><th>Ответов</th><th>Чаще всего путает</th><th>Опора</th></tr></thead>
+        <tbody>${S.skills.map(x => `<tr><td>${x.weak ? '⚠️' : '✅'} ${esc(x.skill.title)} <span class="t-muted">${x.code}</span></td><td>${x.skill.grade}</td><td>${levelTitle(x.level)}</td><td>${x.pct}%</td><td>${x.ok + x.bad}</td>
+          <td>${x.wrong.length ? x.wrong.slice(0, 3).map(([o, n]) => `${esc(o)} ×${n}`).join(', ') : '<span class="t-muted">—</span>'}</td>
+          <td>${x.needs.length ? esc(needsLine(x)) : '<span class="t-muted">—</span>'}</td></tr>`).join('')}</tbody>
       </table></div>` : '<p class="t-muted">Пока нет — навыки появятся после упражнений «Грамматика».</p>'}
+    </section>
+
+    <section class="adm-card">
+      <h2 class="adm-h2">Слова: освоение <span class="t-muted">встречалось ${S.mastery.seen} из ${S.mastery.total}</span></h2>
+      ${S.mastery.seen ? `
+        <p>Освоено <b>${S.mastery.levels.mastered}</b>, учим <b>${S.mastery.levels.learning}</b>, трудных <b>${S.mastery.levels.weak}</b>.${S.mastery.errors.length ? ` Типы ошибок: ${esc(errorsLine(S.mastery.errors))}.` : ''}</p>
+        <div class="t-table-wrap"><table class="t-table adm-table">
+          <thead><tr><th>Слово</th><th>Класс</th><th>Освоение</th><th>Верно</th><th>Ошибок</th><th>Тип ошибки</th></tr></thead>
+          <tbody>${S.mastery.words.filter(w => w.level !== 'mastered').slice(0, 25).map(w => `<tr><td><b>${esc(w.en)}</b> — ${esc(w.word.ru)}</td><td>${w.word.grade}</td><td>${levelTitle(w.level)}</td><td>${w.ok}</td><td>${w.bad}</td><td>${esc(wordErrNote(w)) || '<span class="t-muted">—</span>'}</td></tr>`).join('')}</tbody>
+        </table></div>` : '<p class="t-muted">Пока нет — слова появятся после упражнений.</p>'}
     </section>
 
     <section class="adm-card adm-cols">
