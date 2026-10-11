@@ -2225,9 +2225,10 @@ const ERROR_TYPES = [
 // У каждого региона 4 ранга; ранг открывается за темы и проверки этого региона, а не за XP
 // (условия — RANK_STEPS, расчёт — regionRanks() в js/stats.js). Уровни 1–60 по XP остаются отдельно.
 const REGIONS = [
-  { id: 'valley', grade: 2, name: 'Зелёная долина', emoji: '🌳', color: '#3fb650' },
-  { id: 'city', grade: 3, name: 'Город мастеров', emoji: '🏰', color: '#c58a3a' },
-  { id: 'expedition', grade: 4, name: 'Большая экспедиция', emoji: '🧭', color: '#3a9fe0' },
+  // color — табличка звания и рамка региона (эскиз «Кто играет?»)
+  { id: 'valley', grade: 2, name: 'Зелёная долина', emoji: '🌳', color: '#61d074' },
+  { id: 'city', grade: 3, name: 'Город мастеров', emoji: '🏰', color: '#3a9fe0' },
+  { id: 'expedition', grade: 4, name: 'Большая экспедиция', emoji: '🧭', color: '#c9b3ff' },
 ];
 // step: 1 — первая пройденная тема региона, 2 — первая проверка, 3 — все проверки, 4 — все темы пройдены полностью;
 // RANK_STEPS — как это сказано ребёнку
@@ -2507,10 +2508,11 @@ const SECRET_REGIONS = [
 // слово в контексте и меньше подсказок — редкий, текст и самостоятельный ответ — эпический.
 // Открывается квест по мастерству (questLock в js/stats.js); награда за редкость — один раз, при первом прохождении на 80%.
 const QUEST_RARITY = [
-  { id: 'common', title: 'Обычный', color: '#5d6b5b', coins: 5, xp: 10, prize: 'монеты' },
-  { id: 'rare', title: 'Редкий', color: '#2a7cb4', coins: 15, xp: 25, prize: 'монеты и опыт' },
-  { id: 'epic', title: 'Эпический', color: '#7c4bd6', coins: 30, xp: 50, prize: 'большой сундук монет' },
-  { id: 'legendary', title: 'Легендарный', color: '#d69f0a', coins: 0, xp: 0, prize: 'кубок' },
+  // color — заливка метки и рамка, pill — фон таблички (токены --rarity-* в style.css, docs/design-v2/STYLE.md)
+  { id: 'common', title: 'Обычный', color: 'var(--rarity-common)', pill: 'var(--rarity-common-bg)', coins: 5, xp: 10, prize: 'монеты' },
+  { id: 'rare', title: 'Редкий', color: 'var(--rarity-rare)', pill: 'var(--rarity-rare-bg)', coins: 15, xp: 25, prize: 'монеты и опыт' },
+  { id: 'epic', title: 'Эпический', color: 'var(--rarity-epic)', pill: 'var(--rarity-epic-bg)', coins: 30, xp: 50, prize: 'большой сундук монет' },
+  { id: 'legendary', title: 'Легендарный', color: 'var(--rarity-legend)', pill: 'var(--rarity-legend-bg)', coins: 0, xp: 0, prize: 'кубок' },
 ];
 const QUEST_PASS_PCT = 80;
 const KIND_RARITY = { cards: 'common', vocab: 'common', listen: 'common', match: 'common', fill: 'common', build: 'common',

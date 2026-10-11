@@ -174,6 +174,15 @@ export function regionRanks(st){
       done, lessons: ls.length, passed, checkpoints: cps.length };
   });
 }
+// Класс игрока для «Кто играет?»: регион, открытый на карте, иначе класс домашки, иначе старший класс с прогрессом
+export function playerGrade(st){
+  const g = +st.settings?.mapGrade;
+  if (REGIONS.some(r => r.grade === g)) return g;
+  const hw = st.homework && LESSONS.find(l => l.id === st.homework.lessonId);
+  if (hw) return hw.grade;
+  const started = LESSONS.filter(l => Object.keys(st.lessonProgress?.[l.id] || {}).length).map(l => l.grade);
+  return started.length ? Math.max(...started) : REGIONS[0].grade;
+}
 // Звание для шапки и отчётов — самый высокий ранг в самом дальнем регионе, где он есть (null — пока ни одного)
 export function topRank(st){ return [...regionRanks(st)].reverse().find(r => r.rank)?.rank || null; }
 

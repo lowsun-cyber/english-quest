@@ -1,10 +1,11 @@
 // English Quest — Несколько учеников на одном устройстве: выбор, добавление, переименование, удаление.
 import { applyFreezes } from './activity.js';
 import { applyLoadedState } from './backup.js';
-import { levelFromXp } from './eq.js';
+import { CHARACTERS, REGIONS, levelFromXp, regionOfGrade } from './eq.js';
 import { heroPic, playerHero } from './heroes.js';
 import { activeId, activeProfile, deleteStoredState, freshState, loadState, profiles, saveProfiles, saveState, setState, state, takeDeviceSettings, writeStoredState } from './state.js';
 import { closeModal, onNextClose, openModal, toast } from './ui.js';
+import { playerGrade, topRank } from './stats.js';
 import { dayKey, escapeHtml } from './util.js';
 
 export const AVATARS = ['🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐵', '🦄', '🐙', '🐧', '🐢', '🐝'];
@@ -17,13 +18,13 @@ export function renderProfileChip(){
   const chip = document.getElementById('btn-profile');
   if (!chip) return;
   const p = activeProfile();
-  chip.hidden = !multi();
+  // игрок в шапке виден всегда (эскиз v2): герой в рамке своего цвета, имя, звание
   const hero = playerHero(state);
   const av = document.getElementById('pf-avatar');
-  av.innerHTML = heroPic(hero, 'happy');
+  av.innerHTML = heroPic(hero, 'full');
   av.style.setProperty('--hero-color', hero.color);
   document.getElementById('pf-name').textContent = p.name;
-  chip.setAttribute('aria-label', `Сейчас занимается ${p.name}. Сменить ученика`);
+  chip.setAttribute('aria-label', `Играет ${p.name}, герой ${hero.name}. ${multi() ? 'Сменить игрока' : 'Кто играет?'}`);
   document.dispatchEvent(new Event('eq:profile'));   // кнопка «Войти» в шапке показывает, кто вошёл
 }
 document.addEventListener('eq:hero', () => renderProfileChip());
@@ -45,26 +46,39 @@ async function brief(p){
   const s = p.id === activeId() ? state : await loadState(p.id);
   const today = s.activity?.[dayKey()] || { sec: 0 };
   const goal = [5, 10, 15, 20].includes(s.settings?.dailyGoal) ? s.settings.dailyGoal : 10;
-  return { level: levelFromXp(s.xp || 0), xp: s.xp || 0, min: Math.floor(today.sec / 60), goal, met: !!today.goalMet, hero: playerHero(s) };
+  const grade = playerGrade(s), region = regionOfGrade(grade), rank = topRank(s);
+  return { level: levelFromXp(s.xp || 0), xp: s.xp || 0, min: Math.floor(today.sec / 60), goal, met: !!today.goalMet, hero: playerHero(s),
+    grade, region, rank, rankRegion: rank && REGIONS.find(r => r.id === rank.region) };
 }
 
-// «Кто играет?» — крупные карточки с героем-аватаром, выбор одним нажатием, без PIN.
+// «Кто играет?» (эскиз 30): крупные карточки — герой в рамке своего цвета, имя, класс и регион, звание, уровень.
+// Выбор одним нажатием, без PIN. «Новый игрок» и «Для взрослых» — в разделе под PIN.
 // onPick(id) после выбора; note — пояснение сверху
 export async function openProfileChooser({ note = '', onPick } = {}){
   const cards = await Promise.all(profiles.list.map(async p => ({ p, b: await brief(p) })));
+  const harlow = CHARACTERS.harlow;
   openModal(`
-    <h2>Кто играет?</h2>
+    <h2 class="who-title">Кто играет?</h2>
+    <div class="who-hello">
+      <span class="who-guide">${heroPic(harlow, 'happy')}</span>
+      <p class="who-bubble">Привет! Нажми на себя — и вперёд за новыми квестами.</p>
+    </div>
     ${note ? `<p class="pf-note">${escapeHtml(note)}</p>` : ''}
     <div class="pf-grid">
       ${cards.map(({ p, b }) => `
-        <button class="pf-card${p.id === activeId() ? ' current' : ''}" data-id="${escapeHtml(p.id)}" aria-label="${escapeHtml(`${p.name}, герой ${b.hero.name}, уровень ${b.level}`)}">
-          <span class="pf-hero" style="--hero-color:${b.hero.color}">${heroPic(b.hero, 'happy')}</span>
-          <span class="pf-name">${escapeHtml(p.name)}</span>
-          <span class="pf-sub">Уровень ${b.level} · ${b.xp} XP</span>
-          <span class="pf-sub">${b.met ? '🎯 цель дня выполнена' : `🎯 ${b.min} / ${b.goal} мин`}</span>
+        <button class="pf-card${p.id === activeId() ? ' current' : ''}" data-id="${escapeHtml(p.id)}"
+          aria-label="${escapeHtml(`${p.name}, герой ${b.hero.name}, ${b.grade} класс, ${b.region?.name || ''}, ${b.rank ? `звание ${b.rank.title}, ` : ''}уровень ${b.level}`)}">
+          <span class="pf-hero" style="--hero-color:${b.hero.color}">${heroPic(b.hero, 'full')}</span>
+          <span class="pf-info">
+            <span class="pf-name">${escapeHtml(p.name)}</span>
+            <span class="pf-sub">${b.grade} класс · ${escapeHtml(b.region?.name || '')}</span>
+            <span class="pf-rank" style="--region-color:${b.rankRegion?.color || 'var(--locked)'}">${escapeHtml(b.rank ? b.rank.title : 'Новичок')}</span>
+          </span>
+          <span class="lvl-badge">L${b.level}</span>
         </button>`).join('')}
     </div>
-    <p class="t-muted pf-hint">Добавить ученика можно в панели «Для репетитора и родителей».</p>
+    <button class="pf-new" id="pf-new" type="button">＋ Новый игрок <span aria-hidden="true">🔒</span></button>
+    <button class="pf-adults" id="pf-adults" type="button"><span aria-hidden="true">🔒</span> Для взрослых</button>
   `);
   let picked = false;
   document.querySelectorAll('.pf-card').forEach(btn => btn.onclick = async () => {
@@ -74,6 +88,10 @@ export async function openProfileChooser({ note = '', onPick } = {}){
     await switchProfile(id);
     onPick?.(id);
   });
+  // добавить ученика и всё взрослое — в панели под PIN
+  const adults = () => { closeModal(); document.getElementById('btn-tutor')?.click(); };
+  document.getElementById('pf-new').onclick = adults;
+  document.getElementById('pf-adults').onclick = adults;
   onNextClose(() => { if (!picked) onPick?.(activeId()); });
 }
 

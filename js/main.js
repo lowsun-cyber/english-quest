@@ -19,6 +19,7 @@ import './worksheet.js';
 import './lock.js';
 import './profiles.js';
 import './cloud.js';
+import './nav.js';
 import { applyFreezes, openFreezeInfo, renderGoal } from './activity.js';
 import { CHARACTERS, HARLOW_LINES } from './eq.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';

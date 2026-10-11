@@ -38,7 +38,7 @@ export function renderSecret(wrap, region, onChange){
       ${S.locations.map(({ loc, res, passed, lock }, i) => {
         const r = rarityOf(loc.rarity);
         const status = lock ? `🔒 ${lock}` : passed ? `✓ пройдено · лучший ${res.best}%` : res ? `лучший ${res.best}% · нужно ${QUEST_PASS_PCT}%` : `${loc.size} вопросов · приз: 💠 ${loc.crystals}`;
-        return `<li><button class="quest-card secret-loc rarity-${loc.rarity}${passed ? ' done' : ''}${lock ? ' locked' : ''}" data-loc="${i}" style="--rarity:${r.color}"
+        return `<li><button class="quest-card secret-loc rarity-${loc.rarity}${passed ? ' done' : ''}${lock ? ' locked' : ''}" data-loc="${i}" style="--rarity:${r.color}; --rarity-pill:${r.pill}"
             aria-label="${escapeHtml(`${loc.title}. ${r.title}${loc.boss ? ', босс' : ''}. ${status}`)}">
           <span class="quest-rarity">${r.title}${loc.boss ? ' · босс' : ''}</span>
           <span class="hub-em" aria-hidden="true">${lock ? '🔒' : loc.emoji}</span>
