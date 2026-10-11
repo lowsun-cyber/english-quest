@@ -509,14 +509,18 @@ try {
 
   await test('несколько учеников', () => js(`
     const f = id => document.getElementById(id);
-    if (__shown(f('btn-profile'))) throw new Error('чип виден при одном ученике');
+    // игрок в шапке виден всегда (дизайн v2); при одном ученике «Кто играет?» показывает одну карточку
+    if (!__shown(f('btn-profile'))) throw new Error('нет игрока в шапке');
+    f('btn-profile').click(); await __sleep(300);
+    if (document.querySelectorAll('.pf-card').length !== 1 || !document.querySelector('#pf-new') || !document.querySelector('#pf-adults')) throw new Error('«Кто играет?» при одном ученике');
+    __close(); await __sleep(100);
     const mainXp = __ls().xp;
     await __gate('1357');
     f('pf-add-name').value = 'Маша <b>'; document.querySelector('input[name=pf-av][value="🐼"]').checked = true;
     f('pf-add').requestSubmit(); await __sleep(400);
     const idx = JSON.parse(localStorage.getItem('english_quest_profiles'));
     if (idx.list.length !== 2) throw new Error('учеников: ' + idx.list.length);
-    if (!__shown(f('btn-profile'))) throw new Error('чип не появился');
+
     document.querySelector('.pf-list [data-act=switch]').click(); await __sleep(500);
     if (!/Маша/.test(f('pf-name').textContent) || document.querySelector('#pf-name b')) throw new Error('не переключилось или имя не экранировано: ' + f('pf-name').innerHTML);
     if (f('stat-xp').textContent !== '0') throw new Error('у нового ученика XP ' + f('stat-xp').textContent);
@@ -534,7 +538,7 @@ try {
     const note = document.querySelector('.pf-note')?.textContent || '';
     if (!/домашнее задание/.test(note)) throw new Error('при запуске не спросили, для кого задание');
     const masha = [...document.querySelectorAll('.pf-card')].find(c => /Маша/.test(c.textContent));
-    if (!/Уровень \\d+ · \\d+ XP/.test(masha.textContent)) throw new Error('на карточке нет уровня: ' + masha.textContent);
+    if (!/L\\d+/.test(masha.textContent) || !/\\d класс · /.test(masha.textContent) || !masha.querySelector('.pf-rank')) throw new Error('на карточке нет уровня, класса или звания: ' + masha.textContent);
     masha.click(); await __sleep(600);
     if (f('homework-sec').hidden) throw new Error('задание не пришло Маше');
     const idx = JSON.parse(localStorage.getItem('english_quest_profiles'));
@@ -548,7 +552,7 @@ try {
     if (after.list.length !== 1) throw new Error('не удалилось');
     if (localStorage.getItem('english_quest_v2__' + idx.list.find(p => /Маша/.test(p.name)).id)) throw new Error('данные Маши остались');
     __close(); await __sleep(100);
-    if (__shown(f('btn-profile'))) throw new Error('чип остался после удаления');
+    if (JSON.parse(localStorage.getItem('english_quest_profiles')).list.length !== 1) throw new Error('ученик не удалился');
     return 'раздельный прогресс, выбор при запуске, задание — выбранному, удаление';`)));
 
   await test('регионы и звания: старый прогресс, новое звание', () => js(`
@@ -621,7 +625,7 @@ try {
     if (!/Кто играет\\?/.test(document.querySelector('#modal h2')?.textContent || '')) throw new Error('при запуске нет «Кто играет?»');
     const cards = [...document.querySelectorAll('.pf-card')];
     if (cards.length !== 2 || cards.some(c => !c.querySelector('.pf-hero .hero-img'))) throw new Error('на карточках нет героев');
-    if (!/luna-happy/.test(cards.find(c => !/Петя/.test(c.textContent)).querySelector('.hero-img').src)) throw new Error('у первого ученика не его герой');
+    if (!/\\/luna\\.svg$/.test(cards.find(c => !/Петя/.test(c.textContent)).querySelector('.hero-img').src)) throw new Error('у первого ученика не его герой');
     cards.find(c => /Петя/.test(c.textContent)).click(); await __sleep(600);
     if (document.querySelector('.gate-q')) throw new Error('спросили PIN');
     if (!/harlow/.test(f('pf-avatar').querySelector('img')?.src || '')) throw new Error('у нового ученика не герой по умолчанию');
@@ -993,6 +997,34 @@ try {
     const back = JSON.parse(saved); state.quests = back.q; state.lessonProgress = back.lp; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null;
     await saveState();
     return '«Новое» на карте и доске, квест на вопросах пакета 4/4, результат отдельно, прогресс «Грамматики» не тронут';`)));
+
+  await test('дизайн v2: шапка игрока, нижнее меню, редкость', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), M = await import('./js/mistakes.js');
+    // шапка: герой в рамке своего цвета, имя, звание, уровень, монеты
+    if (!f('pf-avatar').querySelector('.hero-img') || !f('pf-name').textContent || !f('hud-rank').textContent || !/^L\\d+$/.test(f('level-badge').textContent)) throw new Error('шапка игрока');
+    if (f('stat-gold').textContent !== String(state.gold)) throw new Error('монеты в шапке');
+    // нижнее меню: четыре раздела, «Сундук» прокручивает к достижениям, «Клиника» пока «скоро»
+    const items = [...document.querySelectorAll('#bottom-nav [data-nav]')].map(x => x.dataset.nav).join(',');
+    if (items !== 'map,clinic,chest,mistakes') throw new Error('меню: ' + items);
+    document.querySelector('#bottom-nav [data-nav=chest]').click();
+    for (let i = 0, y = -1; i < 30 && y !== scrollY; i++){ y = scrollY; await __sleep(150); }   // ждём конца плавной прокрутки
+    const top = f('ach-sec').getBoundingClientRect().top;
+    if (top < -5 || top > innerHeight - 120 || document.querySelector('#bottom-nav [aria-current]')?.dataset.nav !== 'chest') throw new Error('«Сундук»: раздел на ' + Math.round(top) + ' px, подсвечено ' + document.querySelector('#bottom-nav [aria-current]')?.dataset.nav);
+    __toasts.length = 0; document.querySelector('#bottom-nav [data-nav=clinic]').click(); await __sleep(150);
+    if (!__toasts.some(t => /Клиника/.test(t))) throw new Error('«Клиника» молчит');
+    // значок «Ошибки» — сколько ждут повторения
+    const saved = JSON.stringify(state.mistakes), L = window.EQ.LESSONS[0];
+    state.mistakes = { ['word:' + L.id + ':' + L.words[0].en]: { type: 'word', lessonId: L.id, ref: L.words[0].en, wrong: 1, box: 0, due: Date.now() - 1000, last: Date.now() } };
+    await saveState(); M.renderMistakes();
+    if (f('nav-due').hidden || f('nav-due').textContent !== '1') throw new Error('значок ошибок: ' + f('nav-due').textContent);
+    state.mistakes = JSON.parse(saved); await saveState(); M.renderMistakes();
+    // табличка редкости — светлый фон и тёмный текст (токены --rarity-*)
+    (await import('./js/map.js')).openLessonHub(L); await __sleep(200);
+    const pill = getComputedStyle(document.querySelector('.quest-card[data-ex=spell] .quest-rarity'));
+    if (pill.color !== 'rgb(28, 43, 26)' || pill.backgroundColor !== 'rgb(140, 200, 240)') throw new Error('редкий: ' + pill.color + ' на ' + pill.backgroundColor);
+    __close();
+    return 'шапка, меню (Сундук, Клиника «скоро», значок ошибок), таблички редкости';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {

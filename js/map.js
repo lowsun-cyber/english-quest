@@ -183,7 +183,7 @@ export function openLessonHub(lesson){
     const [em, ...rest] = questTitle(lesson, q.kind).split(' '), fresh = questIsNew(lesson, q.kind, state);
     const status = lock ? `🔒 ${lock}` : passed ? `✓ пройден · лучший ${res.best}%` : res ? `лучший ${res.best}% · нужно ${QUEST_PASS_PCT}%` : p[q.kind] ? '✓ сделано' : q === next ? 'начни здесь' : '';
     const prize = passed ? 'награда получена' : `приз: ${r.coins ? `+${r.xp} XP, +${r.coins} 🪙` : r.prize}`;
-    return `<button class="hub-ex quest-card rarity-${q.rarity}${passed || p[q.kind] ? ' done' : ''}${q === next ? ' next' : ''}${lock ? ' locked' : ''}" data-ex="${q.kind}" style="--rarity:${r.color}"
+    return `<button class="hub-ex quest-card rarity-${q.rarity}${passed || p[q.kind] ? ' done' : ''}${q === next ? ' next' : ''}${lock ? ' locked' : ''}" data-ex="${q.kind}" style="--rarity:${r.color}; --rarity-pill:${r.pill}"
         aria-label="${escapeHtml(`${rest.join(' ')}. ${fresh ? 'Новое! ' : ''}${r.title} квест. ${status || prize}`)}">
       <span class="quest-rarity">${r.title}</span>${fresh ? '<span class="new-badge">Новое</span>' : ''}
       <span class="hub-em" aria-hidden="true">${lock ? '🔒' : em}</span>

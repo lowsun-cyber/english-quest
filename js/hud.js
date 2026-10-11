@@ -41,6 +41,8 @@ export function renderHUD(){
   rt.textContent = rk ? `${rk.emoji} ${rk.title}` : '🌱 Новичок';
   rt.style.setProperty('--rank-color', rk ? rk.color : 'var(--grass-3)');
   rt.setAttribute('aria-label', `${rk ? `Звание: ${rk.title}` : 'Звания пока нет'}. Показать все звания`);
+  const hr = document.getElementById('hud-rank');   // звание под именем игрока в шапке
+  if (hr) hr.textContent = rk ? rk.title : 'Новичок';
   celebrateRanks();
   checkAchievements();
   document.getElementById('level-progress').style.width = pct + '%';
