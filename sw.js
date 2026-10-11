@@ -5,14 +5,14 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v23';
+const SHELL_CACHE = 'eq-shell-v24';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
 
 const SHELL = [
   './', 'index.html', 'how-to.html', 'privacy.html', 'teacher.html', 'admin/', 'admin/index.html', 'base.css', 'style.css', 'content.js', 'packs.js', 'translations.js',
-  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js', 'js/lock.js', 'js/profiles.js', 'js/speech.js', 'js/howto.js', 'js/config.js', 'js/api.js', 'js/merge.js', 'js/cloud.js', 'js/stats.js', 'js/admin.js', 'js/admin-pdf.js', 'js/dictionary.js', 'js/dict-data.js', 'js/heroes.js', 'js/why.js', 'js/quests.js', 'js/achievements.js', 'js/revenge.js', 'js/mines.js', 'js/nav.js', 'js/path.js',
+  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js', 'js/lock.js', 'js/profiles.js', 'js/speech.js', 'js/howto.js', 'js/config.js', 'js/api.js', 'js/merge.js', 'js/cloud.js', 'js/stats.js', 'js/admin.js', 'js/admin-pdf.js', 'js/dictionary.js', 'js/dict-data.js', 'js/heroes.js', 'js/why.js', 'js/quests.js', 'js/achievements.js', 'js/revenge.js', 'js/mines.js', 'js/nav.js', 'js/path.js', 'js/scene.js',
   'tts_manifest.json', 'tts_voices.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   // рисунки героев: полный рост и 4 эмоции (см. CHARACTERS в content.js)

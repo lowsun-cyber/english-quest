@@ -481,36 +481,10 @@ section { margin-top: 32px; }
 .path-count { font-size: 14px; font-weight: 800; }
 
 /* ==== ЭКРАН ТЕМЫ ==== */
-.hub-progress { margin-top: 14px; font-weight: 700; color: var(--ink-2); }
-.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
-.hub-ex {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  min-height: 104px; padding: 10px 8px;
-  background: #fff; color: var(--ink);
-  border: 3px solid var(--line); border-radius: 14px;
-  box-shadow: 0 4px 0 var(--line);
-}
-[data-theme="dark"] .hub-ex { background: #263849; }
-.hub-ex:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
-.hub-ex.done { background: #d9f5de; }
-[data-theme="dark"] .hub-ex.done { background: #24452d; }
-.hub-ex.next { outline: 4px solid var(--diamond); outline-offset: 2px; }
-.hub-em { font-size: 32px; }
-.hub-name { font-weight: 800; font-size: 16px; }
-.hub-state { font-size: 12px; color: var(--muted); min-height: 1.3em; }
-.hub-ex.next .hub-state { color: var(--diamond-2); font-weight: 700; }
-[data-theme="dark"] .hub-ex.next .hub-state { color: var(--diamond-3); }
 /* доска квестов: рамка цвета редкости, приз виден заранее */
-.quest-card { position: relative; border-color: var(--rarity); border-width: 4px; padding-top: 22px; }
-.quest-rarity { position: absolute; top: -2px; left: -2px; padding: 2px 8px; border-radius: 10px 0 10px 0; background: var(--rarity-pill, var(--rarity)); color: var(--on-color); border-right: 2px solid var(--line); border-bottom: 2px solid var(--line); font-size: 12px; font-weight: 800; }
-.quest-prize { font-size: 12px; font-weight: 700; color: var(--ink-2); }
-.quest-card.locked { background: var(--locked); }
-.quest-card.locked .hub-name, .quest-card.locked .hub-em { opacity: .6; }
-.quest-card.locked .hub-state { color: var(--ink-2); }
 .quest-legend { margin-top: 10px; font-size: 13px; }
 /* «Новое» — тема или квест из пакета локации (14 дней) */
 .new-badge { position: absolute; top: -10px; right: -6px; padding: 2px 8px; border: 2px solid var(--line); border-radius: var(--radius-pill); background: var(--lava); color: #1c2b1a; font-size: 12px; font-weight: 800; transform: rotate(4deg); }
-@media (max-width: 480px){ .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .quest-card { padding-left: 4px; padding-right: 4px; } .hub-name { font-size: 15px; } }
 .quest-result { margin: 6px 0 0; padding: 8px 12px; border: 3px solid var(--rarity, var(--line)); border-radius: 12px; background: var(--surface); }
 /* боссы на месте проверок — легендарная рамка */
 /* сундук достижений */
@@ -560,10 +534,6 @@ section { margin-top: 32px; }
 .secret-head { align-items: center; flex-wrap: nowrap; gap: 12px; }
 .secret-text { display: flex; flex-direction: column; gap: 4px; }
 .secret-guide { flex-shrink: 0; width: 72px; height: 72px; border: 2px solid var(--line); border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--hero-color) 22%, var(--surface)); }
-.secret-locs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
-.secret-loc { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; min-height: 130px; padding: 24px 8px 10px; font: inherit; color: var(--ink); background: var(--surface); border-radius: 14px; box-shadow: 0 4px 0 var(--line); border-style: solid; cursor: pointer; }
-.secret-loc.done { background: #d9f5de; }
-[data-theme="dark"] .secret-loc.done { background: #24452d; }
 @media (max-width: 480px){ .secret-locs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .secret-guide { width: 56px; height: 56px; } }
 
 /* ==== КАРТОЧКИ ==== */
@@ -1609,3 +1579,38 @@ body.drawer-open { overflow: hidden; }
 section[id$="-sec"] { scroll-margin-top: 96px; }
 @media (max-width: 720px){ section[id$="-sec"] { scroll-margin-top: 12px; } }
 .guide-bubble { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+
+/* ==== СЦЕНА ЛОКАЦИИ (STYLE.md §6, эскизы 32 и 40) ==== */
+.scene-progress { display: flex; align-items: center; gap: 10px; margin: 12px 0 8px; font-weight: 800; }
+.scene-bar { flex: 1; height: 14px; background: var(--surface); border: 3px solid var(--line); border-radius: var(--radius-pill); overflow: hidden; }
+.scene-bar i { display: block; height: 100%; background: var(--grass); }
+.scene { position: relative; max-width: 560px; margin: 0 auto; aspect-ratio: 360 / 320; border: 3px solid var(--line); border-radius: 6px; box-shadow: var(--shadow-hard); overflow: hidden; background: #cfe9f6; }
+.scene-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+[data-theme="dark"] .scene-art { filter: brightness(.88); }
+.scene-plate { position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; flex-direction: column; padding: 4px 10px; background: #fffdf6; color: #1c2b1a;
+  border: 3px solid var(--line); border-radius: 4px; box-shadow: 3px 3px 0 var(--line); max-width: 60%; }
+.scene-plate span { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--diamond-2); }
+.scene-plate b { font-size: 16px; font-weight: 800; line-height: 1.1; }
+/* метка квеста: круг 50 px цвета редкости; закрыта — серая с рамкой цвета редкости; выбрана — двойное кольцо */
+.hub-ex.scene-mark { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: clamp(44px, 13.9%, 50px); height: auto; aspect-ratio: 1; min-height: 0; padding: 0;
+  display: flex; align-items: center; justify-content: center; gap: 0; border: 4px solid var(--line); border-radius: 50%;
+  background: var(--rarity); color: #1c2b1a; font: 800 clamp(15px, 4.5vw, 20px) var(--font-body); box-shadow: 3px 3px 0 var(--line); cursor: pointer; }
+@media (max-width: 480px){ .hub-ex.scene-mark { border-width: 3px; } .hub-ex.scene-mark svg { width: 16px; height: 16px; } .modal .scene { margin-left: -14px; margin-right: -14px; } }
+.hub-ex.scene-mark.locked { background: var(--locked); border-color: var(--rarity); }
+.hub-ex.scene-mark.sel { box-shadow: 0 0 0 4px #fffdf6, 0 0 0 7px var(--line); }
+.hub-ex.scene-mark:focus-visible { outline: 3px solid var(--diamond); outline-offset: 6px; }
+.hub-ex.scene-mark:active { transform: translate(-50%, -50%) scale(.94); }
+.scene-mark .new-badge { top: -14px; right: -18px; }
+.scene-card { max-width: 560px; margin: 12px auto 0; box-sizing: border-box; padding: 12px 14px; background: var(--surface); border: 3px solid var(--line); border-radius: 6px; box-shadow: var(--shadow-hard); display: flex; flex-direction: column; gap: 4px; }
+.scene-card-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.quest-pill { padding: 2px 10px; background: var(--rarity-pill); color: #1c2b1a; border: 2px solid var(--line); border-radius: var(--radius-pill); font-size: 12px; font-weight: 800; }
+.scene-card-place { font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.scene-card-title { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.scene-card-what { font-size: 16px; font-weight: 600; color: var(--ink-2); }
+.scene-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.scene-card-prize { font-size: 15px; font-weight: 800; }
+.scene-card .btn { font-family: var(--font-body); font-size: 19px; font-weight: 800; min-height: 48px; }
+.scene-lock { padding: 6px 10px; background: #eef1ef; color: #3a4a38; border-radius: 6px; font-size: 14px; font-weight: 700; flex: 1 1 100%; }
+.scene-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; padding: 0; font-size: 13px; font-weight: 700; }
+.scene-legend li { display: flex; align-items: center; gap: 6px; }
+.scene-legend li::before { content: ''; width: 12px; height: 12px; border: 2px solid var(--line); border-radius: 3px; background: var(--rarity); }
