@@ -9,26 +9,27 @@ import { afterFeedback, closeModal, confetti, openModal } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
 
-// === Проверка после части: 10 вопросов по 4 темам ===
-export function startCheckpoint(cp){
-  const words = cp.lessons.flatMap(l => l.words.map(w => ({ w, l })));
-  const grammar = cp.lessons.flatMap(l => l.grammar.map(q => ({ q, l })));
+// === Смешанная викторина по темам: проверки-боссы и «Шахты» ===
+// mix — сколько вопросов каждого вида: { word, listen, grammar }; недостающие добираются словами.
+// onFinish(right, total) рисует итог.
+export function runQuiz({ header, lessons, size, mix, onFinish }){
+  const words = lessons.flatMap(l => l.words.map(w => ({ w, l })));
+  const grammar = lessons.flatMap(l => l.grammar.map(q => ({ q, l })));
   const picked = shuffle(words);
+  let at = 0;
+  const take = n => picked.slice(at, at += n);
   let qs = [
-    ...picked.slice(0, 4).map(x => ({ type: 'word', ...x })),
-    ...picked.slice(4, 7).map(x => ({ type: 'listen', ...x })),
-    ...shuffle(grammar).slice(0, 3).map(x => ({ type: 'grammar', ...x })),
+    ...take(mix.word || 0).map(x => ({ type: 'word', ...x })),
+    ...take(mix.listen || 0).map(x => ({ type: 'listen', ...x })),
+    ...shuffle(grammar).slice(0, mix.grammar || 0).map(x => ({ type: 'grammar', ...x })),
   ];
-  qs = qs.concat(picked.slice(7, 7 + CHECKPOINT_SIZE - qs.length).map(x => ({ type: 'word', ...x })));
-  const queue = shuffle(qs).slice(0, CHECKPOINT_SIZE);
+  qs = qs.concat(take(size - qs.length).map(x => ({ type: 'word', ...x })));
+  const queue = shuffle(qs).slice(0, size);
   let idx = 0, right = 0;
-  const header = `
-    <h2>${cp.emoji} ${escapeHtml(cp.title)}</h2>
-    <div class="lead">Темы: ${cp.lessons.map(l => escapeHtml(l.title)).join(', ')}. Нужно ${CHECKPOINT_PASS} из ${queue.length}.</div>`;
   render();
 
   function render(){
-    if (idx >= queue.length) return finish();
+    if (idx >= queue.length) return onFinish(right, queue.length);
     const item = queue[idx];
     let body, options, answer, say;
     const others = n => distractors(item.w, words.map(x => x.w), n).map(w => ({ w }));
@@ -82,8 +83,16 @@ export function startCheckpoint(cp){
       };
     });
   }
+}
 
-  function finish(){
+// === Проверка-босс после части: 10 вопросов по 4 темам ===
+export function startCheckpoint(cp){
+  const header = `
+    <h2>${cp.emoji} ${escapeHtml(cp.title)}</h2>
+    <div class="lead">Темы: ${cp.lessons.map(l => escapeHtml(l.title)).join(', ')}. Нужно ${CHECKPOINT_PASS} из ${CHECKPOINT_SIZE}.</div>`;
+  runQuiz({ header, lessons: cp.lessons, size: CHECKPOINT_SIZE, mix: { word: 4, listen: 3, grammar: 3 }, onFinish: finish });
+
+  function finish(right, total){
     const prev = state.checkpoints[cp.id] || {};
     const passed = right >= CHECKPOINT_PASS;
     const firstPass = passed && !prev.passedAt;
@@ -99,7 +108,7 @@ export function startCheckpoint(cp){
       <div class="question checkpoint-result ${passed ? 'pass' : 'fail'}">
         <span class="cp-big" aria-hidden="true">${passed ? cp.emoji : '💪'}</span>
         <h3>${passed ? 'Босс побеждён! Проверка сдана!' : 'Почти получилось'}</h3>
-        <p>Верно: <b>${right}</b> из ${queue.length}.${passed ? '' : ` Нужно ${CHECKPOINT_PASS}.`}</p>
+        <p>Верно: <b>${right}</b> из ${total}.${passed ? '' : ` Нужно ${CHECKPOINT_PASS}.`}</p>
         ${firstPass ? `<p>Награда: ${cp.emoji} в инвентаре и +50 XP.${nextLesson ? ` Открыта тема «${escapeHtml(nextLesson.title)}».` : ''}</p>` : ''}
         ${!passed ? '<p>Ошибки попали в «Мои ошибки» — повтори их и попробуй снова.</p>' : ''}
       </div>

@@ -2479,6 +2479,23 @@ function taskTypeFor(kind, grade){
   return CURRICULUM.taskTypes.find(t => t.grade === grade && t.kinds.includes(kind))?.code || null;
 }
 
+// ---------- СЕКРЕТНЫЕ РЕГИОНЫ ----------
+// Описаны данными: название, условие открытия, локации. До открытия на карте — туман, «???» и счётчик.
+// Квесты локаций — смешанные вопросы по пройденным темам (mix: сколько вопросов каждого вида),
+// все эпические и легендарные; награда — кристаллы для клиники (итерация 4) и опыт с монетами — один раз.
+// Названия локаций — предложение для обсуждения с сыном, менять можно здесь же.
+const SECRET_REGIONS = [
+  { id: 'mines', name: 'Шахты', emoji: '⛏️', color: '#4a5a68', guide: 'max',
+    unlock: { rare: 10 },   // 10 редких квестов на 80% в любых регионах
+    intro: 'Тайный вход открыт! Здесь, под землёй, прячутся кристаллы. Ответь на мои вопросы по всем пройденным темам — и они твои.',
+    locations: [
+      { id: 'entry', title: 'Входная штольня', emoji: '🔦', rarity: 'epic', size: 8, mix: { word: 4, listen: 4 }, crystals: 3 },
+      { id: 'cave', title: 'Кристальная пещера', emoji: '💎', rarity: 'epic', size: 8, mix: { word: 4, grammar: 4 }, crystals: 3 },
+      { id: 'lake', title: 'Подземное озеро', emoji: '🌊', rarity: 'epic', size: 8, mix: { listen: 6, grammar: 2 }, crystals: 3 },
+      { id: 'deep', title: 'Глубокий забой', emoji: '⛏️', rarity: 'legendary', size: 12, mix: { word: 4, listen: 4, grammar: 4 }, crystals: 10, boss: true },
+    ] },
+];
+
 // ---------- КВЕСТЫ: РЕДКОСТЬ И ДОСТИЖЕНИЯ ----------
 // Квест — упражнение темы. Редкость — по типу задания из карты программы (CURRICULUM.taskTypes),
 // а если тип для упражнения в этом классе не задан — по формату (концепция v2): узнавание — обычный,
@@ -2515,6 +2532,7 @@ const ACHIEVEMENTS = [
   { id: 'cloak-expedition', title: 'Плащ Большой экспедиции', emoji: '🧭', rarity: 'epic', text: 'Получи звание «Легенда English Quest»', when: { rank: ['expedition', 4] } },
   { id: 'first-boss', title: 'Победитель босса', emoji: '🐉', rarity: 'legendary', text: 'Победи босса региона', when: { bosses: 1 } },
   { id: 'bosses-all', title: 'Гроза боссов', emoji: '👑', rarity: 'legendary', text: 'Победи всех боссов во всех регионах', when: { bosses: 'all' } },
+  { id: 'mines-boss', title: 'Бриллиантовый топор', emoji: '🪓', rarity: 'legendary', text: 'Победи босса в Глубоком забое', when: { minesBoss: 1 }, secret: true },
   { id: 'rare-10', title: 'Кристальный ключ', emoji: '💠', rarity: 'legendary', text: 'Пройди 10 редких квестов — откроется тайное место', when: { rare: 10 }, secret: true },
 ];
 
@@ -2524,7 +2542,7 @@ window.EQ = {
   LESSONS,
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
   REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES,
-  QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS,
+  QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, SECRET_REGIONS,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

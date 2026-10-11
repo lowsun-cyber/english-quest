@@ -533,6 +533,29 @@ section { margin-top: 32px; }
 .revenge-banner:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
 .revenge-soon { font-size: 13px; align-self: center; }
 .options.options-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* секретный регион: туман и счётчик, потом локации */
+.grade-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 820px; }
+@media (max-width: 480px){ .grade-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.grade-tabs .tab-secret { background: #d7dde2; border-style: dashed; }
+.grade-tabs .tab-secret.active { background: #4a5a68; color: #fff; border-style: solid; }
+.grade-tabs .tab-secret.active small { color: #e6ecf0; }
+[data-theme="dark"] .grade-tabs .tab-secret { background: #2b3a48; }
+.secret-fog { position: relative; overflow: hidden; text-align: center; padding: 28px 18px; border: 3px dashed var(--line); border-radius: 18px; color: var(--ink);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.75), transparent 45%), radial-gradient(circle at 70% 60%, rgba(255,255,255,.6), transparent 40%), #c9d3d9; }
+[data-theme="dark"] .secret-fog { background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.12), transparent 45%), #22303d; }
+.fog-q { display: block; font-size: 64px; line-height: 1; }
+.secret-fog h3 { margin: 8px 0 4px; }
+.fog-bar { height: 16px; max-width: 320px; margin: 10px auto 4px; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius-pill); overflow: hidden; }
+.fog-bar span { display: block; height: 100%; background: var(--diamond); }
+.fog-count { font-size: 17px; }
+.secret-head { align-items: center; flex-wrap: nowrap; gap: 12px; }
+.secret-text { display: flex; flex-direction: column; gap: 4px; }
+.secret-guide { flex-shrink: 0; width: 72px; height: 72px; border: 2px solid var(--line); border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--hero-color) 22%, var(--surface)); }
+.secret-locs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.secret-loc { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; min-height: 130px; padding: 24px 8px 10px; font: inherit; color: var(--ink); background: var(--surface); border-radius: 14px; box-shadow: 0 4px 0 var(--line); border-style: solid; cursor: pointer; }
+.secret-loc.done { background: #d9f5de; }
+[data-theme="dark"] .secret-loc.done { background: #24452d; }
+@media (max-width: 480px){ .secret-locs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .secret-guide { width: 56px; height: 56px; } }
 
 /* ==== КАРТОЧКИ ==== */
 .flash {

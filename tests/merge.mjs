@@ -154,6 +154,7 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('квест с другого устройства', m.quests['a:listen']?.best === 100);
   check('достижения: объединение, время — самое раннее', same(m.achievements, { 'first-quest': 150, 'goal-1': 120 }), m.achievements);
   check('реванши складываются', M(S({ revengeWins: 1 }), S({ revengeWins: 2 }), S({ revengeWins: 3 })).revengeWins === 4);
+  check('кристаллы складываются', M(S({ crystals: 3 }), S({ crystals: 6 }), S({ crystals: 13 })).crystals === 16);
 }
 
 console.log(`\n${total - fail} из ${total} проверок объединения прошли`);

@@ -1,14 +1,15 @@
 // English Quest — Карта уровней и экран темы.
 import { startCheckpoint } from './checkpoint.js';
-import { CHARACTERS, LESSONS, QUEST_PASS_PCT, regionOfGrade } from './eq.js';
+import { CHARACTERS, LESSONS, QUEST_PASS_PCT, SECRET_REGIONS, regionOfGrade } from './eq.js';
 import { lessonHeader, startExercise } from './exercises.js';
+import { renderSecret } from './mines.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, questKey, questLock, questPassed, rarityOf, regionRanks, revengeItems, revengeReady, skillStats } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, questKey, questLock, questPassed, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillStats } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -62,7 +63,15 @@ export function renderMap(){
   const wrap = document.getElementById('lessons');
   if (!wrap) return;
   const grade = mapGrade();
-  document.querySelectorAll('#grade-tabs .tab').forEach(t => {
+  const secret = SECRET_REGIONS.find(r => r.id === state.settings.mapView);
+  document.querySelectorAll('#grade-tabs .tab[data-secret]').forEach(t => {
+    const r = SECRET_REGIONS.find(x => x.id === t.dataset.secret), open = r && secretRegionState(r, state).open;
+    t.innerHTML = open ? `<span aria-hidden="true">${r.emoji}</span> ${escapeHtml(r.name)} <small>секретный регион</small>` : '<span aria-hidden="true">❔</span> ??? <small>тайное место</small>';
+    t.classList.toggle('active', r === secret);
+    t.setAttribute('aria-pressed', r === secret ? 'true' : 'false');
+  });
+  if (secret){ renderSecret(wrap, secret, renderMap); updateContinue(); return; }
+  document.querySelectorAll('#grade-tabs .tab[data-grade]').forEach(t => {
     const on = +t.dataset.grade === grade, rg = regionOfGrade(+t.dataset.grade);
     if (rg) t.innerHTML = `<span aria-hidden="true">${rg.emoji}</span> ${rg.name} <small>${t.dataset.grade} класс</small>`;
     t.classList.toggle('active', on);
@@ -118,6 +127,8 @@ export function openNode(n){
 
 document.querySelectorAll('#grade-tabs .tab').forEach(t => {
   t.addEventListener('click', () => {
+    if (t.dataset.secret){ state.settings.mapView = t.dataset.secret; saveState(); renderMap(); return; }
+    state.settings.mapView = null;
     state.settings.mapGrade = +t.dataset.grade;
     saveState();
     renderMap();
