@@ -2570,7 +2570,7 @@ const SECRET_REGIONS = [
       { id: 'entry', title: 'Входная штольня', emoji: '🔦', img: 'assets/locations/mines-1-adit.svg', rarity: 'epic', size: 8, mix: { word: 4, listen: 4 }, crystals: 3 },
       { id: 'cave', title: 'Кристальная пещера', emoji: '💎', img: 'assets/locations/mines-2-crystals.svg', rarity: 'epic', size: 8, mix: { word: 4, grammar: 4 }, crystals: 3 },
       { id: 'lake', title: 'Подземное озеро', emoji: '🌊', img: 'assets/locations/mines-3-lake.svg', rarity: 'epic', size: 8, mix: { listen: 6, grammar: 2 }, crystals: 3 },
-      { id: 'deep', title: 'Глубокий забой', emoji: '⛏️', rarity: 'legendary', size: 12, mix: { word: 4, listen: 4, grammar: 4 }, crystals: 10, boss: true },
+      { id: 'deep', title: 'Глубокий забой', emoji: '⛏️', img: 'assets/locations/mines-boss.svg', rarity: 'legendary', size: 12, mix: { word: 4, listen: 4, grammar: 4 }, crystals: 10, boss: true },
     ] },
 ];
 
