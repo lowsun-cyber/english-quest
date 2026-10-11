@@ -2,7 +2,7 @@
 // Разметка контента по карте программы: у каждого урока модуль Spotlight, темы ФРП и CEFR,
 // у вопросов грамматики — существующий код навыка. Плюс сводка: сколько слов набрано к цели класса.
 //   node tests/curriculum.mjs
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import vm from 'node:vm';
 
@@ -10,6 +10,7 @@ const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const ctx = { window: {} };
 vm.createContext(ctx);
 vm.runInContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), ctx);
+if (existsSync(join(ROOT, 'packs.js'))) vm.runInContext(readFileSync(join(ROOT, 'packs.js'), 'utf8'), ctx);   // подключённые пакеты локаций — как на сайте
 const { LESSONS, CURRICULUM, SKILLS, taskTypeFor } = ctx.window.EQ;
 
 let fail = 0, total = 0;

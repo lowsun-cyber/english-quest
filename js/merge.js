@@ -102,6 +102,8 @@ const RULES = {
   errorTypes: addMap,
   revengeWins: add,
   crystals: add,
+  // { регион: полученный шаг звания } — максимум
+  rankSteps: (b, l, r) => { const out = {}; for (const k of keysOf(b, l, r)) out[k] = Math.max(n(l?.[k]), n(r?.[k])); return out; },
   // квесты: лучший результат, число прохождений складывается, первое прохождение — самое раннее, last — последнее изменение
   quests: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, {
     best: max, runs: add, at: max,

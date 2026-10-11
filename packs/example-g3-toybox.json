@@ -1,0 +1,26 @@
+{
+  "id": "example-g3-toybox",
+  "type": "quests",
+  "title": "Коробка с игрушками: this / these",
+  "addedAt": "2026-10-11",
+  "layer": "base",
+  "lessonId": "g3-toys3",
+  "quests": [
+    {
+      "id": "toybox-this-these",
+      "kind": "grammar",
+      "title": "Коробка с игрушками",
+      "emoji": "🧸",
+      "rarity": "rare",
+      "grammar": [
+        { "skill": "G3-04", "q": "___ is my teddy bear.", "a": "This", "hint": "Один предмет рядом — this.", "options": ["This", "These", "Those"] },
+        { "skill": "G3-04", "q": "___ are my toy soldiers.", "a": "These", "hint": "Много предметов рядом — these.", "options": ["This", "These", "That"] },
+        { "skill": "G3-04", "q": "Look! ___ kite is in the sky.", "a": "That", "hint": "Один предмет далеко — that.", "options": ["That", "Those", "These"] },
+        { "skill": "G3-04", "q": "___ balls are in the box over there.", "a": "Those", "hint": "Много предметов далеко — those.", "options": ["Those", "That", "This"] }
+      ]
+    }
+  ],
+  "scene": null,
+  "patient": null,
+  "reward": null
+}

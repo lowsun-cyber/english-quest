@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { ACHIEVEMENTS, CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { ACHIEVEMENTS, CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -44,9 +44,19 @@ export const questKey = (lesson, kind) => `${lesson.id}:${kind}`;
 export const rarityOf = id => QUEST_RARITY.find(r => r.id === id) || QUEST_RARITY[0];
 export const questPassed = (st, lesson, kind) => (st.quests?.[questKey(lesson, kind)]?.best ?? -1) >= QUEST_PASS_PCT;
 const SCORED = kind => kind !== 'cards';   // карточки — просмотр, без ответов
+// Редкость квеста темы: у квеста из пакета — своя (или по его упражнению), у остальных — по типу задания
+export function questRarityOf(lesson, kind){
+  const x = extraQuestOf(lesson, kind);
+  return x ? (x.rarity || questRarity(x.kind, lesson.grade)) : questRarity(kind, lesson.grade);
+}
+// Название квеста: «🧩 Грамматика» или у квеста из пакета — его эмодзи и название
+export const questTitle = (lesson, kind) => { const x = extraQuestOf(lesson, kind); return x ? `${x.emoji || '✨'} ${x.title}` : EX_NAMES[kind]; };
+// Новый квест из пакета: подключён меньше 14 дней назад и ещё не начат
+export const questIsNew = (lesson, kind, st) => { const x = extraQuestOf(lesson, kind); return !!x && isNewItem(x.addedAt) && !st.quests?.[questKey(lesson, kind)] && !st.lessonProgress?.[lesson.id]?.[kind]; };
 export function lessonQuests(l){
   const order = id => QUEST_RARITY.findIndex(r => r.id === id);
-  return lessonExercises(l).map(kind => ({ kind, rarity: questRarity(kind, l.grade) })).sort((a, b) => order(a.rarity) - order(b.rarity));
+  const kinds = [...lessonExercises(l), ...(l.extraQuests || []).map(q => `x:${q.id}`)];
+  return kinds.map(kind => ({ kind, rarity: questRarityOf(l, kind) })).sort((a, b) => order(a.rarity) - order(b.rarity));
 }
 // Почему квест закрыт; null — открыт. Начатое (есть прогресс или результат) не закрывается никогда.
 //   редкий — после двух обычных квестов темы на 80% и выше;
@@ -56,7 +66,7 @@ export function questLock(lesson, kind, st){
   if (st.lessonProgress?.[lesson.id]?.[kind] || st.quests?.[questKey(lesson, kind)]) return null;
   // домашнее задание от репетитора открыто всегда
   if (st.homework?.lessonId === lesson.id && (st.homework.tasks || []).includes(kind)) return null;
-  const qs = lessonQuests(lesson), rarity = questRarity(kind, lesson.grade);
+  const qs = lessonQuests(lesson), rarity = questRarityOf(lesson, kind);
   const passed = r => qs.filter(q => q.rarity === r && SCORED(q.kind) && questPassed(st, lesson, q.kind)).length;
   const scored = r => qs.filter(q => q.rarity === r && SCORED(q.kind)).length;
   const commonsOk = passed('common') >= Math.min(2, scored('common'));
@@ -158,6 +168,8 @@ export function regionRanks(st){
     const conds = [done > 0, passed > 0, cps.length > 0 && passed === cps.length, ls.length > 0 && done === ls.length];
     let step = 0;
     while (step < conds.length && conds[step]) step++;
+    // полученное звание не теряется, даже если в регион добавили новые темы и проверки (пакеты локаций)
+    step = Math.max(step, Math.min(4, st.rankSteps?.[region.id] || 0));
     return { region, step, rank: rankOf(region.id, step), next: rankOf(region.id, step + 1), nextNeed: RANK_STEPS[step] || null,
       done, lessons: ls.length, passed, checkpoints: cps.length };
   });
@@ -172,17 +184,19 @@ export function homeworkDone(st, hw, ex){ return (st.lessonProgress?.[hw.lessonI
 export function resolveMistake(m){
   const lesson = LESSONS.find(l => l.id === m.lessonId);
   if (!lesson) return null;
+  // слова, вопросы и тексты темы и её квестов из пакетов
+  const parts = [lesson, ...(lesson.extraQuests || [])];
   if (m.type === 'word'){
-    const w = lesson.words.find(w => w.en === m.ref);
-    return w ? { lesson, word: w } : null;
+    for (const p of parts){ const w = (p.words || []).find(w => w.en === m.ref); if (w) return { lesson: p === lesson ? lesson : { ...lesson, words: p.words }, word: w }; }
+    return null;
   }
   if (m.type === 'grammar'){
-    const q = lesson.grammar.find(q => q.q === m.ref);
-    return q ? { lesson, q } : null;
+    for (const p of parts){ const q = (p.grammar || []).find(q => q.q === m.ref); if (q) return { lesson, q }; }
+    return null;
   }
   if (m.type === 'reading'){
-    const q = lesson.reading?.questions.find(q => q.q === m.ref);
-    return q ? { lesson, q, reading: lesson.reading } : null;
+    for (const p of parts){ const q = p.reading?.questions.find(q => q.q === m.ref); if (q) return { lesson, q, reading: p.reading }; }
+    return null;
   }
   return null;
 }
@@ -286,7 +300,7 @@ export function lessonWords(){
   if (_words) return _words;
   _words = new Map();
   for (const l of [...LESSONS].sort((a, b) => a.grade - b.grade || a.order - b.order))
-    for (const w of l.words) if (!_words.has(w.en)) _words.set(w.en, { ...w, grade: l.grade, lessonId: l.id });
+    for (const w of [...l.words, ...(l.extraQuests || []).flatMap(q => q.words || [])]) if (!_words.has(w.en)) _words.set(w.en, { ...w, grade: l.grade, lessonId: l.id });
   return _words;
 }
 // Мастерство по словам. st.words — ответы с этого обновления; у старого прогресса берём то, что уже было:

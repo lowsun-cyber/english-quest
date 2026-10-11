@@ -74,9 +74,15 @@ const STUBS = `
   return true;`;
 
 const results = [];
+// Сценарий, который завис (ждёт то, чего не будет), отмечается ошибкой, а не останавливает весь прогон
+const TEST_TIMEOUT = 90000;
 async function test(name, fn){
-  try { const info = await fn(); results.push({ ok: true, name, info }); }
+  let timer;
+  const limit = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`завис дольше ${TEST_TIMEOUT / 1000} с`)), TEST_TIMEOUT); });
+  try { const info = await Promise.race([fn(), limit]); results.push({ ok: true, name, info }); }
   catch (e) { results.push({ ok: false, name, info: e.message }); }
+  finally { clearTimeout(timer); }
+  console.log(`  · ${name}: ${results.at(-1).ok ? 'ok' : 'ошибка'}`);   // ход прогона виден сразу; итог — в конце
 }
 const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
 
@@ -954,6 +960,39 @@ try {
     const back = JSON.parse(saved); state.quests = back.q; state.lessonProgress = back.lp; state.crystals = back.c; state.settings.mapView = back.v || null;
     await saveState(); map.renderMap();
     return 'туман и счётчик ' + have + ' из 10, открытие после 10 редких, «Входная штольня» 8/8 → 💠 +3, босс закрыт до трёх мест';`)));
+
+  await test('пакет локации: новый квест в старой теме', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), map = await import('./js/map.js');
+    const pack = await (await fetch('packs/example-g3-toybox.json')).json();
+    pack.addedAt = new Date().toISOString().slice(0, 10);   // подключён сегодня — «Новое»
+    window.EQ.addPacks([pack]);
+    const L = window.EQ.LESSONS.find(l => l.id === 'g3-toys3'), kind = 'x:toybox-this-these';
+    // обычные квесты темы пройдены — редкий квест открыт
+    const saved = JSON.stringify({ q: state.quests, lp: state.lessonProgress, g: state.settings.mapGrade, v: state.settings.mapView });
+    for (const k of ['vocab', 'listen']) state.quests['g3-toys3:' + k] = { best: 100, last: 100, at: Date.now(), runs: 1, passedAt: Date.now() };
+    state.lessonProgress['g3-toys3'] = { ...(state.lessonProgress['g3-toys3'] || {}), vocab: 1 };
+    state.settings.mapGrade = 3; state.settings.mapView = null; await saveState(); map.renderMap();
+    const node = [...document.querySelectorAll('.map-node')].find(n => (n.getAttribute('aria-label') || '').includes('Come in and Play!'));
+    if (!node?.querySelector('.mn-new')) throw new Error('на карте нет «Новое» у темы с новым квестом');
+    map.openLessonHub(L); await __sleep(200);
+    const card = document.querySelector('.quest-card[data-ex="' + kind + '"]');
+    if (!card || !card.querySelector('.new-badge') || !/Коробка с игрушками/.test(card.textContent) || card.classList.contains('locked')) throw new Error('карточка квеста: ' + (card?.outerHTML.slice(0, 200) || 'нет'));
+    const baseGrammar = state.lessonProgress['g3-toys3'].grammar || 0;
+    card.click(); await __sleep(400);
+    for (let i = 0; i < 4; i++){
+      const sn = document.querySelector('.q-sentence').textContent, it = pack.quests[0].grammar.find(g => g.q === sn);
+      if (!it) throw new Error('вопрос не из пакета: ' + sn);
+      [...document.querySelectorAll('.opt')].find(o => o.dataset.o === it.a).click(); await __sleep(1100);
+    }
+    const res = document.querySelector('#modal').innerText;
+    if (!/Квест пройден/.test(res) || document.getElementById('next-read')) throw new Error('итог: ' + res.slice(0, 200));
+    const r = state.quests['g3-toys3:' + kind];
+    if (!r || r.best !== 100 || (state.lessonProgress['g3-toys3'].grammar || 0) !== baseGrammar || !state.lessonProgress['g3-toys3'][kind]) throw new Error('результат: ' + JSON.stringify({ r, lp: state.lessonProgress['g3-toys3'] }));
+    __close(); await __sleep(100);
+    const back = JSON.parse(saved); state.quests = back.q; state.lessonProgress = back.lp; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null;
+    await saveState();
+    return '«Новое» на карте и доске, квест на вопросах пакета 4/4, результат отдельно, прогресс «Грамматики» не тронут';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {
