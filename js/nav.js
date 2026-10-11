@@ -1,9 +1,8 @@
 // English Quest — Нижнее меню (docs/design-v2, эскиз 31/34): Карта · Клиника · Сундук · Ошибки.
 // Разделы — на главной странице: пункт прокручивает к своему разделу и подсвечивается, когда раздел на экране.
-// Клиника — итерация 4, пока «скоро». На «Ошибках» — сколько ошибок ждут повторения.
+// На «Ошибках» — сколько ошибок ждут повторения.
 import { state } from './state.js';
 import { mistakeList } from './stats.js';
-import { toast } from './ui.js';
 
 const nav = document.getElementById('bottom-nav');
 const reduce = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -17,7 +16,6 @@ if (nav){
   nav.addEventListener('click', (e) => {
     const item = e.target.closest('[data-nav]');
     if (!item) return;
-    if (item.dataset.nav === 'clinic'){ toast('🏥 Клиника строится — откроется в следующем обновлении!'); return; }
     const target = document.querySelector(item.getAttribute('href'));
     if (!target) return;
     e.preventDefault();

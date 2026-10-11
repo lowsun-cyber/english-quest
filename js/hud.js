@@ -3,6 +3,7 @@ import { logAnswer, streakInfo } from './activity.js';
 import { CHARACTERS, HARLOW_LINES, LESSONS, MAX_LEVEL, RANKS, RANK_STEPS, heroIntro, levelFromXp, totalXpForLevel } from './eq.js';
 import { heroPic, playerHero, setHeroMood } from './heroes.js';
 import { checkAchievements } from './achievements.js';
+import { renderClinic } from './clinic.js';
 import { isReplay } from './quests.js';
 import { CHECKPOINTS } from './map.js';
 import { activeId, saveState, state } from './state.js';
@@ -45,6 +46,7 @@ export function renderHUD(){
   if (hr) hr.textContent = rk ? rk.title : 'Новичок';
   celebrateRanks();
   checkAchievements();
+  renderClinic();
   document.getElementById('level-progress').style.width = pct + '%';
   document.getElementById('xp-text').textContent = lvl >= MAX_LEVEL
     ? `Максимум! ${state.xp} XP`

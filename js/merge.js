@@ -115,6 +115,12 @@ const RULES = {
     for (const k of keysOf(b, l, r)){ const v = [l?.[k], r?.[k]].filter(Number.isFinite); if (v.length) out[k] = Math.min(...v); }
     return out;
   },
+  // клиника: построенные комнаты не теряются — объединение, время — самое раннее
+  clinic: (b, l, r) => {
+    const out = {};
+    for (const k of keysOf(b, l, r)){ const v = [l?.[k], r?.[k]].filter(Number.isFinite); if (v.length) out[k] = Math.min(...v); }
+    return out;
+  },
   // «Мои ошибки»: у кого попытка позже, тот и прав
   mistakes: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => clone(n(rr?.last) > n(ll?.last) ? rr : ll)),
   // домашка: новее та, что назначена позже; для того же задания — «сделано», если сделано где-нибудь

@@ -2485,6 +2485,61 @@ function taskTypeFor(kind, grade){
   return CURRICULUM.taskTypes.find(t => t.grade === grade && t.kinds.includes(kind))?.code || null;
 }
 
+// ---------- СВОЯ КЛИНИКА (итерация 4, эскиз docs/design-v2/boards/33-screen-clinic) ----------
+// Материалы — за первое прохождение квеста на 80% (по редкости) и за испытания; кристаллы — в «Шахтах».
+// Всё заработанное считается из прогресса (clinicState в js/stats.js), в прогрессе хранится только, что построено.
+const MATERIALS = [
+  { id: 'blocks', title: 'Блоки', one: 'блок' },
+  { id: 'boards', title: 'Доски', one: 'доска' },
+  { id: 'glass', title: 'Стекло', one: 'стекло' },
+  { id: 'crystals', title: 'Кристаллы', one: 'кристалл' },
+];
+// Приз квеста для клиники по редкости; furniture — следующий предмет мебели, recipe — рецепт следующей комнаты
+const CLINIC_PRIZE = {
+  common: { blocks: 3, boards: 1 },
+  rare: { boards: 2, glass: 2, furniture: 1 },
+  epic: { glass: 3, recipe: 1 },
+  boss: { blocks: 5, helper: 1 },
+};
+// Комнаты по порядку: recipe — сколько эпических квестов нужно, чтобы открылся рецепт (0 — с самого начала);
+// mines — комната открывается в «Шахтах»; host — кто в ней работает (герой из CHARACTERS)
+const CLINIC_ROOMS = [
+  { id: 'reception', title: 'Приёмная', emoji: '🩺', bg: '#fff4cc', host: 'harlow', built: true },
+  { id: 'aviary', title: 'Вольер', emoji: '🐾', bg: '#e4f7e7', recipe: 1, cost: { blocks: 10, boards: 4 } },
+  { id: 'ward', title: 'Палата', emoji: '🛏️', bg: '#ffe3ef', host: 'luna', recipe: 2, cost: { blocks: 12, boards: 4, glass: 4 } },
+  { id: 'surgery', title: 'Операционная', emoji: '💡', bg: '#e3f0fb', recipe: 4, cost: { blocks: 14, boards: 6, glass: 8 } },
+  { id: 'lab', title: 'Лаборатория', emoji: '🔬', bg: '#efe5ff', host: 'owl', recipe: 6, cost: { blocks: 12, boards: 6, glass: 10 } },
+  { id: 'studio', title: 'Студия звука', emoji: '🎧', bg: '#fff1d6', host: 'robo', recipe: 8, cost: { blocks: 14, boards: 8, glass: 8 } },
+  { id: 'crystal-lab', title: 'Кристальная лаборатория', emoji: '💠', bg: '#e0fbfc', host: 'max', mines: true, cost: { crystals: 12 } },
+];
+// Мебель и оборудование — за редкие квесты по порядку; room — где стоит
+const CLINIC_FURNITURE = [
+  { id: 'scales', title: 'Весы', emoji: '⚖️', room: 'reception' },
+  { id: 'firstaid', title: 'Аптечка', emoji: '🧰', room: 'reception' },
+  { id: 'bowl', title: 'Миски', emoji: '🥣', room: 'aviary' },
+  { id: 'couch', title: 'Кушетка', emoji: '🛋️', room: 'ward' },
+  { id: 'drip', title: 'Капельница', emoji: '💧', room: 'ward' },
+  { id: 'kennel', title: 'Домик для щенков', emoji: '🏠', room: 'aviary' },
+  { id: 'lamp', title: 'Лампа хирурга', emoji: '🔦', room: 'surgery' },
+  { id: 'microscope', title: 'Микроскоп', emoji: '🔬', room: 'lab' },
+  { id: 'xray', title: 'Рентген', emoji: '🩻', room: 'surgery' },
+  { id: 'books', title: 'Шкаф с книгами', emoji: '📚', room: 'lab' },
+  { id: 'speakers', title: 'Колонки', emoji: '🔊', room: 'studio' },
+  { id: 'mic', title: 'Микрофон', emoji: '🎙️', room: 'studio' },
+  { id: 'plant', title: 'Цветок в горшке', emoji: '🪴', room: 'reception' },
+  { id: 'toys', title: 'Игрушки для пациентов', emoji: '🧸', room: 'ward' },
+];
+// Помощники — за испытания (боссов): сколько нужно пройти; Miner Max — за босса «Шахт»
+const CLINIC_HELPERS = [
+  { hero: 'luna', bosses: 1 }, { hero: 'owl', bosses: 3 }, { hero: 'robo', bosses: 6 }, { hero: 'max', minesBoss: true },
+];
+// Пациенты — по одному на тему: пройденная тема — вылеченный пациент переезжает в клинику (звери по кругу)
+const CLINIC_PATIENTS = [
+  { id: 'kitten', title: 'Котёнок', color: '#f3c58a' }, { id: 'puppy', title: 'Щенок', color: '#e0aa6e' },
+  { id: 'bunny', title: 'Зайчонок', color: '#efe8e2' }, { id: 'duckling', title: 'Утёнок', color: '#ffe680' },
+  { id: 'piglet', title: 'Поросёнок', color: '#ffc2d6' },
+];
+
 // ---------- РИСУНКИ ЛОКАЦИЙ ДЛЯ КАРТЫ-ПУТИ ----------
 // Островок и название места у каждой темы и испытания (docs/design-v2/locations/index.json, рисунки — assets/locations/).
 // Тема из пакета может принести свой: lesson.island = { img, name }; без рисунка — островок региона с эмодзи темы.
@@ -2657,6 +2712,7 @@ window.EQ = {
   REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES,
   QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, SECRET_REGIONS,
   PACKS, addPacks, EXTRA_KINDS, extraQuestOf, questLesson, isNewItem, LOCATION_ART,
+  MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

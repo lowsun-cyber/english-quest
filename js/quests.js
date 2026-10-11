@@ -3,7 +3,7 @@
 import { QUEST_PASS_PCT } from './eq.js';
 import { reward } from './hud.js';
 import { saveState, state } from './state.js';
-import { questKey, questLock, questRarityOf, rarityOf } from './stats.js';
+import { prizeLine, questKey, questLock, questRarityOf, rarityOf } from './stats.js';
 import { confetti, modalClosedHooks, toast } from './ui.js';
 import { escapeHtml } from './util.js';
 
@@ -34,12 +34,13 @@ export function questResult(){
   q.best = Math.max(q.best || 0, pct); q.last = pct; q.at = Date.now(); q.runs = (q.runs || 0) + 1;
   const rarity = rarityOf(questRarityOf(lesson, kind));
   const first = pct >= QUEST_PASS_PCT && !q.passedAt;
+  const clinic = first ? prizeLine(questRarityOf(lesson, kind), state) : '';   // до записи результата — предмет и рецепт этого квеста
   if (first) q.passedAt = Date.now();
   state.quests[key] = q;
   if (pct >= QUEST_PASS_PCT) confetti();   // экран завершения появляется после озвучки последнего слова (afterFeedback)
   if (first && (rarity.xp || rarity.coins)) reward(rarity.xp, rarity.coins, { bonus: true });   // сохраняет состояние и обновляет шапку
   else saveState();
-  const prize = first ? ` <b>+${rarity.xp} XP, +${rarity.coins} 🪙</b> за ${escapeHtml(rarity.title.toLowerCase())} квест!` : '';
+  const prize = first ? ` <b>+${rarity.xp} XP, +${rarity.coins} 🪙</b> за ${escapeHtml(rarity.title.toLowerCase())} квест! Для клиники: <b>${escapeHtml(clinic)}</b>.` : '';
   return `<p class="quest-result" style="--rarity:${rarity.color}">Результат квеста: <b>${pct}%</b>.${
     pct >= QUEST_PASS_PCT ? (first ? ` Квест пройден!${prize}` : ` Лучший результат: ${q.best}%.`) : ` Чтобы пройти квест, нужно ${QUEST_PASS_PCT}% — попробуй ещё раз!`}</p>`;
 }
