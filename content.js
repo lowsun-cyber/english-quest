@@ -2,20 +2,30 @@
 // Ссылки на модули по книгам для учителя из вложений пользователя.
 
 // ---------- ПЕРСОНАЖИ ----------
+// Герои — данными: новый герой добавляется сюда вместе со своими файлами, без правки кода.
+// files: полный рост (full) и четыре эмоции — рад (верный ответ, начало урока), думает (ждёт ответа),
+// подсказывает (подсказка, разбор ошибки), хвалит (конец задания, награда). emoji — запасной вариант,
+// если картинка не загрузилась. playable — героя можно выбрать своим аватаром.
+const HERO_MOODS = ['happy', 'thinking', 'hint', 'praise'];
+const heroFiles = id => ({ full: `assets/heroes/${id}.svg`, ...Object.fromEntries(HERO_MOODS.map(m => [m, `assets/heroes/${id}-${m}.svg`])) });
 const CHARACTERS = {
   harlow: {
     id: 'harlow',
+    files: heroFiles('harlow'),
+    playable: true,
     name: 'Dr. Harlow',
     subtitle: 'Главный гид · Олень',
     color: '#c88a4a',
     accent: '#7a4a1e',
     emoji: '🦌',
-    role: 'Доктор-олень из Animal Hospital. Ведёт по всем урокам, приветствует, объясняет задание.',
+    role: 'Добрый доктор-олень, хозяин клиники. Ведёт по всем урокам, приветствует, объясняет задание.',
     introEn: 'Hi, I am Doctor Harlow. Let us learn English.',
     introRu: null, // у Dr. Harlow — HARLOW_LINES.teamCard
   },
   luna: {
     id: 'luna',
+    files: heroFiles('luna'),
+    playable: true,
     name: 'Nurse Luna',
     subtitle: 'Госпиталь',
     color: '#ff7bb0',
@@ -27,6 +37,8 @@ const CHARACTERS = {
   },
   max: {
     id: 'max',
+    files: heroFiles('max'),
+    playable: true,
     name: 'Miner Max',
     subtitle: 'Крафт-мир',
     color: '#3a9fe0',
@@ -38,6 +50,8 @@ const CHARACTERS = {
   },
   owl: {
     id: 'owl',
+    files: heroFiles('owl'),
+    playable: true,
     name: 'Prof. Owl',
     subtitle: 'Грамматика',
     color: '#a870ff',
@@ -49,6 +63,8 @@ const CHARACTERS = {
   },
   robo: {
     id: 'robo',
+    files: heroFiles('robo'),
+    playable: true,
     name: 'DJ Robo',
     subtitle: 'Произношение',
     color: '#f5c02b',
@@ -2193,26 +2209,34 @@ function levelFromXp(xp){
   while (lvl < MAX_LEVEL && xp >= totalXpForLevel(lvl+1)) lvl++;
   return lvl;
 }
-// Ранги: каждые 5 уровней — новый титул (12 рангов)
-const RANKS = [
-  {min:0,  title:'Rookie Explorer', emoji:'🌱', color:'#7dd87d'},
-  {min:5,  title:'Junior Vet',      emoji:'🩺', color:'#3fb650'},
-  {min:10, title:'Word Miner',      emoji:'⛏️', color:'#3a9fe0'},
-  {min:15, title:'Block Builder',   emoji:'🧱', color:'#c58a3a'},
-  {min:20, title:'Grammar Scout',   emoji:'🦉', color:'#a870ff'},
-  {min:25, title:'Sound Hunter',    emoji:'🎤', color:'#f5c02b'},
-  {min:30, title:'Story Teller',    emoji:'📖', color:'#e07b3a'},
-  {min:35, title:'Diamond Reader',  emoji:'💎', color:'#3ac5e0'},
-  {min:40, title:'Zoo Keeper',      emoji:'🦁', color:'#e0a13a'},
-  {min:45, title:'Time Traveller',  emoji:'⏳', color:'#a597ff'},
-  {min:50, title:'Quest Master',    emoji:'🏆', color:'#f5c02b'},
-  {min:55, title:'English Legend',  emoji:'⭐', color:'#ff6b3a'},
+// ---------- РЕГИОНЫ И РАНГИ ----------
+// Мир — три региона, по одному на учебник Spotlight (дорожка класса на карте).
+// У каждого региона 4 ранга; ранг открывается за темы и проверки этого региона, а не за XP
+// (условия — RANK_STEPS, расчёт — regionRanks() в js/stats.js). Уровни 1–60 по XP остаются отдельно.
+const REGIONS = [
+  { id: 'valley', grade: 2, name: 'Зелёная долина', emoji: '🌳', color: '#3fb650' },
+  { id: 'city', grade: 3, name: 'Город мастеров', emoji: '🏰', color: '#c58a3a' },
+  { id: 'expedition', grade: 4, name: 'Большая экспедиция', emoji: '🧭', color: '#3a9fe0' },
 ];
-function rankFor(level){
-  let r = RANKS[0];
-  for (const rk of RANKS) if (level >= rk.min) r = rk;
-  return r;
-}
+// step: 1 — первая пройденная тема региона, 2 — первая проверка, 3 — все проверки, 4 — все темы пройдены полностью;
+// RANK_STEPS — как это сказано ребёнку
+const RANK_STEPS = ['пройди первую тему', 'сдай первую проверку', 'сдай все проверки', 'пройди все темы'];
+const RANKS = [
+  { region: 'valley', step: 1, title: 'Санитар', emoji: '🩹', color: '#7dd87d' },
+  { region: 'valley', step: 2, title: 'Помощник доктора', emoji: '🩺', color: '#3fb650' },
+  { region: 'valley', step: 3, title: 'Фельдшер', emoji: '🚑', color: '#2e8a3d' },
+  { region: 'valley', step: 4, title: 'Хранитель долины', emoji: '🌳', color: '#1f6b2c' },
+  { region: 'city', step: 1, title: 'Ученик мастера', emoji: '🔨', color: '#e0a13a' },
+  { region: 'city', step: 2, title: 'Подмастерье', emoji: '🧱', color: '#c58a3a' },
+  { region: 'city', step: 3, title: 'Мастер', emoji: '⚒️', color: '#a86a2a' },
+  { region: 'city', step: 4, title: 'Хранитель города', emoji: '🏰', color: '#7a4b1c' },
+  { region: 'expedition', step: 1, title: 'Исследователь', emoji: '🔭', color: '#3ac5e0' },
+  { region: 'expedition', step: 2, title: 'Следопыт', emoji: '🧭', color: '#3a9fe0' },
+  { region: 'expedition', step: 3, title: 'Капитан', emoji: '⚓', color: '#245b85' },
+  { region: 'expedition', step: 4, title: 'Легенда English Quest', emoji: '⭐', color: '#ff6b3a' },
+];
+const regionOfGrade = grade => REGIONS.find(r => r.grade === grade) || null;
+const rankOf = (regionId, step) => RANKS.find(r => r.region === regionId && r.step === step) || null;
 
 // ---------- РЕПЛИКИ ГИДА ----------
 const HARLOW_LINES = {
@@ -2445,10 +2469,10 @@ function taskTypeFor(kind, grade){
 
 // экспорт в глобальную область
 window.EQ = {
-  CHARACTERS,
+  CHARACTERS, HERO_MOODS, DEFAULT_HERO: 'harlow',
   LESSONS,
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
-  RANKS, rankFor,
+  REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

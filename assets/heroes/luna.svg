@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 200 240"><title>Nurse Luna, кролик-медсестра</title>
+<g stroke="#1c2b1a" stroke-width="3.5" stroke-linejoin="round">
+<rect x="76" y="198" width="20" height="24" rx="8" fill="#efe8e2"/>
+<rect x="104" y="198" width="20" height="24" rx="8" fill="#efe8e2"/>
+<rect x="70" y="219" width="28" height="13" rx="6.5" fill="#ff7bb0"/>
+<rect x="102" y="219" width="28" height="13" rx="6.5" fill="#ff7bb0"/>
+<rect x="42" y="146" width="22" height="46" rx="11" fill="#ff7bb0"/>
+<rect x="136" y="146" width="22" height="46" rx="11" fill="#ff7bb0"/>
+<rect x="43" y="184" width="20" height="14" rx="7" fill="#efe8e2"/>
+<rect x="137" y="184" width="20" height="14" rx="7" fill="#efe8e2"/>
+<rect x="60" y="138" width="80" height="68" rx="22" fill="#ff7bb0"/>
+<rect x="74" y="160" width="52" height="42" rx="10" fill="#fffdf6"/>
+<path d="M82 139 L100 154 L118 139 Z" fill="#fffdf6"/>
+<rect x="70" y="4" width="22" height="62" rx="11" fill="#efe8e2"/>
+<rect x="108" y="4" width="22" height="62" rx="11" fill="#efe8e2"/>
+</g>
+<rect x="76" y="12" width="10" height="44" rx="5" fill="#ffb3d1"/>
+<rect x="114" y="12" width="10" height="44" rx="5" fill="#ffb3d1"/>
+<rect x="96" y="166" width="8" height="20" rx="2" fill="#e5483b"/>
+<rect x="90" y="172" width="20" height="8" rx="2" fill="#e5483b"/>
+<rect x="52" y="48" width="96" height="90" rx="36" fill="#efe8e2" stroke="#1c2b1a" stroke-width="3.5"/>
+<ellipse cx="78" cy="64" rx="15" ry="7" fill="#ffffff" opacity="0.55"/>
+<rect x="80" y="40" width="40" height="18" rx="5" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3"/>
+<rect x="97" y="43" width="6" height="12" rx="1.5" fill="#ff7bb0"/>
+<rect x="94" y="46" width="12" height="6" rx="1.5" fill="#ff7bb0"/>
+<ellipse cx="80" cy="92" rx="9" ry="12" fill="#1c2b1a"/>
+<ellipse cx="120" cy="92" rx="9" ry="12" fill="#1c2b1a"/>
+<circle cx="83" cy="87" r="3.5" fill="#ffffff"/>
+<circle cx="123" cy="87" r="3.5" fill="#ffffff"/>
+<path d="M71 80 L76 76 M129 80 L124 76" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round"/>
+<ellipse cx="65" cy="112" rx="8" ry="5" fill="#ffb3d1"/>
+<ellipse cx="135" cy="112" rx="8" ry="5" fill="#ffb3d1"/>
+<ellipse cx="100" cy="110" rx="7" ry="5" fill="#ff7bb0" stroke="#1c2b1a" stroke-width="2.5"/>
+<path d="M100 115 L100 121 M92 120 Q100 127 108 120" fill="none" stroke="#1c2b1a" stroke-width="3" stroke-linecap="round"/>
+<rect x="96" y="122" width="8" height="6" rx="1" fill="#ffffff" stroke="#1c2b1a" stroke-width="2"/>
+</svg>

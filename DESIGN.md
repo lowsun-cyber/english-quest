@@ -14,7 +14,7 @@ Read this before any UI or visual change. It records who the app is for, the loo
 
 ## Visual identity: keep and refine
 
-The theme is **Minecraft × Roblox**: a pixel/blocky world with glossy, toy-like surfaces. This is the brand, so don't replace it. The goal is to make it more consistent, polished, and readable.
+The theme is our own **pixel blocky world**: blocky shapes and pixel textures with glossy, toy-like surfaces and game-card UI. Don’t name or imitate other games in the UI, texts, code or files. This is the brand, so don't replace it. The goal is to make it more consistent, polished, and readable.
 
 Signature elements:
 - **Hard offset shadows** (`--shadow-hard: 4px 4px 0`) and **3px dark outlines** (`--line`) on cards, the HUD, and buttons.

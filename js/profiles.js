@@ -2,6 +2,7 @@
 import { applyFreezes } from './activity.js';
 import { applyLoadedState } from './backup.js';
 import { levelFromXp } from './eq.js';
+import { heroPic, playerHero } from './heroes.js';
 import { activeId, activeProfile, deleteStoredState, freshState, loadState, profiles, saveProfiles, saveState, setState, state, takeDeviceSettings, writeStoredState } from './state.js';
 import { closeModal, onNextClose, openModal, toast } from './ui.js';
 import { dayKey, escapeHtml } from './util.js';
@@ -17,11 +18,15 @@ export function renderProfileChip(){
   if (!chip) return;
   const p = activeProfile();
   chip.hidden = !multi();
-  document.getElementById('pf-avatar').textContent = p.avatar;
+  const hero = playerHero(state);
+  const av = document.getElementById('pf-avatar');
+  av.innerHTML = heroPic(hero, 'happy');
+  av.style.setProperty('--hero-color', hero.color);
   document.getElementById('pf-name').textContent = p.name;
   chip.setAttribute('aria-label', `Сейчас занимается ${p.name}. Сменить ученика`);
   document.dispatchEvent(new Event('eq:profile'));   // кнопка «Войти» в шапке показывает, кто вошёл
 }
+document.addEventListener('eq:hero', () => renderProfileChip());
 
 export async function switchProfile(id){
   if (id === activeId() || !profiles.list.some(p => p.id === id)) return;
@@ -40,19 +45,20 @@ async function brief(p){
   const s = p.id === activeId() ? state : await loadState(p.id);
   const today = s.activity?.[dayKey()] || { sec: 0 };
   const goal = [5, 10, 15, 20].includes(s.settings?.dailyGoal) ? s.settings.dailyGoal : 10;
-  return { level: levelFromXp(s.xp || 0), xp: s.xp || 0, min: Math.floor(today.sec / 60), goal, met: !!today.goalMet };
+  return { level: levelFromXp(s.xp || 0), xp: s.xp || 0, min: Math.floor(today.sec / 60), goal, met: !!today.goalMet, hero: playerHero(s) };
 }
 
-// «Кто сегодня занимается?» — onPick(id) после выбора; note — пояснение сверху
+// «Кто играет?» — крупные карточки с героем-аватаром, выбор одним нажатием, без PIN.
+// onPick(id) после выбора; note — пояснение сверху
 export async function openProfileChooser({ note = '', onPick } = {}){
   const cards = await Promise.all(profiles.list.map(async p => ({ p, b: await brief(p) })));
   openModal(`
-    <h2>Кто сегодня занимается?</h2>
+    <h2>Кто играет?</h2>
     ${note ? `<p class="pf-note">${escapeHtml(note)}</p>` : ''}
     <div class="pf-grid">
       ${cards.map(({ p, b }) => `
-        <button class="pf-card${p.id === activeId() ? ' current' : ''}" data-id="${escapeHtml(p.id)}">
-          <span class="pf-av" aria-hidden="true">${p.avatar}</span>
+        <button class="pf-card${p.id === activeId() ? ' current' : ''}" data-id="${escapeHtml(p.id)}" aria-label="${escapeHtml(`${p.name}, герой ${b.hero.name}, уровень ${b.level}`)}">
+          <span class="pf-hero" style="--hero-color:${b.hero.color}">${heroPic(b.hero, 'happy')}</span>
           <span class="pf-name">${escapeHtml(p.name)}</span>
           <span class="pf-sub">Уровень ${b.level} · ${b.xp} XP</span>
           <span class="pf-sub">${b.met ? '🎯 цель дня выполнена' : `🎯 ${b.min} / ${b.goal} мин`}</span>

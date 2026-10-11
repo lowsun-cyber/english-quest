@@ -2,7 +2,7 @@
 import { renderGoal } from './activity.js';
 import { LESSONS, levelFromXp } from './eq.js';
 import { renderHomework } from './homework.js';
-import { isLessonComplete, renderHUD, renderInventory } from './hud.js';
+import { isLessonComplete, renderHUD, renderInventory, renderTeam } from './hud.js';
 import { renderMap } from './map.js';
 import { renderMistakes } from './mistakes.js';
 import { activeProfile, freshState, getLS, realState, saveState, setRealState, setState, state, stateKey } from './state.js';
@@ -196,7 +196,7 @@ export function applyLoadedState(){
   const theme = state.settings.theme || 'light';
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('btn-theme').textContent = theme === 'light' ? '🌙' : '☀️';
-  renderHUD(); renderMap(); renderInventory(); renderMistakes(); renderHomework(); renderGoal(true);
+  renderHUD(); renderTeam(); renderMap(); renderInventory(); renderMistakes(); renderHomework(); renderGoal(true);
 }
 
 // Просмотр чужого прогресса: панель рисуется по копии, сохранение отключено.

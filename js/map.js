@@ -1,6 +1,6 @@
 // English Quest — Карта уровней и экран темы.
 import { startCheckpoint } from './checkpoint.js';
-import { CHARACTERS, LESSONS } from './eq.js';
+import { CHARACTERS, LESSONS, regionOfGrade } from './eq.js';
 import { lessonHeader, startExercise } from './exercises.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
@@ -8,10 +8,10 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonExercises, lessonsOf } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonExercises, lessonsOf, regionRanks } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
-// Каждый класс — дорожка из 8 тем. После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
+// Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
 // Тема открывается, когда пройдена предыдущая (isLessonComplete), а первая тема части —
 // когда сдана проверка предыдущей части. Первая тема класса открыта всегда.
 // Репетитор может открыть всё сразу (state.settings.unlockAll).
@@ -63,13 +63,19 @@ export function renderMap(){
   if (!wrap) return;
   const grade = mapGrade();
   document.querySelectorAll('#grade-tabs .tab').forEach(t => {
-    const on = +t.dataset.grade === grade;
+    const on = +t.dataset.grade === grade, rg = regionOfGrade(+t.dataset.grade);
+    if (rg) t.innerHTML = `<span aria-hidden="true">${rg.emoji}</span> ${rg.name} <small>${t.dataset.grade} класс</small>`;
     t.classList.toggle('active', on);
     t.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
   const nodes = mapNodes(grade);
   const cur = nodes.find(n => !lockReason(n) && !nodeDone(n));
-  wrap.innerHTML = `<ol class="map" role="list">${nodes.map((n, i) => {
+  const rr = regionRanks(state).find(r => r.region.grade === grade);
+  const head = rr ? `<div class="region-head" style="--region-color:${rr.region.color}">
+      <b>${rr.region.emoji} ${rr.region.name}</b> <span class="t-muted">· Spotlight ${grade}</span>
+      <span class="region-rank">${rr.rank ? `${rr.rank.emoji} ${rr.rank.title}` : 'Звания пока нет'}${rr.next ? ` · дальше «${rr.next.title}»: ${rr.nextNeed}` : ' · все звания региона ✓'}</span>
+    </div>` : '';
+  wrap.innerHTML = `${head}<ol class="map" role="list">${nodes.map((n, i) => {
     const locked = lockReason(n), done = nodeDone(n), isCur = n === cur;
     const st = locked ? 'locked' : done ? 'done' : isCur ? 'current' : 'open';
     const x = MAP_OFFSETS[i % MAP_OFFSETS.length], px = MAP_OFFSETS[(i - 1 + MAP_OFFSETS.length) % MAP_OFFSETS.length];
@@ -123,7 +129,7 @@ export function openLessonHub(lesson){
   const exs = lessonExercises(lesson);
   const next = exs.find(ex => !p[ex]);
   openModal(`
-    ${lessonHeader(lesson, guide)}
+    ${lessonHeader(lesson, guide, '', 'happy')}
     <div class="hub-progress">Сделано ${partsDone(lesson)} из ${PARTS.length}${isLessonComplete(lesson) ? ' · тема пройдена ✓' : ''}</div>
     <div class="hub-grid">
       ${exs.map(ex => {

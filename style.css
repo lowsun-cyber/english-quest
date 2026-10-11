@@ -1,4 +1,4 @@
-/* English Quest — Roblox × Minecraft (pixel + glossy) */
+/* English Quest — пиксельный блочный мир (pixel + glossy) */
 :root {
   --bg: #cfe9f6;
   --bg-2: #a4d5ee;
@@ -66,7 +66,7 @@ body {
   min-height: 100vh;
 }
 
-/* ground grid (Minecraft feel) */
+/* ground grid (pixel blocks) */
 body::before {
   content: '';
   position: fixed; inset: 0;
@@ -191,14 +191,27 @@ img, svg { shape-rendering: crispEdges; image-rendering: pixelated; }
 }
 .level-info { display: flex; flex-direction: column; gap: 6px; }
 .level-info .rank {
-  font-family: var(--font-pixel); font-size: 12px;
+  font-family: var(--font-pixel); font-size: 12px; line-height: 1.4;
   align-self: flex-start;
-  background: var(--rank-color, var(--grass-3));
-  color: var(--on-color);
+  background: var(--surface);
+  color: var(--ink);
   border: 2px solid var(--line);
+  border-left: 8px solid var(--rank-color, var(--grass-3));
   border-radius: var(--radius-pill);
-  padding: 4px 10px;
+  padding: 6px 12px 6px 10px; min-height: 32px;
+  cursor: pointer;
 }
+.level-info .rank:hover { box-shadow: 0 3px 0 var(--line); }
+/* «Мои звания» */
+.rank-region { margin: 14px 0 0; padding: 12px; border: 3px solid var(--line); border-radius: 14px; border-top: 8px solid var(--rank-color); }
+.rank-region h3 { margin: 0 0 8px; }
+.rank-region h3 small { font-weight: 600; color: var(--muted); }
+.rank-region > p { margin: 8px 0 0; }
+.rank-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.rank-steps li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 2px dashed var(--muted); border-radius: 12px; opacity: .8; }
+.rank-steps li.got { border: 2px solid var(--line); border-left: 8px solid var(--rank-color); opacity: 1; background: var(--surface); }
+.rank-steps .rank-em { font-size: 24px; }
+.rank-steps small { color: var(--muted); }
 .level-info .xp-text { font-size: 13px; color: var(--muted); }
 .progress {
   height: 18px;
@@ -273,7 +286,7 @@ img, svg { shape-rendering: crispEdges; image-rendering: pixelated; }
 }
 [data-theme="dark"] .hero-art { background: linear-gradient(180deg, #1b3852 0%, #274866 55%, #325c39 55%, #234023 100%); }
 
-/* stud pattern for a Roblox stage floor */
+/* stud pattern for the toy stage floor */
 .stud-floor {
   position: absolute; left: 0; right: 0; bottom: 0; height: 50%;
   background:
@@ -359,7 +372,9 @@ section { margin-top: 32px; }
 }
 [data-theme="dark"] .char-card::before { background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.02)); }
 .char-avatar {
-  width: 88px; height: 88px;
+  width: 96px; height: 112px;
+  background: var(--hero-tint);
+  padding: 4px;
   margin: 4px auto 8px;
   border: 3px solid var(--line);
   border-radius: 16px;
@@ -377,6 +392,9 @@ section { margin-top: 32px; }
 .char-name { font-family: var(--font-pixel); font-size: 12px; margin-bottom: 2px; }
 .char-sub { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 .char-role { font-size: 13px; }
+.char-card.mine { outline: 4px solid var(--gold); outline-offset: 2px; }
+.char-mine { margin-top: 8px; font-weight: 800; }
+.char-pick { margin-top: 8px; font-size: 13px; padding: 6px 10px; min-height: 40px; white-space: normal; }
 
 /* Grade tabs */
 .grade-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -391,7 +409,16 @@ section { margin-top: 32px; }
   cursor: pointer;
   box-shadow: 0 4px 0 var(--line);
 }
+.grade-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 640px; }
+.grade-tabs .tab { font-family: var(--font-body); font-size: 16px; font-weight: 800; color: var(--ink); line-height: 1.2; padding: 8px 6px; }
+@media (max-width: 480px){ .grade-tabs .tab { font-size: 14px; } .grade-tabs .tab small { font-size: 12px; } }
+.grade-tabs .tab small { display: block; font-size: 13px; font-weight: 700; color: var(--muted); }
 .grade-tabs .tab.active { background: var(--gold); color: var(--line); }
+.grade-tabs .tab.active small { color: var(--ink-2); }
+[data-theme="dark"] .grade-tabs .tab.active small { color: var(--line); }
+.region-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 12px; padding: 10px 14px; background: var(--surface); border: 3px solid var(--line); border-left: 10px solid var(--region-color); border-radius: 14px; }
+.region-head b { font-size: 18px; }
+.region-head .region-rank { flex-basis: 100%; font-weight: 700; font-size: 15px; }
 .grade-tabs .tab:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
 
 /* ==== КАРТА УРОКОВ ==== */
@@ -810,7 +837,7 @@ section { margin-top: 32px; }
   font-weight: 800; font-size: 15px;
   box-shadow: 0 3px 0 var(--line);
 }
-.profile-chip #pf-avatar { font-size: 22px; }
+.profile-chip #pf-avatar { font-size: 22px; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: var(--hero-tint); border: 2px solid var(--line); --hero-tint: color-mix(in srgb, var(--hero-color, var(--grass)) 22%, var(--surface)); }
 .profile-chip #pf-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pf-note { background: #fff3c2; color: var(--on-color); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; font-weight: 700; }
 [data-theme="dark"] .pf-note { background: #3a3320; color: var(--ink); }
@@ -825,6 +852,7 @@ section { margin-top: 32px; }
 .pf-card.current { outline: 4px solid var(--diamond); outline-offset: 2px; }
 .pf-card:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
 .pf-av { font-size: 52px; line-height: 1.1; }
+.pf-hero { width: 104px; height: 104px; font-size: 52px; border: 3px solid var(--line); border-radius: 18px; background: var(--hero-tint); overflow: hidden; padding: 4px; margin-bottom: 4px; }
 .pf-name { font-weight: 800; font-size: 19px; }
 .pf-sub { font-size: 13px; color: var(--muted); }
 .pf-hint { margin-top: 12px; }
@@ -926,7 +954,8 @@ section { margin-top: 32px; }
 .ht-pips i.on { background: var(--grass); }
 .ht-team { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 10px 0; }
 .ht-hero-card { display: flex; gap: 12px; align-items: flex-start; border: 2px solid var(--line); border-radius: 14px; padding: 10px; }
-.ht-hero-av { flex-shrink: 0; width: 52px; height: 52px; display: grid; place-items: center; font-size: 28px; border: 2px solid var(--line); border-radius: 12px; }
+.ht-hero-av { flex-shrink: 0; width: 64px; height: 64px; display: grid; place-items: center; font-size: 28px; border: 2px solid var(--line); border-radius: 12px; overflow: hidden; padding: 2px; }
+.ht-hero-av img { width: 100%; height: 100%; object-fit: contain; }
 .ht-hero-card p { font-size: 15px; margin-top: 4px; }
 .ht-topics { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
 .ht-grade ol { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
@@ -996,6 +1025,14 @@ section { margin-top: 32px; }
 .ws-key-list { padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
 .ws-key-line { font-size: 16px; }
 
+/* ==== ГЕРОИ (assets/heroes/*.svg, запасной вариант — эмодзи) ==== */
+.mini-avatar, .char-avatar, .guide-bubble .avatar, .pf-hero, .hero-pick-av { --hero-tint: color-mix(in srgb, var(--hero-color, var(--grass)) 22%, var(--surface)); }
+.hero-pic { position: relative; display: grid; place-items: center; width: 100%; height: 100%; }
+.hero-pic .hero-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hero-pic .hero-fallback { display: none; line-height: 1; }
+.hero-pic.broken .hero-img { display: none; }
+.hero-pic.broken .hero-fallback { display: block; }
+
 /* ==== GUIDE BUBBLE ==== */
 .guide-bubble {
   position: fixed; right: 16px; bottom: 16px;
@@ -1005,8 +1042,9 @@ section { margin-top: 32px; }
   pointer-events: none;
 }
 .guide-bubble .avatar {
-  width: 68px; height: 68px;
-  background: var(--grass);
+  width: 76px; height: 76px;
+  background: var(--hero-tint);
+  overflow: hidden; padding: 2px;
   border: 3px solid var(--line);
   border-radius: 14px;
   display: grid; place-items: center;
@@ -1088,7 +1126,7 @@ section { margin-top: 32px; }
   padding: 10px;
 }
 [data-theme="dark"] .modal .lead-guide { background: #223140; }
-.modal .lead-guide .mini-avatar { width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--line); display:grid;place-items:center; font-size: 22px; flex-shrink: 0; }
+.modal .lead-guide .mini-avatar { width: 56px; height: 56px; border-radius: 12px; border: 2px solid var(--line); display:grid;place-items:center; font-size: 26px; flex-shrink: 0; overflow: hidden; background: var(--hero-tint); }
 .modal .lead-guide .txt { font-size: 14px; }
 
 /* Word card grid */

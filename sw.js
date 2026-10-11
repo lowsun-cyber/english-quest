@@ -5,16 +5,18 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v14';
+const SHELL_CACHE = 'eq-shell-v15';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
 
 const SHELL = [
   './', 'index.html', 'how-to.html', 'privacy.html', 'teacher.html', 'admin/', 'admin/index.html', 'base.css', 'style.css', 'content.js', 'translations.js',
-  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js', 'js/lock.js', 'js/profiles.js', 'js/speech.js', 'js/howto.js', 'js/config.js', 'js/api.js', 'js/merge.js', 'js/cloud.js', 'js/stats.js', 'js/admin.js', 'js/admin-pdf.js', 'js/dictionary.js', 'js/dict-data.js',
+  'js/activity.js', 'js/backup.js', 'js/checkpoint.js', 'js/eq.js', 'js/exercises.js', 'js/homework.js', 'js/hud.js', 'js/main.js', 'js/map.js', 'js/mistakes.js', 'js/offline.js', 'js/state.js', 'js/tts.js', 'js/tutor.js', 'js/ui.js', 'js/util.js', 'js/worksheet.js', 'js/lock.js', 'js/profiles.js', 'js/speech.js', 'js/howto.js', 'js/config.js', 'js/api.js', 'js/merge.js', 'js/cloud.js', 'js/stats.js', 'js/admin.js', 'js/admin-pdf.js', 'js/dictionary.js', 'js/dict-data.js', 'js/heroes.js',
   'tts_manifest.json', 'tts_voices.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
+  // рисунки героев: полный рост и 4 эмоции (см. CHARACTERS в content.js)
+  ...['harlow', 'luna', 'max', 'owl', 'robo'].flatMap(h => ['', '-happy', '-thinking', '-hint', '-praise'].map(m => `assets/heroes/${h}${m}.svg`)),
 ];
 const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;800&display=swap';
 

@@ -1,5 +1,5 @@
 // English Quest — страница «How to»: тема как у ученика и списки из контента (всегда актуальные).
-const { RANKS, CHARACTERS, LESSONS, MAX_LEVEL, heroIntro } = window.EQ;
+const { REGIONS, RANKS, RANK_STEPS, CHARACTERS, LESSONS, MAX_LEVEL, heroIntro } = window.EQ;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // тема — как у выбранного ученика (светлая/тёмная)
@@ -13,14 +13,14 @@ try {
 
 document.querySelectorAll('[data-ht="maxLevel"]').forEach(el => { el.textContent = MAX_LEVEL; });
 
-document.getElementById('ht-ranks').innerHTML = RANKS.map((r, i) => {
-  const to = RANKS[i + 1] ? RANKS[i + 1].min - 1 : MAX_LEVEL;
-  return `<div class="ht-rank" style="--rank-color:${r.color}"><span class="ht-rank-em">${r.emoji}</span><b>${esc(r.title)}</b><small>уровни ${r.min}–${to}</small></div>`;
+document.getElementById('ht-ranks').innerHTML = RANKS.map(r => {
+  const rg = REGIONS.find(x => x.id === r.region);
+  return `<div class="ht-rank" style="--rank-color:${r.color}"><span class="ht-rank-em">${r.emoji}</span><b>${esc(r.title)}</b><small>${esc(rg.name)}: ${esc(RANK_STEPS[r.step - 1])}</small></div>`;
 }).join('');
 
 document.getElementById('ht-team').innerHTML = Object.values(CHARACTERS).map(c => `
   <div class="ht-hero-card">
-    <span class="ht-hero-av" style="background:${c.color}">${c.emoji}</span>
+    <span class="ht-hero-av" style="background:color-mix(in srgb, ${c.color} 22%, var(--surface))">${c.files?.happy ? `<img src="${c.files.happy}" alt="" onerror="this.replaceWith('${c.emoji}')">` : c.emoji}</span>
     <div><b>${esc(c.name)}</b> · <span class="t-muted">${esc(c.subtitle)}</span><p>${esc(heroIntro(c).ru)}</p></div>
   </div>`).join('');
 

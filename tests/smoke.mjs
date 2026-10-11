@@ -490,6 +490,94 @@ try {
     if (__shown(f('btn-profile'))) throw new Error('чип остался после удаления');
     return 'раздельный прогресс, выбор при запуске, задание — выбранному, удаление';`)));
 
+  await test('регионы и звания: старый прогресс, новое звание', () => js(`
+    window.__saved = localStorage.getItem('english_quest_v2');
+    const tabs = [...document.querySelectorAll('#grade-tabs .tab')].map(t => t.textContent);
+    if (!/Зелёная долина/.test(tabs[0]) || !/Город мастеров/.test(tabs[1]) || !/Большая экспедиция/.test(tabs[2])) throw new Error('вкладки: ' + tabs.join(' | '));
+    // прогресс в старом виде, без всяких полей рангов: 4 темы 2 класса и первая проверка
+    const st = __ls(), ls = window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order);
+    st.lessonProgress = {}; ls.slice(0, 4).forEach(l => st.lessonProgress[l.id] = { vocab: 3, listen: 3, grammar: 2, reading: 1 });
+    st.checkpoints = { 'g2-p1': { best: 8, passedAt: Date.now() } }; st.settings.mapGrade = 2;
+    localStorage.setItem('english_quest_v2', JSON.stringify(st));
+    return true;`).then(() => load()).then(() => js(`
+    const f = id => document.getElementById(id);
+    if (!/Помощник доктора/.test(f('rank-title').textContent)) throw new Error('звание: ' + f('rank-title').textContent);
+    if (!/Зелёная долина/.test(document.querySelector('.region-head')?.textContent || '')) throw new Error('нет шапки региона над картой');
+    if (__toasts.some(t => /Новое звание/.test(t))) throw new Error('поздравление при запуске, а звание не новое');
+    f('rank-title').click(); await __sleep(200);
+    const got = document.querySelectorAll('.rank-steps li.got').length, all = document.querySelectorAll('.rank-steps li').length;
+    if (got !== 2 || all !== 12) throw new Error('в «Моих званиях» получено ' + got + ' из ' + all);
+    __close();
+    // первая пройденная тема 3 класса — звание «Ученик мастера» и поздравление
+    const { state } = await import('./js/state.js'), hud = await import('./js/hud.js');
+    const l3 = window.EQ.LESSONS.filter(l => l.grade === 3).sort((a, b) => a.order - b.order)[0];
+    state.lessonProgress[l3.id] = { vocab: 3, listen: 3, grammar: 2, reading: 1 }; hud.renderHUD(); await __sleep(100);
+    if (!__toasts.some(t => /Новое звание: Ученик мастера/.test(t))) throw new Error('нет поздравления: ' + __toasts.join(' | '));
+    if (!/Ученик мастера/.test(f('rank-title').textContent)) throw new Error('звание в шапке: ' + f('rank-title').textContent);
+    localStorage.setItem('english_quest_v2', window.__saved);
+    return 'вкладки регионов, «Помощник доктора» из старого прогресса, «Ученик мастера» с поздравлением';`)).then(r => load().then(() => r)));
+
+  await test('герои: рисунки, эмоции, свой герой', () => js(`
+    const f = id => document.getElementById(id);
+    const imgs = [...document.querySelectorAll('#team .hero-img')];
+    if (imgs.length !== 5 || imgs.some(i => !i.complete || !i.naturalWidth)) throw new Error('рисунки героев не загрузились');
+    if (document.querySelector('.hero-art svg image[href*="harlow"]') === null) throw new Error('нет Dr. Harlow на главной');
+    // эмоции гида: начало — рад, ошибка — подсказывает, следующий вопрос — думает
+    document.querySelector('.map-node').click(); await __sleep(200);
+    if (document.querySelector('#modal .hero-img[data-mood]')?.dataset.mood !== 'happy') throw new Error('экран темы: гид не рад');
+    document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
+    const mood = () => document.querySelector('#modal .hero-img[data-mood]')?.dataset.mood;
+    if (mood() !== 'happy') throw new Error('начало урока: ' + mood());
+    const L = window.EQ.LESSONS.find(l => l.title === document.querySelector('#modal h2').textContent);
+    const right = __byEmoji(L.words, document.querySelector('.q-emoji').textContent);
+    [...document.querySelectorAll('.opt')].find(o => o.dataset.en !== right).click(); await __sleep(100);
+    if (mood() !== 'hint' || !/-hint\\.svg$/.test(document.querySelector('#modal .hero-img[data-mood]').src)) throw new Error('после ошибки: ' + mood());
+    await __sleep(1700);
+    if (mood() !== 'thinking') throw new Error('следующий вопрос: ' + mood());
+    const right2 = __byEmoji(L.words, document.querySelector('.q-emoji').textContent);
+    [...document.querySelectorAll('.opt')].find(o => o.dataset.en === right2).click(); await __sleep(100);
+    if (mood() !== 'happy') throw new Error('после верного ответа: ' + mood());
+    __close(); await __sleep(200);
+    // свой герой: выбор в «Команде», хранится в прогрессе
+    const luna = [...document.querySelectorAll('.char-card')].find(c => /Nurse Luna/.test(c.textContent));
+    luna.querySelector('.char-pick').click(); await __sleep(200);
+    if (__ls().hero !== 'luna') throw new Error('герой не сохранился: ' + __ls().hero);
+    if (!document.querySelector('.char-card.mine')?.textContent.includes('Nurse Luna')) throw new Error('карточка своего героя не отмечена');
+    // картинка не загрузилась — виден эмодзи
+    const { heroPic } = await import('./js/heroes.js');
+    const box = document.createElement('div'); box.innerHTML = heroPic({ ...window.EQ.CHARACTERS.owl, files: { full: 'assets/heroes/nope.svg' } });
+    document.body.appendChild(box); await __sleep(300);
+    const broken = box.querySelector('.hero-pic').classList.contains('broken') && __shown(box.querySelector('.hero-fallback'));
+    box.remove(); if (!broken) throw new Error('нет запасного эмодзи');
+    return 'рад → подсказывает → думает → рад; свой герой Nurse Luna; запасной эмодзи';`));
+
+  await test('«Кто играет?»: герой у каждого свой', () => js(`
+    const f = id => document.getElementById(id);
+    await __gate('1357');
+    f('pf-add-name').value = 'Петя'; f('pf-add').requestSubmit(); await __sleep(400);
+    __close(); return true;`).then(() => load()).then(() => js(`
+    const f = id => document.getElementById(id);
+    if (!/Кто играет\\?/.test(document.querySelector('#modal h2')?.textContent || '')) throw new Error('при запуске нет «Кто играет?»');
+    const cards = [...document.querySelectorAll('.pf-card')];
+    if (cards.length !== 2 || cards.some(c => !c.querySelector('.pf-hero .hero-img'))) throw new Error('на карточках нет героев');
+    if (!/luna-happy/.test(cards.find(c => !/Петя/.test(c.textContent)).querySelector('.hero-img').src)) throw new Error('у первого ученика не его герой');
+    cards.find(c => /Петя/.test(c.textContent)).click(); await __sleep(600);
+    if (document.querySelector('.gate-q')) throw new Error('спросили PIN');
+    if (!/harlow/.test(f('pf-avatar').querySelector('img')?.src || '')) throw new Error('у нового ученика не герой по умолчанию');
+    [...document.querySelectorAll('.char-card')].find(c => /Prof\\. Owl/.test(c.textContent)).querySelector('.char-pick').click(); await __sleep(300);
+    if (!/owl/.test(f('pf-avatar').querySelector('img').src)) throw new Error('чип не сменил героя');
+    f('btn-profile').click(); await __sleep(400);
+    [...document.querySelectorAll('.pf-card')].find(c => !/Петя/.test(c.textContent)).click(); await __sleep(600);
+    if (__ls().hero !== 'luna' || !document.querySelector('.char-card.mine')?.textContent.includes('Nurse Luna')) throw new Error('герой первого ученика сменился');
+    const idx = JSON.parse(localStorage.getItem('english_quest_profiles')), petya = idx.list.find(p => p.name === 'Петя');
+    if (JSON.parse(localStorage.getItem('english_quest_v2__' + petya.id)).hero !== 'owl') throw new Error('герой Пети не сохранился');
+    // убираем Петю и своего героя, чтобы не мешать следующим тестам
+    await __gate('1357');
+    [...document.querySelectorAll('.pf-list [data-act=delete]')].find(b => /Петя/.test(b.getAttribute('aria-label'))).click(); await __sleep(500);
+    __close(); await __sleep(100);
+    const { chooseHero } = await import('./js/hud.js'); chooseHero('harlow');
+    return 'выбор без PIN, герой на карточке и в шапке, у каждого свой';`)));
+
   await test('говори: попытки, подсказки, «Засчитать»', () => js(`
     // поддельное распознавание: отдаёт по очереди заданные ответы или ошибки
     window.__sr = [];
