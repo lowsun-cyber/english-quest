@@ -434,72 +434,51 @@ section { margin-top: 32px; }
 .region-head .region-rank { flex-basis: 100%; font-weight: 700; font-size: 15px; }
 .grade-tabs .tab:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
 
-/* ==== КАРТА УРОКОВ ==== */
-.map {
-  --step: 64px;
-  list-style: none;
-  max-width: 560px; margin: 8px auto 0;
-  padding: 10px 0 20px;
-}
-.map-step { position: relative; display: flex; justify-content: center; padding-top: 52px; }
-.map-step:first-child { padding-top: 0; }
-.map-node {
-  position: relative;
-  transform: translateX(calc(var(--x) * var(--step)));
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  /* подпись отодвинута от блока с учётом его «тени» снизу (6px) */
-  min-width: 120px; padding: 4px;
-  border-radius: 16px;
-  color: var(--ink);
-}
-.mn-block {
-  position: relative;
-  width: 84px; height: 84px;
-  display: grid; place-items: center;
-  font-size: 40px;
-  border: 3px solid var(--line);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: 0 6px 0 var(--line);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
-}
-.map-node:active .mn-block { transform: translateY(4px); box-shadow: 0 2px 0 var(--line); }
-.map-node.open .mn-block { background: #d5e6f7; }
-.map-node.current .mn-block { background: var(--diamond-3); box-shadow: 0 6px 0 var(--diamond-2), 0 0 0 6px rgba(58,159,224,0.35); }
-.map-node.done .mn-block { background: var(--grass-3); box-shadow: 0 6px 0 var(--grass-2); }
-.map-node.locked .mn-block { background: #c9d3d9; filter: grayscale(1); }
-.map-node.locked .mn-block > :not(.mn-lock) { opacity: 0.5; }
-.map-node.checkpoint .mn-block { width: 100px; height: 100px; font-size: 48px; border-radius: 50%; }
-.map-node.checkpoint.current .mn-block, .map-node.checkpoint.open .mn-block { background: var(--gold); box-shadow: 0 6px 0 var(--gold-2), 0 0 0 6px rgba(245,192,43,0.35); }
-.map-node.checkpoint.done .mn-block { background: var(--gold); box-shadow: 0 6px 0 var(--gold-2); }
-[data-theme="dark"] .map-node.open .mn-block { background: #24425e; }
-[data-theme="dark"] .map-node.locked .mn-block { background: #2b3a48; }
-.mn-badge, .mn-lock {
-  position: absolute; right: -10px; top: -10px;
-  width: 30px; height: 30px; display: grid; place-items: center;
-  border: 2px solid var(--line); border-radius: 50%;
-  font-size: 15px; font-weight: 800;
-  background: var(--surface); color: var(--ink);
-}
-.mn-badge { background: var(--grass); color: var(--on-color); }
-.mn-now {
-  position: absolute; top: -26px;
-  font-family: var(--font-pixel); font-size: 10px;
-  background: var(--on-color); color: #fff;
-  padding: 4px 8px; border-radius: 6px;
-}
-[data-theme="dark"] .mn-now { background: #f2f8ff; color: #0f1721; }
-.mn-title { font-family: var(--font-pixel); font-size: 11px; text-align: center; max-width: 150px; line-height: 1.3; margin-top: 10px; }
-.mn-sub { font-size: 13px; color: var(--muted); font-weight: 700; margin-top: 2px; }
-.map-node.locked .mn-title { color: var(--muted); }
-/* «камушки» между узлами — на трети и двух третях пути от предыдущего узла */
-.map-stones { position: absolute; top: 6px; left: 50%; width: 0; height: 44px; }
-.map-stones i {
-  position: absolute; width: 12px; height: 12px; margin-left: -6px;
-  background: var(--surface); border: 2px solid var(--line); border-radius: 3px;
-}
-.map-stones i:nth-child(1) { top: 4px;  left: calc((var(--px) * 2 + var(--x)) / 3 * var(--step)); }
-.map-stones i:nth-child(2) { top: 26px; left: calc((var(--px) + var(--x) * 2) / 3 * var(--step)); }
+/* ==== КАРТА-ПУТЬ (docs/design-v2 STYLE.md §7, эскиз 34) ==== */
+.path { position: relative; box-sizing: content-box; width: calc(100% - 6px); max-width: 554px; margin: 0 auto; border: 3px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-hard); }
+.path-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+[data-theme="dark"] .path-art { filter: brightness(.82) saturate(.95); }
+.path-mark { position: absolute; z-index: 2; transform: translate(-50%, -50%); padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
+.path-mark .mn-block { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+  border: 4px solid var(--line); border-radius: 26px; background: #fffdf6; color: #1c2b1a; font-size: 20px; font-weight: 800; box-shadow: 3px 3px 0 var(--line); }
+.path-mark.done .mn-block { background: var(--grass); }
+.path-mark.current .mn-block { background: #fffdf6; box-shadow: 0 0 0 4px #fffdf6, 0 0 0 8px var(--gold); }
+.path-mark.locked .mn-block { background: #dfe6e2; border-color: #9fb0b8; }
+.path-mark.checkpoint .mn-block { width: 54px; height: 54px; border-radius: 8px 8px 27px 27px; border-color: var(--gold-2); }
+.path-mark.checkpoint.locked .mn-block { background: #efe3c2; border-color: var(--gold-2); }
+.path-mark:active .mn-block { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
+.path-mark:focus-visible { outline: none; }
+.path-mark:focus-visible .mn-block { outline: 3px solid var(--diamond); outline-offset: 4px; }
+.path-label { position: absolute; z-index: 1; transform: translateX(-50%); padding: 1px 10px; background: #fffdf6; color: #1c2b1a; border: 2px solid var(--line);
+  border-radius: var(--radius-pill); font-size: 14px; font-weight: 800; white-space: nowrap; }
+.path-label.locked { color: #4a5a48; border-color: #9fb0b8; }
+.path-label .mn-new { position: static; display: inline-block; margin-left: 4px; transform: none; font-size: 10px; padding: 0 5px; }
+.path-here-tag { position: absolute; z-index: 2; padding: 1px 8px; background: var(--gold); color: #1c2b1a; border: 2px solid var(--line); border-radius: var(--radius-pill); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.path-hero { position: absolute; z-index: 1; width: 15%; max-width: 70px; aspect-ratio: 58 / 70; }
+.path-card { position: absolute; z-index: 4; width: 236px; box-sizing: border-box; padding: 10px 12px; background: #fffdf6; color: #1c2b1a; border: 3px solid var(--line); border-radius: 6px;
+  box-shadow: var(--shadow-hard); display: flex; flex-direction: column; gap: 4px; }
+.path-card-kicker { font-size: 12px; font-weight: 800; color: #3a4a38; letter-spacing: .04em; }
+.path-card-name { font-size: 20px; font-weight: 800; line-height: 1.05; }
+.path-card-en { font-size: 17px; font-weight: 700; color: #2a7cb4; }
+.path-card-prog { font-size: 14px; font-weight: 700; color: #3a4a38; }
+.path-card .btn { margin-top: 4px; min-height: 46px; width: 100%; justify-content: center; font-family: var(--font-body); font-size: 19px; font-weight: 800; }
+.path-card-lock { margin-top: 4px; padding: 6px 8px; background: #eef1ef; border-radius: 6px; font-size: 14px; font-weight: 700; color: #3a4a38; }
+.path-tail { position: absolute; z-index: 1; left: 16px; right: 16px; }
+.path-next { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px; text-align: left; font: inherit; color: #fffdf6; cursor: pointer;
+  background: rgba(28, 43, 26, .55); border: 3px solid #9ff2f5; border-radius: 6px; min-height: 64px; }
+.path-next > span:first-child { font-size: 26px; }
+.path-next b { display: block; font-size: 18px; }
+.path-next small { font-size: 14px; font-weight: 600; color: #dfe6e2; }
+.path-passed { display: flex; align-items: center; gap: 8px; margin: 0 auto 10px; max-width: 560px; padding: 6px 10px; background: #e4f7e7; color: #2e5e35;
+  border: 3px solid var(--line); border-radius: 6px; font-size: 14px; font-weight: 800; }
+.path-passed > span:nth-child(2) { flex: 1; }
+.path-passed-go { border: 0; background: none; font: inherit; color: inherit; cursor: pointer; min-height: 32px; }
+.path-plate { max-width: 560px; margin: 0 auto 12px; flex-direction: column; align-items: stretch; gap: 2px; }
+.path-kicker { font-size: 12px; font-weight: 800; color: var(--diamond-2); letter-spacing: .06em; }
+[data-theme="dark"] .path-kicker { color: var(--diamond-3); }
+.path-plate-row { display: flex; align-items: baseline; gap: 8px; }
+.path-plate-row b { flex: 1; font-size: 22px; line-height: 1.1; }
+.path-count { font-size: 14px; font-weight: 800; }
 
 /* ==== ЭКРАН ТЕМЫ ==== */
 .hub-progress { margin-top: 14px; font-weight: 700; color: var(--ink-2); }
@@ -531,12 +510,9 @@ section { margin-top: 32px; }
 .quest-legend { margin-top: 10px; font-size: 13px; }
 /* «Новое» — тема или квест из пакета локации (14 дней) */
 .new-badge { position: absolute; top: -10px; right: -6px; padding: 2px 8px; border: 2px solid var(--line); border-radius: var(--radius-pill); background: var(--lava); color: #1c2b1a; font-size: 12px; font-weight: 800; transform: rotate(4deg); }
-.map-node { position: relative; }
-.mn-new { top: -6px; right: 4px; }
 @media (max-width: 480px){ .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .quest-card { padding-left: 4px; padding-right: 4px; } .hub-name { font-size: 15px; } }
 .quest-result { margin: 6px 0 0; padding: 8px 12px; border: 3px solid var(--rarity, var(--line)); border-radius: 12px; background: var(--surface); }
 /* боссы на месте проверок — легендарная рамка */
-.map-node.checkpoint .mn-block { outline: 4px solid var(--rarity-legend); outline-offset: 3px; }
 /* сундук достижений */
 .ach-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .ach { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 3px dashed var(--muted); border-radius: 14px; background: var(--surface); color: var(--ink); opacity: .85; }
@@ -1411,7 +1387,6 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
   .t-tiles { grid-template-columns: repeat(2, 1fr); }
   .level-bar { grid-template-columns: 1fr auto; }
   .level-bar .goal { grid-column: 1 / 2; grid-row: 2; }
-  .map { --step: 44px; }
   .flash-en { font-size: 32px; }
   .slot-l { width: 36px; height: 48px; font-size: 24px; }
   .spell-tile { width: 46px; height: 52px; }

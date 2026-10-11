@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-34" y="-66" width="44" height="30" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><line x1="-12" y1="-66" x2="-12" y2="-36" stroke="#1c2b1a" stroke-width="2.5"/>
+<rect x="-56" y="-28" width="78" height="22" rx="4" fill="#5cbaee" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-56" y="-8" width="78" height="22" rx="3" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-62" y="-14" width="12" height="28" rx="3" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><rect x="16" y="-14" width="12" height="28" rx="3" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<line x1="44" y1="-48" x2="44" y2="20" stroke="#1c2b1a" stroke-width="3"/><polygon points="30,-48 58,-48 52,-64 36,-64" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<ellipse cx="-12" cy="24" rx="44" ry="6" fill="#ff7bb0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

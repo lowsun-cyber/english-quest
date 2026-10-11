@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-50" y="-58" width="100" height="82" fill="#9fb0b8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-50 -58 v-10 h14 v8 h14 v-8 h16 v8 h14 v-8 h14 v8 h14 v-8 h14 v10" fill="#9fb0b8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-22 24 V-14 a22 22 0 0 1 44 0 V24 Z" fill="#4a3018" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-50 -30 q12 6 8 20 q-6 12 4 26 M50 -40 q-12 8 -6 22 q6 14 -4 30" fill="none" stroke="#2e8a3d" stroke-width="5" stroke-linecap="round"/>
+<circle cx="-44" cy="-16" r="5" fill="#61d074" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="44" cy="-24" r="5" fill="#61d074" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-40" y="-50" width="80" height="16" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><text x="0" y="-38" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="11" fill="#1c2b1a">ИСПЫТАНИЕ</text>
+</svg>

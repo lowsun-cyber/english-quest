@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-8" y="-30" width="16" height="54" fill="#8b6f5a" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="0" cy="-60" r="36" fill="#3fb650" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="-18" cy="-70" r="10" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="-18" y="-66" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="13" fill="#1c2b1a">n</text>
+<circle cx="16" cy="-78" r="10" fill="#ff7bb0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="16" y="-74" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="13" fill="#1c2b1a">q</text>
+<circle cx="-2" cy="-44" r="10" fill="#5cbaee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="-2" y="-40" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="13" fill="#1c2b1a">z</text>
+<circle cx="22" cy="-50" r="9" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="22" y="-46" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="12" fill="#1c2b1a">s</text>
+<rect x="-62" y="-6" width="26" height="26" rx="3" fill="#a870ff" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<text x="-49" y="13" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="13" fill="#fffdf6">sh</text>
+<rect x="36" y="-2" width="24" height="24" rx="3" fill="#ff6b3a" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<text x="48" y="15" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="12" fill="#fffdf6">ch</text>
+</svg>
