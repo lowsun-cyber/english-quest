@@ -93,10 +93,32 @@ export function achievementsOf(st){
     if (w.skills != null) return skills >= w.skills;
     if (w.words != null) return words >= w.words;
     if (w.mastered != null) return (st.mastered || 0) >= w.mastered;
+    if (w.revenge != null) return (st.revengeWins || 0) >= w.revenge;
     if (w.rank) return (ranks.find(r => r.region.id === w.rank[0])?.step || 0) >= w.rank[1];
     return false;
   };
   return ACHIEVEMENTS.filter(a => ok(a.when)).map(a => a.id);
+}
+
+// ---------- квест-реванш ----------
+// Накопилось REVENGE_MIN трудных слов и вопросов в «Моих ошибках» — на карте появляется реванш на самые трудные
+// (до REVENGE_MAX). Задания — на ступень проще, чем там, где была ошибка (revengeFormat).
+export const REVENGE_MIN = 5, REVENGE_MAX = 7;
+// В реванш идут слова и вопросы грамматики; отвеченное в реванше верно (m.rv) возвращается туда только после новой ошибки
+const revengeCandidates = st => mistakeList(st).filter(x => (x.m.type === 'word' || x.m.type === 'grammar') && !(x.m.rv && x.m.rv >= (x.m.last || 0)));
+export function revengeItems(st){
+  return revengeCandidates(st)
+    .sort((a, b) => (b.m.wrong || 0) - (a.m.wrong || 0) || (b.m.last || 0) - (a.m.last || 0))
+    .slice(0, REVENGE_MAX);
+}
+export const revengeReady = st => revengeCandidates(st).length >= REVENGE_MIN;
+// Формат задания реванша: «Напиши» → выбрать слово по картинке; слова и прочее → услышать и выбрать картинку;
+// «Слушай» → то же из двух картинок; грамматика → два варианта (верный и тот, что выбирал ребёнок)
+export function revengeFormat(m){
+  if (m.type === 'grammar') return 'grammar2';
+  if (m.ex === 'spell') return 'pick-word';
+  if (m.ex === 'listen') return 'listen2';
+  return 'listen';
 }
 
 // ---------- ранги регионов ----------

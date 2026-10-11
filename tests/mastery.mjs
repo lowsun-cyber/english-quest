@@ -105,5 +105,24 @@ check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g
   check('пустой прогресс — без достижений', S.achievementsOf(fresh()).length === 0);
 }
 
+// квест-реванш: отбор и формат на ступень проще
+{
+  const { LESSONS } = ctx.window.EQ, L = LESSONS.find(l => l.id === 'g2-family');
+  const mk = (n, extra = {}) => Object.fromEntries(L.words.slice(0, n).map((w, i) => [`word:${L.id}:${w.en}`, { type: 'word', lessonId: L.id, ref: w.en, wrong: i + 1, box: 0, due: 0, last: 100 + i, ...extra }]));
+  check('реванш: 4 трудных — рано', !S.revengeReady(fresh({ mistakes: mk(4) })));
+  check('реванш: 5 трудных — готов', S.revengeReady(fresh({ mistakes: mk(5) })));
+  const items = S.revengeItems(fresh({ mistakes: mk(9) }));
+  check('реванш: не больше 7, сначала с большим числом ошибок', items.length === 7 && items[0].m.wrong === 9, items.map(x => x.m.wrong));
+  check('реванш: отвеченное верно не возвращается без новой ошибки', !S.revengeReady(fresh({ mistakes: mk(5, { rv: 500 }) })));
+  check('реванш: после новой ошибки — снова в реванше', S.revengeReady(fresh({ mistakes: mk(5, { rv: 50 }) })));
+  check('реванш: чтение не берётся', !S.revengeReady(fresh({ mistakes: { ...mk(4), r: { type: 'reading', lessonId: L.id, ref: L.reading.questions[0].q, wrong: 3, box: 0, due: 0, last: 1 } } })));
+  check('формат: «Напиши» → выбрать слово', S.revengeFormat({ type: 'word', ex: 'spell' }) === 'pick-word');
+  check('формат: «Слова» → на слух', S.revengeFormat({ type: 'word', ex: 'vocab' }) === 'listen');
+  check('формат: «Слушай» → на слух из двух', S.revengeFormat({ type: 'word', ex: 'listen' }) === 'listen2');
+  check('формат: старая ошибка без упражнения → на слух', S.revengeFormat({ type: 'word' }) === 'listen');
+  check('формат: грамматика → из двух', S.revengeFormat({ type: 'grammar' }) === 'grammar2');
+  check('достижение за реванш', S.achievementsOf(fresh({ revengeWins: 1 })).includes('revenge-1'));
+}
+
 console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);
 process.exit(fail ? 1 : 0);

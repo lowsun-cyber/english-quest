@@ -7,7 +7,7 @@ import { speak } from './tts.js';
 import { afterFeedback, closeModal, openModal, toast } from './ui.js';
 import { DAY, daysLabel, distractors, escapeHtml, shuffle, startOfDay } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
-import { classifyError, mistakeList, resolveMistake } from './stats.js';
+import { REVENGE_MIN, classifyError, mistakeList, resolveMistake, revengeItems, revengeReady } from './stats.js';
 
 // ---------- МОИ ОШИБКИ (интервальное повторение) ----------
 // Каждая ошибка — карточка в «коробке» 0..3. Верный ответ при повторении двигает её дальше,
@@ -35,10 +35,11 @@ export function recordMistake(type, lesson, ref, info = {}){
 }
 // Тип ошибки — в карточку «Моих ошибок», в общий счёт типов и (для слов) в ответы по слову
 const WITH_KEEP = 5;
-function noteError(m, type, ref, { exercise, chosen, skill } = {}){
+export function noteError(m, type, ref, { exercise, chosen, skill } = {}){
   const error = classifyError({ type, exercise, answer: ref, chosen, skill });
   m.err = { ...(m.err || {}), [error]: (m.err?.[error] || 0) + 1 };
   m.lastErr = error;
+  if (exercise) m.ex = exercise;   // где ошибся — реванш подаст это на ступень проще
   if (chosen && chosen !== ref) m.with = topCounts({ ...(m.with || {}), [chosen]: (m.with?.[chosen] || 0) + 1 }, 3);
   countError(error);
   if (type === 'word') logWord(ref, false, { error, chosen });
@@ -137,11 +138,14 @@ export function renderMistakes(){
           ${!due.length && nextLabel ? `<span>Следующее повторение: <b>${nextLabel}</b></span>` : ''}
         </div>
         <button class="btn" id="btn-review" ${due.length ? '' : 'disabled'}>🔁 Повторить${due.length ? ` (${Math.min(due.length, REVIEW_SESSION_SIZE)})` : ''}</button>
+        ${revengeReady(state) ? `<button class="btn violet" data-revenge>⚔️ Квест-реванш (${revengeItems(state).length})</button>`
+          : `<span class="t-muted revenge-soon">Квест-реванш — когда трудных будет ${REVENGE_MIN}</span>`}
       </div>
       <ul class="mistake-list" role="list">
         ${[...due, ...later].map(item).join('')}
       </ul>
     </div>`;
+  document.dispatchEvent(new Event('eq:mistakes'));   // кнопка «Продолжить» на главной
   const btn = document.getElementById('btn-review');
   if (btn && due.length) btn.onclick = startReview;
 }

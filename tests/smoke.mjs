@@ -885,6 +885,39 @@ try {
     }
   });
 
+  await test('квест-реванш и «Продолжить»', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), M = await import('./js/mistakes.js');
+    const saved = JSON.stringify(state.mistakes), L = window.EQ.LESSONS.find(l => l.id === 'g2-family'), now = Date.now();
+    state.mistakes = {};
+    const exs = ['spell', 'vocab', 'listen', 'vocab'];
+    L.words.slice(0, 4).forEach((w, i) => state.mistakes['word:' + L.id + ':' + w.en] = { type: 'word', lessonId: L.id, ref: w.en, wrong: 5 - i, box: 0, due: now + 864e5, last: now, ex: exs[i] });
+    await saveState(); M.renderMistakes();
+    if (document.querySelector('[data-revenge]')) throw new Error('реванш при 4 трудных');
+    const g = L.grammar[0], wrong = g.options.find(o => o !== g.a);
+    state.mistakes['grammar:' + L.id + ':' + g.q] = { type: 'grammar', lessonId: L.id, ref: g.q, wrong: 1, box: 0, due: now + 864e5, last: now, with: { [wrong]: 1 } };
+    await saveState(); M.renderMistakes(); (await import('./js/map.js')).renderMap();
+    if (!document.querySelector('#lessons .revenge-banner') || !document.querySelector('#mistakes [data-revenge]')) throw new Error('нет реванша на карте или в «Моих ошибках»');
+    if (!/реванш/i.test(f('btn-hero-start').textContent)) throw new Error('«Продолжить» не ведёт на реванш: ' + f('btn-hero-start').textContent);
+    f('btn-hero-start').click(); await __sleep(500);
+    const formats = [], gold0 = state.gold;
+    for (let i = 0; i < 5; i++){
+      const q = document.querySelector('#modal .question'), opts = [...q.querySelectorAll('.opt')];
+      let ans;
+      if (q.querySelector('.q-sentence')){ formats.push('g' + opts.length); if (!opts.some(o => o.dataset.o === wrong)) throw new Error('в грамматике нет варианта, который выбирал ребёнок'); ans = g.a; }
+      else if (q.querySelector('.q-emoji')){ formats.push('pick'); ans = L.words.find(w => w.emoji === q.querySelector('.q-emoji').textContent && opts.some(o => o.dataset.o === w.en)).en; }
+      else { formats.push('listen' + opts.length); ans = __said; }
+      opts.find(o => o.dataset.o === ans).click(); await __sleep(1700);   // следующий вопрос на слух звучит через 0,35 с после показа
+    }
+    const res = document.querySelector('#modal .question').innerText;
+    if (!/Реванш взят/.test(res) || state.gold - gold0 < 10) throw new Error('итог: ' + res);
+    if (formats.join(',') !== 'pick,listen4,listen2,listen4,g2') throw new Error('форматы на ступень проще: ' + formats.join(','));
+    if (Object.values(state.mistakes).some(m => m.box !== 1)) throw new Error('реванш не засчитал повторение');
+    __close(); await __sleep(100);
+    if (/реванш/i.test(f('btn-hero-start').textContent)) throw new Error('после реванша кнопка всё ещё на реванше');
+    state.mistakes = JSON.parse(saved); await saveState(); M.renderMistakes();
+    return 'появляется с 5 трудных, форматы ' + formats.join(' ') + ', +' + (state.gold - gold0) + ' 🪙, «Продолжить» → ' + f('btn-hero-start').textContent;`)));
+
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {
   results.push({ ok: false, name: 'запуск', info: e.message });
