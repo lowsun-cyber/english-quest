@@ -13,6 +13,8 @@ export const DEFAULT_STATE = {
   skills: {},      // { 'G2-01': { ok, bad, last, wrong: { 'неверный вариант': n } } } — грамматические навыки (CURRICULUM.skills)
   words: {},       // { en: { ok, bad, last, err: { тип: n }, with: { с чем спутал: n } } } — ответы по словам (мастерство)
   errorTypes: {},  // { тип ошибки: n } — ERROR_TYPES в content.js, считает logError() в mistakes.js
+  quests: {},      // { 'урок:упражнение': { best, last, at, runs, passedAt } } — результаты квестов в %, см. js/quests.js
+  achievements: {}, // { id: когда получено } — ACHIEVEMENTS в content.js
   homework: null,  // текущее домашнее задание, см. makeHomework()
   checkpoints: {}, // { 'g2-p1': { best, passedAt } } — проверки после каждых 4 тем
   settings: { theme: 'light', speechRate: 0.9, dailyGoal: 10 },

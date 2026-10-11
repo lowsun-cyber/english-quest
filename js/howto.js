@@ -30,7 +30,7 @@ document.getElementById('ht-topics').innerHTML = grades.map(g => {
   const items = [];
   ls.forEach((l, i) => {
     items.push(`<li>${l.words[0]?.emoji || '📘'} <b>${esc(l.title)}</b> — ${esc(l.subtitle)}</li>`);
-    if ((i + 1) % 4 === 0) items.push(`<li class="ht-cp">${(i + 1) === 4 ? '💎' : '🏆'} Проверка: 10 вопросов по темам выше</li>`);
+    if ((i + 1) % 4 === 0) items.push(`<li class="ht-cp">${(i + 1) === 4 ? '💎' : '🏆'} Босс-проверка: 10 вопросов по темам выше</li>`);
   });
   return `<div class="ht-grade"><h4 class="ht-h4">${g} класс</h4><ol>${items.join('')}</ol></div>`;
 }).join('');

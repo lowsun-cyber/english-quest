@@ -22,6 +22,7 @@ import './cloud.js';
 import { applyFreezes, openFreezeInfo, renderGoal } from './activity.js';
 import { CHARACTERS, HARLOW_LINES } from './eq.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';
+import { renderAchievements } from './achievements.js';
 import { renderHUD, renderInventory, renderTeam } from './hud.js';
 import { currentNode, mapGrade, openNode, renderMap } from './map.js';
 import { renderMistakes } from './mistakes.js';
@@ -65,6 +66,7 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
   renderTeam();
   renderMap();
   renderInventory();
+  renderAchievements();
   renderMistakes();
   renderProfileChip();
   // несколько учеников: спрашиваем, кто занимается (и для кого пришло задание по ссылке)

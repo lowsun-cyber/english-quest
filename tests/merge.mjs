@@ -144,5 +144,16 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('старый прогресс на сервере не стирает новые ответы', M(old, S({ words: { cat: { ok: 1, bad: 0, last: 5 } } }), old).words.cat?.ok === 1);
 }
 
+// квесты и достижения (итерация 3)
+{
+  const base = S({ quests: { 'a:vocab': { best: 60, runs: 1, at: 100, passedAt: null } }, achievements: {} });
+  const l = S({ quests: { 'a:vocab': { best: 90, runs: 2, at: 200, passedAt: 200 } }, achievements: { 'first-quest': 200 } });
+  const r = S({ quests: { 'a:vocab': { best: 70, runs: 3, at: 300, passedAt: null }, 'a:listen': { best: 100, runs: 1, at: 250, passedAt: 250 } }, achievements: { 'first-quest': 150, 'goal-1': 120 } });
+  const m = M(base, l, r);
+  check('квест: лучший результат и число прохождений', m.quests['a:vocab'].best === 90 && m.quests['a:vocab'].runs === 4 && m.quests['a:vocab'].passedAt === 200, m.quests['a:vocab']);
+  check('квест с другого устройства', m.quests['a:listen']?.best === 100);
+  check('достижения: объединение, время — самое раннее', same(m.achievements, { 'first-quest': 150, 'goal-1': 120 }), m.achievements);
+}
+
 console.log(`\n${total - fail} из ${total} проверок объединения прошли`);
 process.exit(fail ? 1 : 0);

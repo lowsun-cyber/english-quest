@@ -2,7 +2,7 @@
 import { endView } from './backup.js';
 import { CHARACTERS } from './eq.js';
 import { heroPic } from './heroes.js';
-import { speak, stopSpeech } from './tts.js';
+import { speak, speechDone, stopSpeech } from './tts.js';
 
 // ---------- TOAST / CONFETTI ----------
 export function toast(msg){
@@ -77,9 +77,17 @@ export function openModal(html, opts={}){
 // Таймеры «показать ответ → следующий вопрос» не должны заново открывать окно,
 // если ребёнок успел его закрыть (или открыть другой урок).
 export let modalGen = 0;
+// Переход ждёт, пока договорит озвучка, и делает паузу — фразы не накладываются,
+// а экран завершения появляется после того, как прозвучало слово.
+export const SPEECH_GAP = 600;
 export function afterFeedback(fn, ms){
   const gen = modalGen;
-  setTimeout(() => { if (gen === modalGen && back.classList.contains('open')) fn(); }, ms);
+  const alive = () => gen === modalGen && back.classList.contains('open');
+  setTimeout(async () => {
+    if (!alive()) return;
+    if (await speechDone()) await new Promise(r => setTimeout(r, SPEECH_GAP));
+    if (alive()) fn();
+  }, ms);
 }
 export const modalIsOpen = () => back.classList.contains('open');
 // постоянные подписчики на закрытие окна (синхронизация ждёт, пока ребёнок закончит упражнение)

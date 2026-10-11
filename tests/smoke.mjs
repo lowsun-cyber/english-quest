@@ -21,7 +21,14 @@ if (!CHROME){ console.error('Не найден Google Chrome. Укажите п�
 try { await fetch(APP); console.error(`Порт ${PORT} уже занят — остановите другой сервер и запустите тест снова.`); process.exit(2); } catch (e) {}
 
 const profile = mkdtempSync(join(tmpdir(), 'eq-smoke-'));
-const server = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1', '--directory', ROOT], { stdio: 'ignore', cwd: tmpdir() });
+// Статический сервер Python с длинной очередью соединений: у http.server по умолчанию она 5, и когда браузер
+// разом запрашивает десятки модулей, изредка соединение отклонялось — приложение не запускалось и падали все тесты.
+const SERVE = `import functools, http.server, sys
+class S(http.server.ThreadingHTTPServer): request_queue_size = 128
+h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=sys.argv[2])
+h.log_message = lambda *a: None
+S(('127.0.0.1', int(sys.argv[1])), h).serve_forever()`;
+const server = spawn('python3', ['-I', '-c', SERVE, String(PORT), ROOT], { stdio: 'ignore', cwd: tmpdir() });
 // на сервере GitHub (CI) Chrome запускается без песочницы — там нет нужных прав
 const chrome = spawn(CHROME, ['--headless=new', '--remote-debugging-port=9335', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--window-size=1200,900', ...(process.env.CI ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), 'about:blank'], { stdio: 'ignore' });
 
@@ -50,7 +57,7 @@ const STUBS = `
   const man = await (await fetch('tts_manifest.json')).json(); const rev = {}; for (const [k, v] of Object.entries(man)) rev[v] = rev[v] || k;
   const voices = await (await fetch('tts_voices.json')).json(); for (const [k, v] of Object.entries(voices)) rev[v.replace(/\\.(mp3|m4a)$/, '')] = k;
   window.speechSynthesis.speak = u => { window.__said = u.text; };
-  window.Audio = function(src){ const k = String(src).split('/').pop().replace(/\\.(mp3|m4a)$/, ''); window.__said = rev[k] || src; const o = { play: () => Promise.resolve(), pause(){}, set currentTime(v){} }; window.__lastAudio = o; return o; };
+  window.Audio = function(src){ const k = String(src).split('/').pop().replace(/\\.(mp3|m4a)$/, ''); window.__said = rev[k] || src; const o = { paused: true, ended: true, play: () => Promise.resolve(), pause(){}, set currentTime(v){} }; window.__lastAudio = o; return o; };
   window.confirm = () => true;
   window.__sleep = t => new Promise(r => setTimeout(r, t));
   window.__toasts = []; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.classList?.contains('toast') && window.__toasts.push(n.textContent)))).observe(document.body, { childList: true });
@@ -160,6 +167,40 @@ try {
       [...document.querySelectorAll('.opt')].find(o => o.dataset.o === g.a).click(); await __sleep(1100); }
     const p = __ls().lessonProgress['g2-letters']; __close();
     return 'match ' + p.match + ', spell ' + p.spell + ', grammar ' + p.grammar;`));
+
+  await test('доска квестов: редкость, замки, награда один раз', () => js(`
+    const L = window.EQ.LESSONS.find(l => l.id === 'g2-letters'), f = id => document.getElementById(id);
+    document.querySelector('.map-node').click(); await __sleep(200);
+    const card = k => document.querySelector('.quest-card[data-ex=' + k + ']');
+    const rar = k => card(k).querySelector('.quest-rarity').textContent;
+    if (rar('listen') !== 'Обычный' || rar('spell') !== 'Редкий' || rar('picture') !== 'Эпический' || rar('reading') !== 'Эпический') throw new Error('редкость: ' + ['listen', 'spell', 'picture', 'reading'].map(rar).join(', '));
+    if (!card('picture').classList.contains('locked') || !card('reading').classList.contains('locked')) throw new Error('эпические открыты без условий');
+    if (!/приз:/.test(card('spell').textContent)) throw new Error('приз не виден заранее: ' + card('spell').textContent);
+    __toasts.length = 0; card('picture').click(); await __sleep(150);
+    if (!__toasts.some(t => /🔒/.test(t)) || document.querySelector('.pic-emoji')) throw new Error('закрытый квест открылся');
+    __close(); await __sleep(100);
+    // награда за редкость — один раз; повтор пройденного — половина опыта
+    const Q = await import('./js/quests.js'), { state, saveState } = await import('./js/state.js'), hud = await import('./js/hud.js');
+    delete state.quests['g2-letters:vocab'];
+    const gold0 = state.gold;
+    Q.startQuest(L, 'vocab'); for (let i = 0; i < 5; i++) Q.noteAnswer(true);
+    const first = Q.questResult();
+    if (!/Квест пройден/.test(first) || state.gold - gold0 !== 5) throw new Error('первое прохождение: ' + first + ', монет +' + (state.gold - gold0));
+    Q.startQuest(L, 'vocab'); if (!Q.isReplay()) throw new Error('повтор не распознан');
+    const xp0 = state.xp; hud.reward(10, 2); if (state.xp - xp0 !== 5) throw new Error('опыт за повтор: ' + (state.xp - xp0));
+    const again = Q.questResult();
+    if (/Квест пройден/.test(again) || state.gold - gold0 !== 7) throw new Error('награда выдана повторно: ' + again);
+    // обычные и редкие темы пройдены — эпические открываются
+    for (const k of ['listen', 'match', 'spell', 'grammar']) state.quests['g2-letters:' + k] = { best: 100, last: 100, at: Date.now(), runs: 1, passedAt: Date.now() };
+    await saveState();
+    document.querySelector('.map-node').click(); await __sleep(200);
+    if (card('picture').classList.contains('locked') || card('reading').classList.contains('locked')) throw new Error('эпические не открылись');
+    __close(); await __sleep(100);
+    // сундук достижений: все карточки, полученное отмечено и сохранено, секретное — силуэт
+    const achs = document.querySelectorAll('#achievements .ach');
+    if (achs.length !== window.EQ.ACHIEVEMENTS.length || !document.querySelector('#achievements .ach.got') || !state.achievements['first-quest']) throw new Error('сундук: ' + achs.length + ', получено ' + JSON.stringify(state.achievements));
+    if (!document.getElementById('achievements').textContent.includes('???')) throw new Error('секретное достижение видно до получения');
+    return 'замки по редкости, приз заранее, +5 🪙 один раз, повтор — ½ XP, сундук достижений';`));
 
   await test('что на картинке (2-E)', () => js(`
     const L = window.EQ.LESSONS.find(l => l.id === 'g2-letters');
@@ -304,7 +345,7 @@ try {
     if (!/Грамматика по навыкам/.test(txt) || !/Неправильные глаголы/.test(txt) || !/путает: goed/.test(txt)) throw new Error('в панели нет навыка');
     document.getElementById('t-report').click(); await __sleep(300);
     const rep = document.getElementById('t-report-out').value;
-    if (!/Грамматика, над чем поработать: Неправильные глаголы/.test(rep)) throw new Error('в отчёте нет слабого навыка: ' + rep.split(String.fromCharCode(10)).filter(l => l.includes('Грамматика')).join(' | '));
+    if (!/Грамматика, над чем поработать: .*Неправильные глаголы \\(33%, путает: goed\\)/.test(rep)) throw new Error('в отчёте нет слабого навыка: ' + rep.split(String.fromCharCode(10)).filter(l => l.includes('Грамматика')).join(' | '));
     __close(); return 'G4-07: 1 верно, 2 ошибки (goed)';`));
 
   await test('словарь: поиск в обе стороны, фраза, поверх урока', () => js(`
@@ -601,6 +642,10 @@ try {
       this.onresult?.({ results: [r] }); setTimeout(() => this.onend?.(), 30); }, 30); } stop(){} };
     const f = id => document.getElementById(id);
     const attempt = async (item) => { window.__sr.push(item); document.getElementById('mic').click(); await __sleep(250); };
+    // «Говори» — эпический квест: открываем его, как будто обычные и редкие квесты темы пройдены
+    { const { state, saveState } = await import('./js/state.js');
+      for (const k of ['vocab', 'listen', 'match', 'spell', 'grammar']) state.quests['g2-letters:' + k] = { best: 100, last: 100, at: Date.now(), runs: 1, passedAt: Date.now() };
+      await saveState(); }
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(500);
     const phrase = [...document.querySelectorAll('#speak-words .sw')].map(x => x.textContent).join(' ');
     const before = __ls().lessonProgress['g2-letters']?.speak || 0, xpBefore = __ls().xp;

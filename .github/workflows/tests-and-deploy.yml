@@ -40,7 +40,7 @@ jobs:
         run: node tests/merge.mjs
       - name: Разметка по карте программы
         run: node tests/curriculum.mjs
-      - name: Типы ошибок и мастерство
+      - name: Типы ошибок, мастерство, квесты и достижения
         run: node tests/mastery.mjs
       - name: Сервер учителя (API) на SQLite
         run: node tests/api.mjs

@@ -508,6 +508,26 @@ section { margin-top: 32px; }
 .hub-state { font-size: 12px; color: var(--muted); min-height: 1.3em; }
 .hub-ex.next .hub-state { color: var(--diamond-2); font-weight: 700; }
 [data-theme="dark"] .hub-ex.next .hub-state { color: var(--diamond-3); }
+/* доска квестов: рамка цвета редкости, приз виден заранее */
+.quest-card { position: relative; border-color: var(--rarity); border-width: 4px; padding-top: 22px; }
+.quest-rarity { position: absolute; top: -2px; left: -2px; padding: 2px 8px; border-radius: 10px 0 10px 0; background: var(--rarity); color: #fff; font-size: 12px; font-weight: 800; }
+.quest-card.rarity-legendary .quest-rarity { color: #1c2b1a; }
+.quest-prize { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.quest-card.locked { background: repeating-linear-gradient(135deg, var(--surface) 0 10px, rgba(0,0,0,0.04) 10px 20px); }
+.quest-card.locked .hub-name, .quest-card.locked .hub-em { opacity: .6; }
+.quest-card.locked .hub-state { color: var(--ink-2); }
+.quest-legend { margin-top: 10px; font-size: 13px; }
+@media (max-width: 480px){ .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .quest-card { padding-left: 4px; padding-right: 4px; } .hub-name { font-size: 15px; } }
+.quest-result { margin: 6px 0 0; padding: 8px 12px; border: 3px solid var(--rarity, var(--line)); border-radius: 12px; background: var(--surface); }
+/* боссы на месте проверок — легендарная рамка */
+.map-node.checkpoint .mn-block { outline: 4px solid #d69f0a; outline-offset: 3px; }
+/* сундук достижений */
+.ach-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.ach { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 3px dashed var(--muted); border-radius: 14px; background: var(--surface); color: var(--ink); opacity: .85; }
+.ach.got { border: 4px solid var(--rarity); opacity: 1; box-shadow: 0 4px 0 var(--line); }
+.ach-em { font-size: 30px; line-height: 1.1; }
+.ach small { color: var(--muted); font-size: 12px; }
+#ach-count { font-family: var(--font-body); font-size: 15px; }
 
 /* ==== КАРТОЧКИ ==== */
 .flash {

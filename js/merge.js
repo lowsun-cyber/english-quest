@@ -100,6 +100,17 @@ const RULES = {
   // { слово: { ok, bad, last, err, with } } — так же, как навыки
   words: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, { ok: add, bad: add, last: max, err: addMap, with: addMap })),
   errorTypes: addMap,
+  // квесты: лучший результат, число прохождений складывается, первое прохождение — самое раннее, last — последнее изменение
+  quests: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, {
+    best: max, runs: add, at: max,
+    passedAt: (x, y, z) => (y && z) ? Math.min(y, z) : (y || z || null),
+  })),
+  // достижения не теряются: объединение, время — самое раннее
+  achievements: (b, l, r) => {
+    const out = {};
+    for (const k of keysOf(b, l, r)){ const v = [l?.[k], r?.[k]].filter(Number.isFinite); if (v.length) out[k] = Math.min(...v); }
+    return out;
+  },
   // «Мои ошибки»: у кого попытка позже, тот и прав
   mistakes: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => clone(n(rr?.last) > n(ll?.last) ? rr : ll)),
   // домашка: новее та, что назначена позже; для того же задания — «сделано», если сделано где-нибудь

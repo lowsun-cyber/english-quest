@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, RANK_STEPS, REGIONS, SKILLS, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { ACHIEVEMENTS, CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SKILLS, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -22,10 +22,11 @@ export const GOAL_OPTIONS = [5, 10, 15, 20];
 export function lessonsOf(grade){ return LESSONS.filter(l => l.grade === grade).sort((a, b) => a.order - b.order); }
 export function checkpointsOf(grade){
   const ls = lessonsOf(grade), out = [];
-  for (let i = 0; i < ls.length; i += BLOCK){
+  // только полные блоки по 4 темы — как на карте (mapNodes); хвост из 1–3 тем без проверки
+  for (let i = 0; i + BLOCK <= ls.length; i += BLOCK){
     const part = i / BLOCK + 1;
     out.push({ id: `g${grade}-p${part}`, grade, part, lessons: ls.slice(i, i + BLOCK),
-      emoji: part === 1 ? '💎' : '🏆', title: `Проверка: ${grade} класс, часть ${part}` });
+      emoji: part === 1 ? '💎' : '🏆', title: `Босс-проверка: ${grade} класс, часть ${part}` });
   }
   return out;
 }
@@ -37,6 +38,67 @@ export function isLessonComplete(l, st){
   if (!p) return false;
   return (p.vocab||0) >= 3 && (p.listen||0) >= 3 && (p.grammar||0) >= 2 && (p.reading||0) >= 1;
 }
+// ---------- квесты: редкость, открытие, результаты ----------
+// state.quests['урок:упражнение'] = { best, last, runs, passedAt } — лучший и последний результат в %, первое прохождение на 80%
+export const questKey = (lesson, kind) => `${lesson.id}:${kind}`;
+export const rarityOf = id => QUEST_RARITY.find(r => r.id === id) || QUEST_RARITY[0];
+export const questPassed = (st, lesson, kind) => (st.quests?.[questKey(lesson, kind)]?.best ?? -1) >= QUEST_PASS_PCT;
+const SCORED = kind => kind !== 'cards';   // карточки — просмотр, без ответов
+export function lessonQuests(l){
+  const order = id => QUEST_RARITY.findIndex(r => r.id === id);
+  return lessonExercises(l).map(kind => ({ kind, rarity: questRarity(kind, l.grade) })).sort((a, b) => order(a.rarity) - order(b.rarity));
+}
+// Почему квест закрыт; null — открыт. Начатое (есть прогресс или результат) не закрывается никогда.
+//   редкий — после двух обычных квестов темы на 80% и выше;
+//   эпический — когда все редкие квесты темы пройдены на 80% или освоены все её навыки.
+export function questLock(lesson, kind, st){
+  if (st.settings?.unlockAll) return null;
+  if (st.lessonProgress?.[lesson.id]?.[kind] || st.quests?.[questKey(lesson, kind)]) return null;
+  // домашнее задание от репетитора открыто всегда
+  if (st.homework?.lessonId === lesson.id && (st.homework.tasks || []).includes(kind)) return null;
+  const qs = lessonQuests(lesson), rarity = questRarity(kind, lesson.grade);
+  const passed = r => qs.filter(q => q.rarity === r && SCORED(q.kind) && questPassed(st, lesson, q.kind)).length;
+  const scored = r => qs.filter(q => q.rarity === r && SCORED(q.kind)).length;
+  const commonsOk = passed('common') >= Math.min(2, scored('common'));
+  if (rarity === 'rare') return commonsOk ? null : `Пройди два обычных квеста этой темы на ${QUEST_PASS_PCT}%`;
+  if (rarity === 'epic' || rarity === 'legendary'){
+    if (!commonsOk) return `Пройди два обычных квеста этой темы на ${QUEST_PASS_PCT}%`;
+    const skills = [...new Set((lesson.grammar || []).map(q => q.skill).filter(Boolean))];
+    const skillsOk = skills.length && skills.every(c => masteryOf(st.skills?.[c] || {}).level === 'mastered');
+    return passed('rare') >= scored('rare') || skillsOk ? null : `Пройди редкие квесты этой темы на ${QUEST_PASS_PCT}%`;
+  }
+  return null;
+}
+// Сколько квестов пройдено на 80% — всего и по редкости; боссы — сданные проверки
+export function questCounts(st){
+  const out = { quests: 0, common: 0, rare: 0, epic: 0, legendary: 0, bosses: 0, bossesTotal: CHECKPOINTS.length };
+  for (const l of LESSONS) for (const q of lessonQuests(l)) if (questPassed(st, l, q.kind)){ out.quests++; out[q.rarity]++; }
+  out.bosses = CHECKPOINTS.filter(cp => st.checkpoints?.[cp.id]?.passedAt).length;
+  out.legendary += out.bosses;
+  return out;
+}
+// Какие достижения выполнены по прогрессу (ACHIEVEMENTS в content.js)
+export function achievementsOf(st){
+  const c = questCounts(st), ranks = regionRanks(st), si = streakOf(st);
+  const goalDays = Object.values(st.activity || {}).filter(d => d.goalMet).length;
+  const words = wordStats(st).filter(w => w.level === 'mastered').length;
+  const skills = skillStats(st).filter(x => x.level === 'mastered').length;
+  const ok = w => {
+    if (w.quests != null) return c.quests >= w.quests;
+    if (w.rare != null) return c.rare >= w.rare;
+    if (w.epic != null) return c.epic >= w.epic;
+    if (w.bosses != null) return w.bosses === 'all' ? c.bosses >= c.bossesTotal : c.bosses >= w.bosses;
+    if (w.goalDays != null) return goalDays >= w.goalDays;
+    if (w.streak != null) return si.best >= w.streak;
+    if (w.skills != null) return skills >= w.skills;
+    if (w.words != null) return words >= w.words;
+    if (w.mastered != null) return (st.mastered || 0) >= w.mastered;
+    if (w.rank) return (ranks.find(r => r.region.id === w.rank[0])?.step || 0) >= w.rank[1];
+    return false;
+  };
+  return ACHIEVEMENTS.filter(a => ok(a.when)).map(a => a.id);
+}
+
 // ---------- ранги регионов ----------
 // Ранг идёт по шагам подряд: 1 — пройдена хотя бы одна тема региона, 2 — сдана хотя бы одна проверка,
 // 3 — сданы все проверки, 4 — пройдены все темы. Считается из прогресса, поэтому старый прогресс
