@@ -66,6 +66,7 @@ const STUBS = `
     else document.getElementById('gate-in').value = pin || '';
     document.getElementById('gate-form').requestSubmit(); await __sleep(300); };
   window.__ls = () => JSON.parse(localStorage.getItem('english_quest_v2') || 'null');
+  window.__enter = async (node, wait = 200) => { node.click(); await __sleep(80); const go = document.getElementById('path-go'); if (!go) throw new Error('у метки нет кнопки входа: ' + (document.getElementById('path-card')?.innerText || '')); go.click(); await __sleep(wait); };
   window.__close = () => document.getElementById('modal-close').click();
   // «виден ли на экране» — атрибута hidden мало: его может перебить display из CSS
   window.__shown = el => !!el && getComputedStyle(el).display !== 'none' && el.getClientRects().length > 0;
@@ -113,11 +114,14 @@ try {
     const n = document.querySelectorAll('.map-node');
     if (!n[0].classList.contains('current') || !n[1].classList.contains('locked')) throw new Error(n[0].className + ' / ' + n[1].className);
     n[1].click(); await __sleep(100);
-    if (!__toasts.some(t => t.includes('Сначала пройди'))) throw new Error('нет подсказки о замке');
+    const card = document.getElementById('path-card');
+    if (card.hidden || !/Сначала пройди/.test(card.innerText) || document.getElementById('path-go')) throw new Error('нет подсказки о замке: ' + card.innerText);
+    document.body.click(); await __sleep(50);
+    if (!card.hidden) throw new Error('карточка не закрылась');
     return 'ok';`));
 
   await test('экран темы и карточки', () => js(`
-    document.querySelector('.map-node').click(); await __sleep(200);
+    await __enter(document.querySelector('.map-node'), 200);
     const ex = [...document.querySelectorAll('.hub-ex')].map(b => b.dataset.ex).join(',');
     if (ex !== 'cards,vocab,listen,match,spell,grammar,reading,speak,picture') throw new Error(ex);
     document.querySelector('.hub-ex[data-ex=cards]').click(); await __sleep(200);
@@ -129,7 +133,7 @@ try {
 
   await test('слова: 2 ошибки и 4 верных', () => js(`
     const L = window.EQ.LESSONS[0];
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
     const why = [], wrongs = [];
     for (let i = 0; i < 6; i++){ const q = document.querySelector('.q-emoji'); const ans = __byEmoji(L.words, q.textContent);
       const b = [...document.querySelectorAll('.opt')].find(o => i < 2 ? o.dataset.en !== ans : o.dataset.en === ans); b.click();
@@ -150,14 +154,14 @@ try {
     return 'XP ' + st.xp + ', ошибок 2, без штрафа';`));
 
   await test('слушай: все верно', () => js(`
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=listen]').click(); await __sleep(700);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=listen]').click(); await __sleep(700);
     for (let i = 0; i < 5; i++){ const b = [...document.querySelectorAll('.opt')].find(o => o.dataset.en === __said); if (!b) throw new Error('не нашёл ответ для «' + __said + '»'); b.click(); await __sleep(1300); }
     const p = __ls().lessonProgress['g2-letters'].listen; __close();
     if (p !== 5) throw new Error('listen = ' + p);
     return '5 из 5';`));
 
   await test('пары → напиши → грамматика', () => js(`
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=match]').click(); await __sleep(300);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=match]').click(); await __sleep(300);
     for (const l of [...document.querySelectorAll('.match-item[data-side=l]')]){ l.click(); [...document.querySelectorAll('.match-item[data-side=r]')].find(r => r.dataset.k === l.dataset.k).click(); await __sleep(100); }
     await __sleep(1500);
     if (!document.getElementById('next-spell')) throw new Error('нет перехода к «Напиши»');
@@ -168,7 +172,7 @@ try {
     await __sleep(100);
     if (!document.querySelector('.slot-l.ok')) throw new Error('слово ' + w + ' не принято');
     __close(); await __sleep(100);
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=grammar]').click(); await __sleep(300);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=grammar]').click(); await __sleep(300);
     for (let i = 0; i < L.grammar.length; i++){ const q = [...document.querySelectorAll('.q-text')][1].textContent.trim(); const g = L.grammar.find(x => x.q === q);
       [...document.querySelectorAll('.opt')].find(o => o.dataset.o === g.a).click(); await __sleep(1100); }
     const p = __ls().lessonProgress['g2-letters']; __close();
@@ -176,7 +180,7 @@ try {
 
   await test('доска квестов: редкость, замки, награда один раз', () => js(`
     const L = window.EQ.LESSONS.find(l => l.id === 'g2-letters'), f = id => document.getElementById(id);
-    document.querySelector('.map-node').click(); await __sleep(200);
+    await __enter(document.querySelector('.map-node'), 200);
     const card = k => document.querySelector('.quest-card[data-ex=' + k + ']');
     const rar = k => card(k).querySelector('.quest-rarity').textContent;
     if (rar('listen') !== 'Обычный' || rar('spell') !== 'Редкий' || rar('picture') !== 'Эпический' || rar('reading') !== 'Эпический') throw new Error('редкость: ' + ['listen', 'spell', 'picture', 'reading'].map(rar).join(', '));
@@ -199,7 +203,7 @@ try {
     // обычные и редкие темы пройдены — эпические открываются
     for (const k of ['listen', 'match', 'spell', 'grammar']) state.quests['g2-letters:' + k] = { best: 100, last: 100, at: Date.now(), runs: 1, passedAt: Date.now() };
     await saveState();
-    document.querySelector('.map-node').click(); await __sleep(200);
+    await __enter(document.querySelector('.map-node'), 200);
     if (card('picture').classList.contains('locked') || card('reading').classList.contains('locked')) throw new Error('эпические не открылись');
     __close(); await __sleep(100);
     // сундук достижений: все карточки, полученное отмечено и сохранено, секретное — силуэт
@@ -210,7 +214,7 @@ try {
 
   await test('что на картинке (2-E)', () => js(`
     const L = window.EQ.LESSONS.find(l => l.id === 'g2-letters');
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=picture]').click(); await __sleep(300);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=picture]').click(); await __sleep(300);
     let n = 0;
     while (document.querySelector('.pic-emoji') && n < 6){
       const em = document.querySelector('.pic-emoji').textContent, it = L.pics.find(p => p.emoji === em);
@@ -224,7 +228,7 @@ try {
     const st = __ls(); st.settings.unlockAll = true; st.settings.mapGrade = 3;
     localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
     const L = window.EQ.LESSONS.filter(l => l.grade === 3).sort((a, b) => a.order - b.order)[0], items = window.EQ.fillItemsFor(L);
-    document.querySelector('.map-node').click(); await __sleep(250);
+    await __enter(document.querySelector('.map-node'), 250);
     document.querySelector('.hub-ex[data-ex=fill]').click(); await __sleep(300);
     let n = 0;
     while (document.querySelector('.q-sentence') && n < 6){
@@ -241,7 +245,7 @@ try {
     const st = __ls(); st.settings.unlockAll = true; st.settings.mapGrade = 4;
     localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
     const L = window.EQ.LESSONS.filter(l => l.grade === 4).sort((a, b) => a.order - b.order)[0], items = window.EQ.buildItemsFor(L);
-    document.querySelector('.map-node').click(); await __sleep(250);
+    await __enter(document.querySelector('.map-node'), 250);
     document.querySelector('.hub-ex[data-ex=build]').click(); await __sleep(300);
     let n = 0, wrongDone = false;
     while (document.querySelector('.build-pool') && n < 6){
@@ -259,7 +263,7 @@ try {
 
   await test('чтение → тема пройдена → следующая открыта', () => js(`
     const L = window.EQ.LESSONS[0];
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=reading]').click(); await __sleep(300);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=reading]').click(); await __sleep(300);
     document.getElementById('read-start').click(); await __sleep(200);
     for (let i = 0; i < L.reading.questions.length; i++){ const q = document.querySelector('.q-text').textContent.trim(); const rq = L.reading.questions.find(x => x.q === q);
       [...document.querySelectorAll('.opt')].find(o => o.dataset.o === rq.a).click(); await __sleep(1000); }
@@ -287,7 +291,7 @@ try {
     localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
     const LS = window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order).slice(0, 4), words = LS.flatMap(l => l.words), gram = LS.flatMap(l => l.grammar);
     const cp = document.querySelectorAll('.map-node')[4]; if (!cp.classList.contains('current')) throw new Error('проверка не открылась: ' + cp.className);
-    cp.click(); await __sleep(700);
+    await __enter(cp, 700);
     for (let i = 0; i < 10; i++){
       const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.o); let ans;
       const em = document.querySelector('.q-emoji'), s = document.querySelector('.q-sentence');
@@ -366,7 +370,7 @@ try {
     t = await ask('My brother likes apples'); if (!/brother → брат/.test(t) || !/likes → нравиться/.test(t) || !/apples → яблоко/.test(t)) throw new Error('фраза: ' + t.slice(0, 200));
     t = await ask('zzzqx'); if (!/пока нет в словаре/.test(t)) throw new Error('нет сообщения «не найдено»');
     document.querySelector('.drawer-close').click(); await __sleep(350);
-    document.querySelector('.map-node').click(); await __sleep(250);
+    await __enter(document.querySelector('.map-node'), 250);
     document.querySelector('#modal .lesson-dict').click(); await __sleep(400);
     if (f('drawer-back').hidden) throw new Error('из урока словарь не открылся');
     document.getElementById('dict-q').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await __sleep(350);
@@ -414,7 +418,7 @@ try {
     const st = __ls(); st.activity = { [k(-2)]: { sec: 700, ok: 1, bad: 0, goalMet: true }, [k(-1)]: { sec: 650, ok: 1, bad: 0, goalMet: true }, [k(0)]: { sec: 590, ok: 0, bad: 0 } };
     localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`).then(() => load()).then(() => js(`
     if (document.getElementById('stat-streak').textContent !== '2') throw new Error('серия до: ' + document.getElementById('stat-streak').textContent);
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=cards]').click(); await __sleep(200);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=cards]').click(); await __sleep(200);
     for (let i = 0; i < 5; i++){ window.dispatchEvent(new Event('pointerdown')); await __sleep(2500); }
     __close(); await __sleep(200);
     if (!document.getElementById('goal').classList.contains('met')) throw new Error('цель не выполнена: ' + document.getElementById('goal-sub').textContent);
@@ -447,7 +451,7 @@ try {
     const st = __ls(); st.activity = {}; for (let d = -6; d <= -1; d++) st.activity[k(d)] = { sec: 700, ok: 1, bad: 0, goalMet: true };
     st.activity[k(0)] = { sec: 590, ok: 0, bad: 0 }; st.freezes = 0;
     localStorage.setItem('english_quest_v2', JSON.stringify(st)); return true;`)).then(() => load()).then(() => js(`
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=cards]').click(); await __sleep(200);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=cards]').click(); await __sleep(200);
     for (let i = 0; i < 5; i++){ window.dispatchEvent(new Event('pointerdown')); await __sleep(2500); }
     __close(); await __sleep(2800);
     const st = __ls();
@@ -459,7 +463,7 @@ try {
   await test('тёмная тема и Escape', () => js(`
     document.getElementById('btn-theme').click(); await __sleep(100);
     if (document.documentElement.dataset.theme !== 'dark') throw new Error('тема не переключилась');
-    document.querySelector('.map-node').click(); await __sleep(200);
+    await __enter(document.querySelector('.map-node'), 200);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await __sleep(100);
     if (document.getElementById('modal-back').classList.contains('open')) throw new Error('Escape не закрыл окно');
     return true;`).then(() => load()).then(() => js(`
@@ -525,7 +529,7 @@ try {
     if (!/Маша/.test(f('pf-name').textContent) || document.querySelector('#pf-name b')) throw new Error('не переключилось или имя не экранировано: ' + f('pf-name').innerHTML);
     if (f('stat-xp').textContent !== '0') throw new Error('у нового ученика XP ' + f('stat-xp').textContent);
     const L = window.EQ.LESSONS[0];
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
     const ans = __byEmoji(L.words, document.querySelector('.q-emoji').textContent);
     [...document.querySelectorAll('.opt')].find(o => o.dataset.en === ans).click(); await __sleep(300); __close(); await __sleep(200);
     const mashaXp = +f('stat-xp').textContent; if (!mashaXp) throw new Error('Маша не получила XP');
@@ -588,7 +592,7 @@ try {
     if (imgs.length !== 5 || imgs.some(i => !i.complete || !i.naturalWidth)) throw new Error('рисунки героев не загрузились');
     if (document.querySelector('.hero-art svg image[href*="harlow"]') === null) throw new Error('нет Dr. Harlow на главной');
     // эмоции гида: начало — рад, ошибка — подсказывает, следующий вопрос — думает
-    document.querySelector('.map-node').click(); await __sleep(200);
+    await __enter(document.querySelector('.map-node'), 200);
     if (document.querySelector('#modal .hero-img[data-mood]')?.dataset.mood !== 'happy') throw new Error('экран темы: гид не рад');
     document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
     const mood = () => document.querySelector('#modal .hero-img[data-mood]')?.dataset.mood;
@@ -656,7 +660,7 @@ try {
     { const { state, saveState } = await import('./js/state.js');
       for (const k of ['vocab', 'listen', 'match', 'spell', 'grammar']) state.quests['g2-letters:' + k] = { best: 100, last: 100, at: Date.now(), runs: 1, passedAt: Date.now() };
       await saveState(); }
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(500);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(500);
     const phrase = [...document.querySelectorAll('#speak-words .sw')].map(x => x.textContent).join(' ');
     const before = __ls().lessonProgress['g2-letters']?.speak || 0, xpBefore = __ls().xp;
     await attempt({ alts: ['banana rocket'] });
@@ -690,7 +694,7 @@ try {
     if (f('self-ok').hidden) throw new Error('при запрете микрофона нет «Засчитать»');
     __close(); await __sleep(100);
     delete window.SpeechRecognition; delete window.webkitSpeechRecognition;
-    document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(400);
+    await __enter(document.querySelector('.map-node'), 200); document.querySelector('.hub-ex[data-ex=speak]').click(); await __sleep(400);
     if (document.getElementById('mic') || f('self-ok').hidden || !/не умеет распознавать/.test(f('speak-hint').textContent)) throw new Error('нет запасного варианта для браузера без распознавания');
     f('self-ok').click(); await __sleep(900);
     if ((__ls().lessonProgress['g2-letters']?.speak || 0) !== before + 2) throw new Error('«Я сказал(а)» не засчитало');
@@ -982,7 +986,7 @@ try {
     state.lessonProgress['g3-toys3'] = { ...(state.lessonProgress['g3-toys3'] || {}), vocab: 1 };
     state.settings.mapGrade = 3; state.settings.mapView = null; await saveState(); map.renderMap();
     const node = [...document.querySelectorAll('.map-node')].find(n => (n.getAttribute('aria-label') || '').includes('Come in and Play!'));
-    if (!node?.querySelector('.mn-new')) throw new Error('на карте нет «Новое» у темы с новым квестом');
+    if (!node?.nextElementSibling?.querySelector('.mn-new') || !/Новое!/.test(node.getAttribute('aria-label'))) throw new Error('на карте нет «Новое» у темы с новым квестом');
     map.openLessonHub(L); await __sleep(200);
     const card = document.querySelector('.quest-card[data-ex="' + kind + '"]');
     if (!card || !card.querySelector('.new-badge') || !/Коробка с игрушками/.test(card.textContent) || card.classList.contains('locked')) throw new Error('карточка квеста: ' + (card?.outerHTML.slice(0, 200) || 'нет'));
@@ -1029,6 +1033,36 @@ try {
     if (pill.color !== 'rgb(28, 43, 26)' || pill.backgroundColor !== 'rgb(140, 200, 240)') throw new Error('редкий: ' + pill.color + ' на ' + pill.backgroundColor);
     __close();
     return 'шапка, меню (Сундук, Клиника «скоро», значок ошибок), таблички редкости';`)));
+
+  await test('карта-путь: островки, дорога, «Ты здесь», карточка, регионы', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), map = await import('./js/map.js');
+    state.settings.mapGrade = 3; state.settings.mapView = null; await saveState(); map.renderMap();
+    const marks = [...document.querySelectorAll('.path-mark')], imgs = [...document.querySelectorAll('.path-art image')];
+    const L3 = window.EQ.LESSONS.filter(l => l.grade === 3).length;
+    if (marks.length !== L3 + Math.floor(L3 / 4) || imgs.length !== marks.length) throw new Error('меток ' + marks.length + ', островков ' + imgs.length);
+    if (!document.querySelector('.path.region-3') || !/РЕГИОН · 3 КЛАСС/.test(document.querySelector('.path-plate').innerText)) throw new Error('табличка региона');
+    if (marks.filter(m => m.classList.contains('checkpoint')).some(m => !m.querySelector('.mn-block'))) throw new Error('испытания без щита');
+    const cur = document.querySelector('.path-mark.current');
+    if (!cur || !document.querySelector('.path-here-tag') || !document.querySelector('.path-hero .hero-img')) throw new Error('нет «Ты здесь» у текущей темы');
+    const curL = window.EQ.LESSONS.find(l => cur.getAttribute('aria-label').startsWith(l.title)), place = curL && window.EQ.LOCATION_ART[curL.id]?.name;
+    if (!place || !cur.getAttribute('aria-label').includes(place)) throw new Error('метка без названия места: ' + cur.getAttribute('aria-label'));
+    // рисунки островков загрузились
+    await __sleep(300);
+    const broken = await Promise.all(imgs.slice(0, 5).map(i => fetch(i.getAttribute('href')).then(r => r.ok)));
+    if (broken.includes(false)) throw new Error('рисунок островка не найден');
+    // карточка у метки и вход в локацию
+    cur.click(); await __sleep(80);
+    const card = f('path-card');
+    if (card.hidden || !/ЛОКАЦИЯ \\d+ ИЗ \\d+/.test(card.innerText) || !card.innerText.includes(place)) throw new Error('карточка: ' + card.innerText);
+    f('path-go').click(); await __sleep(200);
+    if (!document.querySelector('.quest-card')) throw new Error('не открылась доска квестов');
+    __close(); await __sleep(100);
+    // туман внизу ведёт в следующий регион
+    document.querySelector('.path-next[data-grade]').click(); await __sleep(300);
+    if (!document.querySelector('.path.region-4') || state.settings.mapGrade !== 4) throw new Error('не перешли в следующий регион');
+    state.settings.mapGrade = 2; await saveState(); map.renderMap();
+    return marks.length + ' меток с островками, «Ты здесь», карточка → доска квестов, переход в следующий регион';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {

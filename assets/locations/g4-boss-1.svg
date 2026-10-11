@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="-62,24 -18,-62 26,24" fill="#9fb0b8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><polygon points="-6,24 26,-36 58,24" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="-18,-62 -30,-38 -22,-42 -16,-34 -8,-42" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2" stroke-linejoin="round"/>
+<line x1="-18" y1="-62" x2="-18" y2="-90" stroke="#1c2b1a" stroke-width="3"/><polygon points="-18,-90 6,-83 -18,-76" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-44" y="-6" width="76" height="16" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><text x="-6" y="6" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="10" fill="#1c2b1a">ИСПЫТАНИЕ</text>
+</svg>

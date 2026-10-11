@@ -1,8 +1,10 @@
 // English Quest — Карта уровней и экран темы.
 import { startCheckpoint } from './checkpoint.js';
-import { CHARACTERS, LESSONS, QUEST_PASS_PCT, SECRET_REGIONS, isNewItem, regionOfGrade } from './eq.js';
+import { CHARACTERS, LESSONS, LOCATION_ART, QUEST_PASS_PCT, SECRET_REGIONS, isNewItem, regionOfGrade } from './eq.js';
 import { lessonHeader, startExercise } from './exercises.js';
 import { renderSecret } from './mines.js';
+import { hideCard, renderPath, showCard } from './path.js';
+import { playerHero } from './heroes.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
 import { saveState, state } from './state.js';
@@ -16,7 +18,6 @@ import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, ch
 // Тема открывается, когда пройдена предыдущая (isLessonComplete), а первая тема части —
 // когда сдана проверка предыдущей части. Первая тема класса открыта всегда.
 // Репетитор может открыть всё сразу (state.settings.unlockAll).
-export const MAP_OFFSETS = [0, 1, 1.6, 1, 0, -1, -1.6, -1]; // зигзаг дорожки, в шагах --step
 // уроки, части и проверки — общие с админ-панелью (stats.js)
 export { PARTS, BLOCK, CHECKPOINT_SIZE, CHECKPOINT_PASS, lessonsOf, checkpointsOf, CHECKPOINTS, GRADES };
 
@@ -79,47 +80,73 @@ export function renderMap(){
   });
   const nodes = mapNodes(grade);
   const cur = nodes.find(n => !lockReason(n) && !nodeDone(n));
+  const st = n => lockReason(n) ? 'locked' : nodeDone(n) ? 'done' : n === cur ? 'current' : 'open';
+  // «Новое»: тема из пакета или новые квесты в теме (пакеты локаций, 14 дней)
+  for (const n of nodes) n.fresh = n.kind === 'lesson' && ((isNewItem(n.lesson.addedAt) && !partsDone(n.lesson) && !state.lessonProgress[n.lesson.id]) || lessonQuests(n.lesson).some(q => questIsNew(n.lesson, q.kind, state)));
+  const label = (n, place) => {
+    const locked = lockReason(n), s = st(n);
+    if (n.kind === 'checkpoint'){
+      const best = state.checkpoints[n.cp.id]?.best;
+      return `${place ? `${place}: ` : ''}${n.cp.title}. ${locked ? 'Закрыто. ' + locked : s === 'done' ? `Сдана, лучший результат ${best} из ${CHECKPOINT_SIZE}.` : `Нужно ${CHECKPOINT_PASS} из ${CHECKPOINT_SIZE}.`}`;
+    }
+    const pd = partsDone(n.lesson);
+    return `${n.lesson.title}${place ? ` — ${place}` : ''}, ${n.lesson.subtitle}. ${n.fresh ? 'Новое! ' : ''}${locked ? 'Закрыто. ' + locked : s === 'done' ? 'Тема пройдена.' : `${s === 'current' ? 'Ты здесь. ' : ''}Сделано ${pd} из ${PARTS.length}.`}`;
+  };
   const rr = regionRanks(state).find(r => r.region.grade === grade);
-  const head = rr ? `<div class="region-head" style="--region-color:${rr.region.color}">
-      <b>${rr.region.emoji} ${rr.region.name}</b> <span class="t-muted">· Spotlight ${grade}</span>
+  const lessons = nodes.filter(n => n.kind === 'lesson'), doneN = lessons.filter(n => nodeDone(n)).length;
+  // сверху: пройденный регион ниже классом и табличка региона (эскиз 34)
+  const prev = regionRanks(state).find(r => r.region.grade === grade - 1);
+  const prevDone = prev && prev.done === prev.lessons && prev.lessons > 0;
+  const head = rr ? `${prevDone ? `<div class="path-passed"><span aria-hidden="true">✅</span> <span>${escapeHtml(prev.region.name)} пройдена</span> <button type="button" class="path-passed-go" data-grade="${prev.region.grade}">${prev.region.grade} класс ↑</button></div>` : ''}
+    <div class="region-head path-plate" style="--region-color:${rr.region.color}">
+      <span class="path-kicker">РЕГИОН · ${grade} КЛАСС</span>
+      <span class="path-plate-row"><b>${rr.region.emoji} ${escapeHtml(rr.region.name)}</b><span class="path-count">${doneN} из ${lessons.length}</span></span>
       <span class="region-rank">${rr.rank ? `${rr.rank.emoji} ${rr.rank.title}` : 'Звания пока нет'}${rr.next ? ` · дальше «${rr.next.title}»: ${rr.nextNeed}` : ' · все звания региона ✓'}</span>
     </div>` : '';
+  // внизу: туман и следующий регион (или тайное место за последним)
+  const next = regionOfGrade(grade + 1), mines = SECRET_REGIONS[0];
+  const tail = next
+    ? `<button type="button" class="path-next" data-grade="${next.grade}"><span aria-hidden="true">🔒</span><span><b>${escapeHtml(next.name)}</b><small>Дорога дальше — ${next.grade} класс. Нажми, чтобы посмотреть</small></span></button>`
+    : `<button type="button" class="path-next" data-secret="${mines?.id}"><span aria-hidden="true">❔</span><span><b>Тайное место</b><small>Кто-то стучит под землёй… Пройди 10 редких квестов</small></span></button>`;
   const revenge = revengeReady(state) ? `<button class="revenge-banner" data-revenge>⚔️ <b>Квест-реванш!</b> ${revengeItems(state).length} самых трудных слов и вопросов — одолей их</button>` : '';
-  wrap.innerHTML = `${revenge}${head}<ol class="map" role="list">${nodes.map((n, i) => {
-    const locked = lockReason(n), done = nodeDone(n), isCur = n === cur;
-    // «Новое»: тема из пакета или новые квесты в теме (пакеты локаций, 14 дней)
-    const fresh = n.kind === 'lesson' && ((isNewItem(n.lesson.addedAt) && !partsDone(n.lesson) && !state.lessonProgress[n.lesson.id]) || lessonQuests(n.lesson).some(q => questIsNew(n.lesson, q.kind, state)));
-    const st = locked ? 'locked' : done ? 'done' : isCur ? 'current' : 'open';
-    const x = MAP_OFFSETS[i % MAP_OFFSETS.length], px = MAP_OFFSETS[(i - 1 + MAP_OFFSETS.length) % MAP_OFFSETS.length];
-    let emoji, title, sub, label;
-    if (n.kind === 'lesson'){
-      const pd = partsDone(n.lesson);
-      emoji = n.lesson.words[0]?.emoji || '📘';
-      title = escapeHtml(n.lesson.title);
-      sub = `${pd}/${PARTS.length}`;
-      label = `${fresh ? 'Новое! ' : ''}${n.lesson.title}, ${n.lesson.subtitle}. ${locked ? 'Закрыто. ' + locked : done ? 'Тема пройдена.' : `Сделано ${pd} из ${PARTS.length}.`}`;
-    } else {
+  const { pts, H } = renderPath(wrap, { grade, nodes, st, label, hero: playerHero(state), head: revenge + head, tail });
+  // метка → карточка рядом: «Войти в локацию», «Повторить» или замок с условием
+  let open = -1;
+  wrap.querySelectorAll('.path-mark').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i, p = pts[i], n = nodes[i];
+    if (open === i){ hideCard(wrap); open = -1; return; }
+    open = i;
+    const s = st(n), lock = lockReason(n), place = (n.kind === 'checkpoint' ? LOCATION_ART[n.cp.id] : (n.lesson.island || LOCATION_ART[n.lesson.id]))?.name;
+    const li = lessons.indexOf(n) + 1;
+    let progress;
+    if (n.kind === 'checkpoint'){
       const best = state.checkpoints[n.cp.id]?.best;
-      emoji = n.cp.emoji;
-      title = 'Босс';
-      sub = best != null ? `лучший: ${best}/${CHECKPOINT_SIZE}` : `${CHECKPOINT_SIZE} вопросов`;
-      label = `${n.cp.title}. ${locked ? 'Закрыто. ' + locked : done ? `Сдана, лучший результат ${best} из ${CHECKPOINT_SIZE}.` : `Нужно ${CHECKPOINT_PASS} из ${CHECKPOINT_SIZE}.`}`;
+      progress = `легендарный · ${best != null ? `лучший ${best} из ${CHECKPOINT_SIZE}` : `${CHECKPOINT_SIZE} вопросов, нужно ${CHECKPOINT_PASS}`}`;
+    } else {
+      const qs = lessonQuests(n.lesson);
+      progress = `квестов пройдено: ${qs.filter(q => questPassed(state, n.lesson, q.kind)).length} из ${qs.length}`;
     }
-    return `
-      <li class="map-step" style="--x:${x}; --px:${px}">
-        ${i > 0 ? '<span class="map-stones" aria-hidden="true"><i></i><i></i></span>' : ''}
-        <button class="map-node ${n.kind} ${st}" data-i="${i}" aria-label="${escapeHtml(label)}">
-          <span class="mn-block" aria-hidden="true">${emoji}${done ? '<span class="mn-badge">✓</span>' : ''}${locked ? '<span class="mn-lock">🔒</span>' : ''}</span>
-          ${isCur ? '<span class="mn-now" aria-hidden="true">Сейчас</span>' : ''}
-          ${fresh ? '<span class="new-badge mn-new" aria-hidden="true">Новое</span>' : ''}
-          <span class="mn-title" aria-hidden="true">${title}</span>
-          <span class="mn-sub" aria-hidden="true">${sub}</span>
-        </button>
-      </li>`;
-  }).join('')}</ol>`;
-  wrap.querySelectorAll('.map-node').forEach(b => b.onclick = () => openNode(nodes[+b.dataset.i]));
+    showCard(wrap, p, H, `
+      <span class="path-card-kicker">${n.kind === 'checkpoint' ? 'ИСПЫТАНИЕ · ЛЕГЕНДАРНЫЙ' : `ЛОКАЦИЯ ${li} ИЗ ${lessons.length}`}</span>
+      <b class="path-card-name">${escapeHtml(place || (n.kind === 'checkpoint' ? n.cp.title : n.lesson.title))}</b>
+      <span class="path-card-en">${escapeHtml(n.kind === 'checkpoint' ? n.cp.title : n.lesson.title)}</span>
+      <span class="path-card-prog">${escapeHtml(progress)}</span>
+      ${lock ? `<span class="path-card-lock"><span aria-hidden="true">🔒</span> ${escapeHtml(lock)}</span>`
+        : `<button type="button" class="btn ${s === 'done' ? 'secondary' : ''}" id="path-go">${s === 'done' ? 'Повторить' : n.kind === 'checkpoint' ? 'Сразиться с боссом' : 'Войти в локацию'}</button>`}`);
+    wrap.querySelector('#path-go')?.addEventListener('click', () => { hideCard(wrap); open = -1; openNode(n); });
+  });
+  wrap.querySelectorAll('[data-grade].path-next, .path-passed-go').forEach(b => b.onclick = () => { state.settings.mapGrade = +b.dataset.grade; state.settings.mapView = null; saveState(); renderMap(); scrollToCurrent(); });
+  wrap.querySelectorAll('[data-secret].path-next').forEach(b => b.onclick = () => { state.settings.mapView = b.dataset.secret; saveState(); renderMap(); });
   updateContinue();
 }
+// Экран к текущей теме (при смене региона), как в эскизе
+export function scrollToCurrent(){
+  const el = document.querySelector('#lessons .path-mark.current') || document.querySelector('#lessons .path');
+  el?.scrollIntoView({ behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+}
+// закрыть карточку у метки: Esc или нажатие мимо
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const w = document.getElementById('lessons'); if (w && !w.querySelector('#path-card')?.hidden) hideCard(w); } });
+document.addEventListener('click', e => { const w = document.getElementById('lessons'); if (w && !e.target.closest('.path-mark, #path-card')) hideCard(w); });
 
 export function openNode(n){
   const locked = lockReason(n);
@@ -135,6 +162,7 @@ document.querySelectorAll('#grade-tabs .tab').forEach(t => {
     state.settings.mapGrade = +t.dataset.grade;
     saveState();
     renderMap();
+    scrollToCurrent();
   });
 });
 
