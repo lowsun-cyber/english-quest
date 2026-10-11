@@ -14,7 +14,7 @@ import { join, relative } from 'node:path';
 const dir = process.argv[2];
 if (!dir){ console.error('Укажите папку сайта: node tools/stamp.mjs _site'); process.exit(2); }
 
-const SKIP = new Set(['.git', '.github', 'node_modules', 'tests', 'tools', 'server', 'tts_cache', '_site']);
+const SKIP = new Set(['.git', '.github', 'node_modules', 'tests', 'tools', 'server', 'tts_cache', '_site', 'docs', 'packs']);
 function walk(d, out = []){
   for (const name of readdirSync(d)){
     if (SKIP.has(name)) continue;

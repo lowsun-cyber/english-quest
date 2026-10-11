@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Моя клиника</title>
+<script src="./dc-shim.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Baloo+2:wght@500;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.sky{background-color:#cfe9f6;background-image:linear-gradient(rgba(0,0,0,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.06) 1px,transparent 1px);background-size:48px 48px}
+.fog{background-color:#3a4150;background-image:radial-gradient(rgba(255,255,255,0.14) 1px,transparent 1.5px);background-size:10px 10px}
+a{color:#1c2b1a;text-decoration:none}a:hover{color:#1c2b1a}
+</style>
+</helmet>
+<div class="sky" style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Baloo 2', system-ui, sans-serif; color: #1c2b1a;">
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #fffdf6; border-bottom: 3px solid #1c2b1a;">
+<div style="flex: 1; font-size: 21px; font-weight: 800;">Моя клиника</div>
+<div style="display: flex; gap: 6px;">
+<div title="Блоки" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: #fffdf6; border: 2px solid #1c2b1a; border-radius: 999px; font-size: 14px; font-weight: 800;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" fill="#c58a4a" stroke="#1c2b1a" stroke-width="2.5"/><path d="M4 12h16M12 4v8" stroke="#a8743f" stroke-width="2"/></svg>24</div>
+<div title="Доски" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: #fffdf6; border: 2px solid #1c2b1a; border-radius: 999px; font-size: 14px; font-weight: 800;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="5" fill="#e0aa6e" stroke="#1c2b1a" stroke-width="2"/><rect x="3" y="13" width="18" height="5" fill="#e0aa6e" stroke="#1c2b1a" stroke-width="2"/></svg>9</div>
+<div title="Кристаллы" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: #fffdf6; border: 2px solid #1c2b1a; border-radius: 999px; font-size: 14px; font-weight: 800;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 7-6 11-6-11z" fill="#5ce0e6" stroke="#1c2b1a" stroke-width="2" stroke-linejoin="round"/></svg>2</div>
+</div>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 12px 16px;">
+<div style="display: flex; flex-direction: column;">
+<svg width="358" height="54" viewBox="0 0 358 54" aria-hidden="true"><path d="M8 52 L179 6 L350 52 Z" fill="#e5483b" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="128" y="26" width="102" height="22" rx="3" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2.5"/><text x="179" y="42" text-anchor="middle" font-family="'Baloo 2', sans-serif" font-weight="800" font-size="13" fill="#1c2b1a">КЛИНИКА ЛЁВЫ</text></svg>
+<div style="padding: 6px; background: #f3dcb5; border: 3px solid #1c2b1a; border-top: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
+<div style="height: 112px; box-sizing: border-box; padding: 4px; background: #ffe3ef; border: 3px solid #1c2b1a; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+<img src="../heroes/luna-happy.svg" alt="Nurse Luna в палате" style="width: 66px; height: 70px;">
+<div style="font-size: 13px; font-weight: 800;">Палата</div>
+</div>
+<div class="fog" style="height: 112px; box-sizing: border-box; padding: 6px; border: 3px solid #1c2b1a; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fffdf6; text-align: center;">
+<div style="font-family: 'Press Start 2P', monospace; font-size: 16px; color: #9ff2f5;">?</div>
+<div style="font-size: 12px; font-weight: 800; line-height: 1.15;">Секретная комната</div>
+<div style="font-size: 11px; font-weight: 600; color: #dfe6e2;">откроется в Шахтах</div>
+</div>
+<div style="height: 112px; box-sizing: border-box; padding: 6px; background: #e9ecea; border: 3px dashed #7c4bd6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; color: #3a4a38;">
+<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="#5a32a3" stroke-width="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#5a32a3" stroke-width="2.5" stroke-linecap="round"/></svg>
+<div style="font-size: 13px; font-weight: 800; color: #1c2b1a;">Операционная</div>
+<div style="font-size: 11px; font-weight: 700; color: #5a32a3; line-height: 1.15;">рецепт: эпический квест</div>
+</div>
+<div style="height: 112px; box-sizing: border-box; padding: 4px; background: #fff4cc; border: 3px solid #1c2b1a; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+<img src="../heroes/harlow.svg" alt="Dr. Harlow в приёмной" style="width: 64px; height: 76px;">
+<div style="font-size: 13px; font-weight: 800;">Приёмная</div>
+</div>
+<div style="height: 112px; box-sizing: border-box; padding: 6px; background: #e4f7e7; border: 3px solid #1c2b1a; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center;">
+<div style="font-size: 13px; font-weight: 800;">Вольер</div>
+<div style="width: 100%; height: 12px; box-sizing: border-box; background: #fffdf6; border: 2px solid #1c2b1a; border-radius: 4px; overflow: hidden;"><div style="width: 60%; height: 100%; background: #c58a4a;"></div></div>
+<div style="font-size: 11px; font-weight: 700; color: #2e5e35;">блоки: 6 из 10</div>
+<button type="button" style="width: 100%; min-height: 32px; background: #3fb650; border: 2px solid #1c2b1a; border-radius: 4px; box-shadow: 0 2px 0 #1c2b1a; font-family: 'Baloo 2', system-ui, sans-serif; font-size: 13px; font-weight: 800; color: #1c2b1a; cursor: pointer;">Строить</button>
+</div>
+<button type="button" style="height: 112px; box-sizing: border-box; background: transparent; border: 3px dashed #1c2b1a; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: 'Baloo 2', system-ui, sans-serif; font-size: 13px; font-weight: 800; color: #1c2b1a; cursor: pointer;">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Новая комната</button>
+</div>
+<div style="height: 10px; background: #3fb650; border: 3px solid #1c2b1a; border-top: none;"></div>
+</div>
+<div style="padding: 10px 12px; background: #fffdf6; border: 3px solid #1c2b1a; border-radius: 6px; box-shadow: 4px 4px 0 #1c2b1a; display: flex; flex-direction: column; gap: 8px;">
+<div style="display: flex; align-items: baseline; justify-content: space-between;">
+<div style="font-size: 16px; font-weight: 800;">Пациенты</div>
+<div style="font-size: 13px; font-weight: 700; color: #3a4a38;">вылечено 5 из 8 в этом регионе</div>
+</div>
+<div style="display: flex; gap: 6px;">
+<div title="Котёнок" style="width: 40px; height: 40px; border-radius: 20px; background: #f3c58a; border: 3px solid #1c2b1a; display: flex; align-items: center; justify-content: center;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9 L6 3 L10 7 M19 9 L18 3 L14 7" fill="#f3c58a" stroke="#1c2b1a" stroke-width="2" stroke-linejoin="round"/><circle cx="9" cy="13" r="1.6" fill="#1c2b1a"/><circle cx="15" cy="13" r="1.6" fill="#1c2b1a"/><path d="M11 16 Q12 17 13 16" fill="none" stroke="#1c2b1a" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+<div title="Щенок" style="width: 40px; height: 40px; border-radius: 20px; background: #e0aa6e; border: 3px solid #1c2b1a; display: flex; align-items: center; justify-content: center;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6 Q3 12 6 14 M19 6 Q21 12 18 14" fill="none" stroke="#1c2b1a" stroke-width="3" stroke-linecap="round"/><circle cx="9" cy="12" r="1.6" fill="#1c2b1a"/><circle cx="15" cy="12" r="1.6" fill="#1c2b1a"/><ellipse cx="12" cy="16" rx="2" ry="1.4" fill="#1c2b1a"/></svg></div>
+<div title="Зайчонок" style="width: 40px; height: 40px; border-radius: 20px; background: #efe8e2; border: 3px solid #1c2b1a; display: flex; align-items: center; justify-content: center;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="1" width="3.5" height="9" rx="1.7" fill="#efe8e2" stroke="#1c2b1a" stroke-width="1.8"/><rect x="13.5" y="1" width="3.5" height="9" rx="1.7" fill="#efe8e2" stroke="#1c2b1a" stroke-width="1.8"/><circle cx="9.5" cy="14" r="1.6" fill="#1c2b1a"/><circle cx="14.5" cy="14" r="1.6" fill="#1c2b1a"/><ellipse cx="12" cy="17" rx="1.3" ry="1" fill="#ff7bb0"/></svg></div>
+<div title="Утёнок" style="width: 40px; height: 40px; border-radius: 20px; background: #ffe680; border: 3px solid #1c2b1a; display: flex; align-items: center; justify-content: center;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="11" r="1.6" fill="#1c2b1a"/><circle cx="15" cy="11" r="1.6" fill="#1c2b1a"/><path d="M8 15 Q12 13 16 15 Q12 19 8 15 Z" fill="#ff9a3c" stroke="#1c2b1a" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+<div title="Поросёнок" style="width: 40px; height: 40px; border-radius: 20px; background: #ffc2d6; border: 3px solid #1c2b1a; display: flex; align-items: center; justify-content: center;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="10" r="1.6" fill="#1c2b1a"/><circle cx="15" cy="10" r="1.6" fill="#1c2b1a"/><ellipse cx="12" cy="15" rx="3.5" ry="2.5" fill="#ff9cc0" stroke="#1c2b1a" stroke-width="1.6"/><circle cx="11" cy="15" r="0.7" fill="#1c2b1a"/><circle cx="13" cy="15" r="0.7" fill="#1c2b1a"/></svg></div>
+<div style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 20px; border: 3px dashed #9fb0b8; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #6a7a68;">?</div>
+<div style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 20px; border: 3px dashed #9fb0b8; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #6a7a68;">?</div>
+</div>
+</div>
+<div style="display: flex; gap: 10px;">
+<div style="flex: 1; padding: 10px 12px; background: #fffdf6; border: 3px solid #1c2b1a; border-radius: 6px; box-shadow: 4px 4px 0 #1c2b1a; display: flex; flex-direction: column; gap: 6px;">
+<div style="font-size: 15px; font-weight: 800;">Альбом слов</div>
+<div style="height: 12px; box-sizing: border-box; background: #fffdf6; border: 2px solid #1c2b1a; border-radius: 4px; overflow: hidden;"><div style="width: 25%; height: 100%; background: #3a9fe0;"></div></div>
+<div style="font-size: 13px; font-weight: 700; color: #3a4a38;">87 из 350 карточек</div>
+</div>
+<div style="flex: 1; padding: 10px 12px; background: #fffdf6; border: 3px solid #1c2b1a; border-radius: 6px; box-shadow: 4px 4px 0 #1c2b1a; display: flex; flex-direction: column; gap: 4px;">
+<div style="font-size: 15px; font-weight: 800;">Помощники</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<img src="../heroes/luna.svg" alt="Nurse Luna" style="width: 34px; height: 40px;">
+<img src="../heroes/owl.svg" alt="Prof. Owl ещё не открыт" style="width: 34px; height: 40px; filter: brightness(0); opacity: 0.35;">
+<div style="font-size: 12px; font-weight: 700; color: #3a4a38; line-height: 1.15;">ещё 1 — за босса</div>
+</div>
+</div>
+</div>
+</div>
+<nav style="display: flex; background: #fffdf6; border-top: 3px solid #1c2b1a;">
+<a href="Map.dc.html" style="flex: 1; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700; color: #3a4a38;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Карта</a>
+<a href="Clinic.dc.html" aria-current="page" style="flex: 1; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: #d6ecfb; font-size: 13px; font-weight: 800;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v10H3z"/><path d="M12 11v6M9 14h6"/></svg>Клиника</a>
+<a href="Clinic.dc.html" style="flex: 1; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700; color: #3a4a38;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 9a9 5 0 0 1 18 0M11 13h2"/></svg>Сундук</a>
+<a href="Clinic.dc.html" style="flex: 1; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700; color: #3a4a38;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/></svg>Ошибки</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

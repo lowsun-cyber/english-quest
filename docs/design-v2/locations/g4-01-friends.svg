@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#e9d3a8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="-56,22 -14,-50 28,22" fill="#e89a4c" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><polygon points="-14,-50 -24,22 -4,22" fill="#c0742c" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<line x1="-14" y1="-50" x2="-14" y2="-76" stroke="#1c2b1a" stroke-width="3"/><polygon points="-14,-76 8,-70 -14,-62" fill="#3fb650" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M30 22 l20 -10 M30 12 l20 10" stroke="#8b6f5a" stroke-width="5" stroke-linecap="round"/><path d="M40 12 q-8 -12 0 -26 q8 12 4 18 q6 -4 4 -12 q8 10 0 20 z" fill="#ff6b3a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M40 8 q-3 -6 0 -12 q3 6 0 12z" fill="#f5c02b"/>
+</svg>

@@ -1,0 +1,240 @@
+[
+ {
+  "file": "locations/g2-01-letters.svg",
+  "name": "Алфавитная поляна",
+  "topic": "My Letters",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-02-hello.svg",
+  "name": "Арка приветствий",
+  "topic": "Hello!",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-03-family.svg",
+  "name": "Семейное дерево",
+  "topic": "My Family",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-04-home.svg",
+  "name": "Мой домик",
+  "topic": "My Home",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-05-birthday.svg",
+  "name": "Праздничный торт",
+  "topic": "My Birthday",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-06-animals.svg",
+  "name": "Пруд зверят",
+  "topic": "My Animals",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-07-toys.svg",
+  "name": "Магазин игрушек",
+  "topic": "My Toys",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-08-holidays.svg",
+  "name": "Пляж",
+  "topic": "My Holidays",
+  "region": "Зелёная Долина",
+  "boss": false
+ },
+ {
+  "file": "locations/g2-boss-1.svg",
+  "name": "Ворота долины",
+  "topic": "Испытание · темы 1–4",
+  "region": "Зелёная Долина",
+  "boss": true
+ },
+ {
+  "file": "locations/g2-boss-2.svg",
+  "name": "Хранитель долины",
+  "topic": "Испытание · темы 5–8",
+  "region": "Зелёная Долина",
+  "boss": true
+ },
+ {
+  "file": "locations/g3-01-school.svg",
+  "name": "Школа",
+  "topic": "School Days!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-02-family.svg",
+  "name": "Семейный альбом",
+  "topic": "Family Moments!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-03-likes.svg",
+  "name": "Кафе вкусностей",
+  "topic": "All the Things I Like!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-04-play.svg",
+  "name": "Игровая комната",
+  "topic": "Come in and Play!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-05-pets.svg",
+  "name": "Питомник",
+  "topic": "Furry Friends!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-06-home.svg",
+  "name": "Уютный дом",
+  "topic": "Home, Sweet Home!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-07-dayoff.svg",
+  "name": "Парк",
+  "topic": "A Day Off!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-08-daybyday.svg",
+  "name": "Часовая башня",
+  "topic": "Day by Day!",
+  "region": "Город Мастеров",
+  "boss": false
+ },
+ {
+  "file": "locations/g3-boss-1.svg",
+  "name": "Ворота мастеров",
+  "topic": "Испытание · темы 1–4",
+  "region": "Город Мастеров",
+  "boss": true
+ },
+ {
+  "file": "locations/g3-boss-2.svg",
+  "name": "Хранитель города",
+  "topic": "Испытание · темы 5–8",
+  "region": "Город Мастеров",
+  "boss": true
+ },
+ {
+  "file": "locations/g4-01-friends.svg",
+  "name": "Лагерь друзей",
+  "topic": "Family & Friends!",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-02-work.svg",
+  "name": "Больница",
+  "topic": "A Working Day!",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-03-treats.svg",
+  "name": "Рынок",
+  "topic": "Tasty Treats!",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-04-zoo.svg",
+  "name": "Зоопарк",
+  "topic": "At the Zoo!",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-05-yesterday.svg",
+  "name": "Музей",
+  "topic": "Where Were You Yesterday?",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-06-tale.svg",
+  "name": "Книга сказок",
+  "topic": "Tell the Tale!",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-07-remember.svg",
+  "name": "Площадь праздников",
+  "topic": "Days to Remember!",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-08-places.svg",
+  "name": "Порт",
+  "topic": "Places to Go!",
+  "region": "Большая Экспедиция",
+  "boss": false
+ },
+ {
+  "file": "locations/g4-boss-1.svg",
+  "name": "Горный перевал",
+  "topic": "Испытание · темы 1–4",
+  "region": "Большая Экспедиция",
+  "boss": true
+ },
+ {
+  "file": "locations/g4-boss-2.svg",
+  "name": "Легенда экспедиции",
+  "topic": "Испытание · темы 5–8",
+  "region": "Большая Экспедиция",
+  "boss": true
+ },
+ {
+  "file": "locations/mines-1-adit.svg",
+  "name": "Входная штольня",
+  "topic": "смешанные квесты",
+  "region": "Шахты",
+  "boss": false
+ },
+ {
+  "file": "locations/mines-2-crystals.svg",
+  "name": "Кристальная пещера",
+  "topic": "эпические квесты",
+  "region": "Шахты",
+  "boss": false
+ },
+ {
+  "file": "locations/mines-3-lake.svg",
+  "name": "Подземное озеро",
+  "topic": "эпические квесты",
+  "region": "Шахты",
+  "boss": false
+ },
+ {
+  "file": "locations/mines-boss.svg",
+  "name": "Глубокий забой",
+  "topic": "босс Шахт",
+  "region": "Шахты",
+  "boss": true
+ }
+]
