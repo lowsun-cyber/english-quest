@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-7" y="-24" width="14" height="48" fill="#8b6f5a" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M0 -84 a34 34 0 0 0 0 68 Z" fill="#3fb650" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M0 -84 a34 34 0 0 1 0 68 Z" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="-14" cy="-56" r="4" fill="#e5483b" stroke="#1c2b1a" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="-20" cy="-36" r="4" fill="#e5483b" stroke="#1c2b1a" stroke-width="2" stroke-linejoin="round"/>
+<path d="M10 -64 l6 6 M16 -64 l-6 6 M18 -40 l6 6 M24 -40 l-6 6" fill="none" stroke="#5cbaee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="-64" cy="-70" r="12" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M-64 -88 v-6 M-82 -70 h-6 M-64 -52 v6 M-46 -70 h6" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42 -64 a10 10 0 0 1 10 -14 a12 12 0 0 1 22 4 a8 8 0 0 1 0 16 h-30 a8 8 0 0 1 -2 -6 Z" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M50 -42 l-3 8 M62 -42 l-3 8 M74 -42 l-3 8" fill="none" stroke="#3a9fe0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
