@@ -918,6 +918,43 @@ try {
     state.mistakes = JSON.parse(saved); await saveState(); M.renderMistakes();
     return 'появляется с 5 трудных, форматы ' + formats.join(' ') + ', +' + (state.gold - gold0) + ' 🪙, «Продолжить» → ' + f('btn-hero-start').textContent;`)));
 
+  await test('секретный регион «Шахты»', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), map = await import('./js/map.js'), St = await import('./js/stats.js');
+    const saved = JSON.stringify({ q: state.quests, lp: state.lessonProgress, c: state.crystals, v: state.settings.mapView });
+    const tab = document.querySelector('#grade-tabs [data-secret=mines]');
+    if (!tab.textContent.includes('???') || /Шахт/.test(tab.textContent)) throw new Error('название видно до открытия: ' + tab.textContent);
+    tab.click(); await __sleep(200);
+    const fog = document.querySelector('.secret-fog')?.innerText || '';
+    const have = Math.min(St.questCounts(state).rare, 10);
+    if (!fog.includes('Редких квестов: ' + have + ' из 10') || /Шахт/.test(fog)) throw new Error('туман: ' + fog);
+    // 10 редких квестов и две пройденные темы — регион открывается
+    const g2 = window.EQ.LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order);
+    g2.slice(0, 5).forEach(l => ['spell', 'grammar'].forEach(k => state.quests[l.id + ':' + k] = { best: 100, last: 100, at: Date.now(), runs: 1, passedAt: Date.now() }));
+    g2.slice(0, 2).forEach(l => state.lessonProgress[l.id] = { vocab: 3, listen: 3, grammar: 2, reading: 1 });
+    await saveState(); map.renderMap();
+    if (!/Шахты/.test(tab.textContent)) throw new Error('вкладка не открылась');
+    const locs = [...document.querySelectorAll('.secret-loc')];
+    if (locs.length !== 4 || !locs[3].classList.contains('locked') || locs.slice(0, 3).some(b => b.classList.contains('locked'))) throw new Error('места: ' + locs.map(b => b.className).join(' | '));
+    // Входная штольня: 8 вопросов по пройденным темам
+    const pool = St.secretPool(state), words = pool.flatMap(l => l.words), gram = pool.flatMap(l => l.grammar), c0 = state.crystals || 0;
+    locs[0].click(); await __sleep(500);
+    for (let i = 0; i < 8; i++){
+      const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.o), em = document.querySelector('.q-emoji'), sn = document.querySelector('.q-sentence');
+      const ans = em ? words.filter(w => w.emoji === em.textContent).map(w => w.en).find(e => opts.includes(e))
+        : sn ? gram.filter(g => g.q === sn.textContent).map(g => g.a).find(a => opts.includes(a)) : opts.find(o => o.toLowerCase() === String(__said).toLowerCase());
+      const b = [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans);
+      if (!b) throw new Error('вопрос ' + (i + 1) + ': нет ответа');
+      b.click(); await __sleep(1300);
+    }
+    const res = document.querySelector('#modal .question').innerText;
+    if (!/Место пройдено/.test(res) || state.crystals - c0 !== 3 || !state.quests['mines:entry']?.passedAt) throw new Error('итог: ' + res + ' кристаллов +' + (state.crystals - c0));
+    __close(); await __sleep(200);
+    if (!document.querySelector('.secret-loc[data-loc="0"]').classList.contains('done') || !document.querySelector('.secret-loc[data-loc="3"]').classList.contains('locked')) throw new Error('после прохождения: места не обновились');
+    const back = JSON.parse(saved); state.quests = back.q; state.lessonProgress = back.lp; state.crystals = back.c; state.settings.mapView = back.v || null;
+    await saveState(); map.renderMap();
+    return 'туман и счётчик ' + have + ' из 10, открытие после 10 редких, «Входная штольня» 8/8 → 💠 +3, босс закрыт до трёх мест';`)));
+
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {
   results.push({ ok: false, name: 'запуск', info: e.message });

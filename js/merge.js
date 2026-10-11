@@ -101,6 +101,7 @@ const RULES = {
   words: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, { ok: add, bad: add, last: max, err: addMap, with: addMap })),
   errorTypes: addMap,
   revengeWins: add,
+  crystals: add,
   // квесты: лучший результат, число прохождений складывается, первое прохождение — самое раннее, last — последнее изменение
   quests: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, {
     best: max, runs: add, at: max,

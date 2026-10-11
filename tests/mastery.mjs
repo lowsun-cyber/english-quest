@@ -124,5 +124,25 @@ check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g
   check('достижение за реванш', S.achievementsOf(fresh({ revengeWins: 1 })).includes('revenge-1'));
 }
 
+// секретный регион «Шахты»
+{
+  const { LESSONS, SECRET_REGIONS } = ctx.window.EQ, R = SECRET_REGIONS.find(r => r.id === 'mines');
+  const g2 = LESSONS.filter(l => l.grade === 2).sort((a, b) => a.order - b.order);
+  const rares = n => Object.fromEntries(g2.slice(0, Math.ceil(n / 2)).flatMap(l => ['spell', 'grammar'].map(k => [`${l.id}:${k}`, { best: 100, runs: 1, passedAt: 1 }])).slice(0, n));
+  const done = Object.fromEntries(g2.slice(0, 2).map(l => [l.id, { vocab: 3, listen: 3, grammar: 2, reading: 1 }]));
+  check('Шахты: данные — 4 места, последнее босс, условие 10 редких', R && R.locations.length === 4 && R.locations[3].boss && R.unlock.rare === 10);
+  const closed = S.secretRegionState(R, fresh({ quests: rares(9) }));
+  check('Шахты: 9 редких — скрыты, счётчик 9 из 10', !closed.open && closed.have === 9 && closed.need === 10, closed.have);
+  const open = S.secretRegionState(R, fresh({ quests: rares(10), lessonProgress: done }));
+  check('Шахты: 10 редких — открыты', open.open);
+  check('Шахты: вопросы — из пройденных тем', open.pool.length === 2 && open.pool.every(l => done[l.id]));
+  check('Шахты: три места открыты, босс закрыт', open.locations.filter(x => !x.lock).length === 3 && open.locations[3].lock);
+  const three = Object.fromEntries(R.locations.slice(0, 3).map(l => [`mines:${l.id}`, { best: 90, passedAt: 1 }]));
+  check('Шахты: босс открывается после трёх мест', !S.secretRegionState(R, fresh({ quests: { ...rares(10), ...three }, lessonProgress: done })).locations[3].lock);
+  check('Шахты: без пройденных тем места закрыты', S.secretRegionState(R, fresh({ quests: rares(10) })).locations.every(x => x.lock));
+  check('Шахты: секретное достижение за босса', S.achievementsOf(fresh({ quests: { 'mines:deep': { best: 90, passedAt: 1 } } })).includes('mines-boss'));
+  check('Шахты: места не считаются обычными квестами', S.questCounts(fresh({ quests: three })).quests === 0);
+}
+
 console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);
 process.exit(fail ? 1 : 0);

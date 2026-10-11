@@ -1,4 +1,4 @@
 // English Quest — Контент.
 
 // Данные из content.js (подключается обычным скриптом раньше модулей).
-export const { CHARACTERS, LESSONS, MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp, REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES, QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, HERO_MOODS, DEFAULT_HERO, HARLOW_LINES, lessonStartLine, heroIntro, CURRICULUM, SKILLS, taskTypeFor, EMOJI, fillItemsFor, buildItemsFor } = window.EQ;
+export const { CHARACTERS, LESSONS, MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp, REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES, QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, SECRET_REGIONS, HERO_MOODS, DEFAULT_HERO, HARLOW_LINES, lessonStartLine, heroIntro, CURRICULUM, SKILLS, taskTypeFor, EMOJI, fillItemsFor, buildItemsFor } = window.EQ;

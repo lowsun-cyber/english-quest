@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { ACHIEVEMENTS, CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SKILLS, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { ACHIEVEMENTS, CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -94,10 +94,35 @@ export function achievementsOf(st){
     if (w.words != null) return words >= w.words;
     if (w.mastered != null) return (st.mastered || 0) >= w.mastered;
     if (w.revenge != null) return (st.revengeWins || 0) >= w.revenge;
+    if (w.minesBoss != null) return !!st.quests?.['mines:deep']?.passedAt;
     if (w.rank) return (ranks.find(r => r.region.id === w.rank[0])?.step || 0) >= w.rank[1];
     return false;
   };
   return ACHIEVEMENTS.filter(a => ok(a.when)).map(a => a.id);
+}
+
+// ---------- секретные регионы («Шахты») ----------
+// Открытие — по условию региона (редкие квесты на 80%); квесты локаций — по пройденным темам.
+// Результаты — в state.quests['регион:локация'], как у обычных квестов.
+export const secretKey = (region, loc) => `${region.id}:${loc.id}`;
+export function secretPool(st){
+  const done = LESSONS.filter(l => isLessonComplete(l, st));
+  return done.length >= 2 ? done : LESSONS.filter(l => Object.keys(st.lessonProgress?.[l.id] || {}).length);
+}
+export function secretRegionState(region, st){
+  const have = questCounts(st).rare, need = region.unlock?.rare ?? 10;
+  const open = have >= need || !!st.settings?.unlockAll;
+  const pool = secretPool(st), words = pool.reduce((n, l) => n + l.words.length, 0);
+  const passed = loc => (st.quests?.[secretKey(region, loc)]?.best ?? -1) >= QUEST_PASS_PCT;
+  const locations = region.locations.map(loc => {
+    const res = st.quests?.[secretKey(region, loc)] || null;
+    let lock = null;
+    if (!open) lock = 'Регион ещё скрыт';
+    else if (words < loc.size) lock = 'Пройди хотя бы две темы — вопросы берутся из пройденных';
+    else if (loc.boss && !region.locations.filter(x => !x.boss).every(passed)) lock = 'Сначала пройди остальные места Шахт';
+    return { loc, res, passed: passed(loc), lock };
+  });
+  return { region, open, have: Math.min(have, need), need, pool, locations };
 }
 
 // ---------- квест-реванш ----------
