@@ -4,210 +4,240 @@
   "name": "Алфавитная поляна",
   "topic": "My Letters",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-letters"
  },
  {
   "file": "locations/g2-02-hello.svg",
   "name": "Арка приветствий",
   "topic": "Hello!",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-hello"
  },
  {
   "file": "locations/g2-03-family.svg",
   "name": "Семейное дерево",
   "topic": "My Family",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-family"
  },
  {
   "file": "locations/g2-04-home.svg",
   "name": "Мой домик",
   "topic": "My Home",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-home"
  },
  {
   "file": "locations/g2-05-birthday.svg",
   "name": "Праздничный торт",
   "topic": "My Birthday",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-birthday"
  },
  {
   "file": "locations/g2-06-animals.svg",
   "name": "Пруд зверят",
   "topic": "My Animals",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-animals"
  },
  {
   "file": "locations/g2-07-toys.svg",
   "name": "Магазин игрушек",
   "topic": "My Toys",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-toys"
  },
  {
   "file": "locations/g2-08-holidays.svg",
   "name": "Пляж",
   "topic": "My Holidays",
   "region": "Зелёная Долина",
-  "boss": false
+  "boss": false,
+  "lesson": "g2-holidays"
  },
  {
   "file": "locations/g2-boss-1.svg",
   "name": "Ворота долины",
   "topic": "Испытание · темы 1–4",
   "region": "Зелёная Долина",
-  "boss": true
+  "boss": true,
+  "checkpoint": "g2-p1"
  },
  {
   "file": "locations/g2-boss-2.svg",
   "name": "Хранитель долины",
-  "topic": "Испытание · темы 5–8",
+  "topic": "Испытание · темы 13–16",
   "region": "Зелёная Долина",
-  "boss": true
+  "boss": true,
+  "checkpoint": "g2-p4"
  },
  {
   "file": "locations/g3-01-school.svg",
   "name": "Школа",
   "topic": "School Days!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-school"
  },
  {
   "file": "locations/g3-02-family.svg",
   "name": "Семейный альбом",
   "topic": "Family Moments!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-family-moments"
  },
  {
   "file": "locations/g3-03-likes.svg",
   "name": "Кафе вкусностей",
   "topic": "All the Things I Like!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-food"
  },
  {
   "file": "locations/g3-04-play.svg",
   "name": "Игровая комната",
   "topic": "Come in and Play!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-toys3"
  },
  {
   "file": "locations/g3-05-pets.svg",
   "name": "Питомник",
   "topic": "Furry Friends!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-animals3"
  },
  {
   "file": "locations/g3-06-home.svg",
   "name": "Уютный дом",
   "topic": "Home, Sweet Home!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-home3"
  },
  {
   "file": "locations/g3-07-dayoff.svg",
   "name": "Парк",
   "topic": "A Day Off!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-dayoff"
  },
  {
   "file": "locations/g3-08-daybyday.svg",
   "name": "Часовая башня",
   "topic": "Day by Day!",
   "region": "Город Мастеров",
-  "boss": false
+  "boss": false,
+  "lesson": "g3-daybyday"
  },
  {
   "file": "locations/g3-boss-1.svg",
   "name": "Ворота мастеров",
   "topic": "Испытание · темы 1–4",
   "region": "Город Мастеров",
-  "boss": true
+  "boss": true,
+  "checkpoint": "g3-p1"
  },
  {
   "file": "locations/g3-boss-2.svg",
   "name": "Хранитель города",
-  "topic": "Испытание · темы 5–8",
+  "topic": "Испытание · темы 13–16",
   "region": "Город Мастеров",
-  "boss": true
+  "boss": true,
+  "checkpoint": "g3-p4"
  },
  {
   "file": "locations/g4-01-friends.svg",
   "name": "Лагерь друзей",
   "topic": "Family & Friends!",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-family4"
  },
  {
   "file": "locations/g4-02-work.svg",
   "name": "Больница",
   "topic": "A Working Day!",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-workingday"
  },
  {
   "file": "locations/g4-03-treats.svg",
   "name": "Рынок",
   "topic": "Tasty Treats!",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-tastytreats"
  },
  {
   "file": "locations/g4-04-zoo.svg",
   "name": "Зоопарк",
   "topic": "At the Zoo!",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-zoo"
  },
  {
   "file": "locations/g4-05-yesterday.svg",
   "name": "Музей",
   "topic": "Where Were You Yesterday?",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-yesterday"
  },
  {
   "file": "locations/g4-06-tale.svg",
   "name": "Книга сказок",
   "topic": "Tell the Tale!",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-tellthetale"
  },
  {
   "file": "locations/g4-07-remember.svg",
   "name": "Площадь праздников",
   "topic": "Days to Remember!",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-daystoremember"
  },
  {
   "file": "locations/g4-08-places.svg",
   "name": "Порт",
   "topic": "Places to Go!",
   "region": "Большая Экспедиция",
-  "boss": false
+  "boss": false,
+  "lesson": "g4-placestogo"
  },
  {
   "file": "locations/g4-boss-1.svg",
   "name": "Горный перевал",
   "topic": "Испытание · темы 1–4",
   "region": "Большая Экспедиция",
-  "boss": true
+  "boss": true,
+  "checkpoint": "g4-p1"
  },
  {
   "file": "locations/g4-boss-2.svg",
   "name": "Легенда экспедиции",
-  "topic": "Испытание · темы 5–8",
+  "topic": "Испытание · темы 13–16",
   "region": "Большая Экспедиция",
-  "boss": true
+  "boss": true,
+  "checkpoint": "g4-p4"
  },
  {
   "file": "locations/mines-1-adit.svg",
@@ -236,5 +266,293 @@
   "topic": "босс Шахт",
   "region": "Шахты",
   "boss": true
+ },
+ {
+  "file": "locations/g2-letters2.svg",
+  "name": "Сад букв",
+  "topic": "More Letters",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-letters2"
+ },
+ {
+  "file": "locations/g2-colours.svg",
+  "name": "Радужный холм",
+  "topic": "My Colours",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-colours"
+ },
+ {
+  "file": "locations/g2-school.svg",
+  "name": "Классная доска",
+  "topic": "My School",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-school"
+ },
+ {
+  "file": "locations/g2-countries.svg",
+  "name": "Площадь флагов",
+  "topic": "Russia and the UK",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-countries"
+ },
+ {
+  "file": "locations/g2-food.svg",
+  "name": "Поляна пикника",
+  "topic": "My Favourite Food",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-food"
+ },
+ {
+  "file": "locations/g2-cando.svg",
+  "name": "Игровая площадка",
+  "topic": "I Can Do It",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-cando"
+ },
+ {
+  "file": "locations/g2-town.svg",
+  "name": "Цирк-шапито",
+  "topic": "My Town",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-town"
+ },
+ {
+  "file": "locations/g2-tales.svg",
+  "name": "Башня принцессы",
+  "topic": "Fairy Tales",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-tales"
+ },
+ {
+  "file": "locations/g2-seasons.svg",
+  "name": "Погодная поляна",
+  "topic": "Weather and Seasons",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-seasons"
+ },
+ {
+  "file": "locations/g2-newyear.svg",
+  "name": "Ёлочная поляна",
+  "topic": "Happy New Year",
+  "region": "Зелёная Долина",
+  "boss": false,
+  "lesson": "g2-newyear"
+ },
+ {
+  "file": "locations/g3-friends.svg",
+  "name": "Улица друзей",
+  "topic": "Welcome Back",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-friends"
+ },
+ {
+  "file": "locations/g3-subjects.svg",
+  "name": "Кабинет предметов",
+  "topic": "My Favourite Subject",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-subjects"
+ },
+ {
+  "file": "locations/g3-birthday.svg",
+  "name": "Праздничный стол",
+  "topic": "Birthday Party",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-birthday"
+ },
+ {
+  "file": "locations/g3-lunchbox.svg",
+  "name": "Ланч-бокс",
+  "topic": "My Lunch Box",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-lunchbox"
+ },
+ {
+  "file": "locations/g3-wild.svg",
+  "name": "Ферма",
+  "topic": "Wild and Farm Animals",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-wild"
+ },
+ {
+  "file": "locations/g3-tale.svg",
+  "name": "Сказочная полка",
+  "topic": "The Toy Soldier",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-tale"
+ },
+ {
+  "file": "locations/g3-weather.svg",
+  "name": "Метеостанция",
+  "topic": "Months and Weather",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-weather"
+ },
+ {
+  "file": "locations/g3-countries.svg",
+  "name": "Кремлёвская башня",
+  "topic": "Big Ben and the Kremlin",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-countries"
+ },
+ {
+  "file": "locations/g3-folklore.svg",
+  "name": "Ярмарка праздников",
+  "topic": "Holidays and Traditions",
+  "region": "Город мастеров",
+  "boss": false,
+  "lesson": "g3-folklore"
+ },
+ {
+  "file": "locations/g4-back.svg",
+  "name": "Доска расписания",
+  "topic": "Back Together",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-back"
+ },
+ {
+  "file": "locations/g4-mythings.svg",
+  "name": "Рюкзак",
+  "topic": "My Things",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-mythings"
+ },
+ {
+  "file": "locations/g4-hobbies.svg",
+  "name": "Клуб увлечений",
+  "topic": "My Hobbies",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-hobbies"
+ },
+ {
+  "file": "locations/g4-town.svg",
+  "name": "Вокзал",
+  "topic": "In My Town",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-town"
+ },
+ {
+  "file": "locations/g4-sport.svg",
+  "name": "Стадион",
+  "topic": "Sport for Everyone",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-sport"
+ },
+ {
+  "file": "locations/g4-shopping.svg",
+  "name": "Лавка покупок",
+  "topic": "Shopping List",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-shopping"
+ },
+ {
+  "file": "locations/g4-room.svg",
+  "name": "Моя комната",
+  "topic": "My Room",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-room"
+ },
+ {
+  "file": "locations/g4-hare.svg",
+  "name": "Финишная черта",
+  "topic": "The Hare and the Tortoise",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-hare"
+ },
+ {
+  "file": "locations/g4-dayout.svg",
+  "name": "Колесо обозрения",
+  "topic": "A Great Day Out",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-dayout"
+ },
+ {
+  "file": "locations/g4-world.svg",
+  "name": "Большой глобус",
+  "topic": "Around the World",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-world"
+ },
+ {
+  "file": "locations/g4-packing.svg",
+  "name": "Чемодан",
+  "topic": "Pack Your Suitcase",
+  "region": "Большая экспедиция",
+  "boss": false,
+  "lesson": "g4-packing"
+ },
+ {
+  "file": "locations/g2-boss-3.svg",
+  "name": "Каменный мост",
+  "topic": "Испытание · темы 5–8",
+  "region": "Зелёная Долина",
+  "boss": true,
+  "checkpoint": "g2-p2"
+ },
+ {
+  "file": "locations/g2-boss-4.svg",
+  "name": "Старая мельница",
+  "topic": "Испытание · темы 9–12",
+  "region": "Зелёная Долина",
+  "boss": true,
+  "checkpoint": "g2-p3"
+ },
+ {
+  "file": "locations/g3-boss-3.svg",
+  "name": "Сторожевая башня",
+  "topic": "Испытание · темы 5–8",
+  "region": "Город мастеров",
+  "boss": true,
+  "checkpoint": "g3-p2"
+ },
+ {
+  "file": "locations/g3-boss-4.svg",
+  "name": "Ратуша",
+  "topic": "Испытание · темы 9–12",
+  "region": "Город мастеров",
+  "boss": true,
+  "checkpoint": "g3-p3"
+ },
+ {
+  "file": "locations/g4-boss-3.svg",
+  "name": "Древняя пирамида",
+  "topic": "Испытание · темы 5–8",
+  "region": "Большая экспедиция",
+  "boss": true,
+  "checkpoint": "g4-p2"
+ },
+ {
+  "file": "locations/g4-boss-4.svg",
+  "name": "Огненный вулкан",
+  "topic": "Испытание · темы 9–12",
+  "region": "Большая экспедиция",
+  "boss": true,
+  "checkpoint": "g4-p3"
  }
 ]

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-26" y="-76" width="52" height="100" fill="#9fb0b8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-32 -76 v-14 h12 v8 h14 v-8 h12 v8 h14 v-8 h12 v14 Z" fill="#9fb0b8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-6" y="-66" width="12" height="16" fill="#4a3018" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M-12 24 V0 a12 12 0 0 1 24 0 V24 Z" fill="#4a3018" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M0 -90 V-106" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="0,-106 18,-101 0,-96" fill="#a870ff" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-40" y="-40" width="80" height="16" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><text x="0" y="-28" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="11" fill="#1c2b1a">ИСПЫТАНИЕ</text>
+<circle cx="-64" cy="12" r="7" fill="#61d074" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="-55" cy="14" r="6" fill="#3fb650" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="46" cy="14" r="7" fill="#61d074" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="55" cy="16" r="6" fill="#3fb650" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-30 22 V-70" fill="none" stroke="#9fb0b8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="-30,-70 -6,-74 -6,-66" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="-30,-70 -48,-76 -48,-64" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M-30 -50 h20 M-30 -50 h-20" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M-12 -50 a6 6 0 0 1 12 0 Z M-48 -50 a6 6 0 0 1 12 0 Z" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2" stroke-linejoin="round"/>
+<rect x="10" y="-48" width="16" height="66" rx="8" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="18" cy="12" r="9" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="15" y="-32" width="6" height="40" fill="#e5483b" stroke="#1c2b1a" stroke-width="0" stroke-linejoin="round"/>
+<path d="M26 -38 h6 M26 -26 h6 M26 -14 h6" fill="none" stroke="#1c2b1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="46" y="-28" width="30" height="32" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="46" y="-28" width="30" height="9" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="61" y="-2" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="13" fill="#1c2b1a">12</text>
+</svg>
