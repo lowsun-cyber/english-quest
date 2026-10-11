@@ -5,7 +5,7 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v21';
+const SHELL_CACHE = 'eq-shell-v22';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
@@ -16,6 +16,8 @@ const SHELL = [
   'tts_manifest.json', 'tts_voices.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   // рисунки героев: полный рост и 4 эмоции (см. CHARACTERS в content.js)
+  // рисунки мест Шахт (видны и под туманом)
+  'assets/locations/mines-1-adit.svg', 'assets/locations/mines-2-crystals.svg', 'assets/locations/mines-3-lake.svg',
   ...['harlow', 'luna', 'max', 'owl', 'robo'].flatMap(h => ['', '-happy', '-thinking', '-hint', '-praise'].map(m => `assets/heroes/${h}${m}.svg`)),
 ];
 const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;800&display=swap';
