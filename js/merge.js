@@ -97,6 +97,9 @@ const RULES = {
   })),
   // { код навыка: { ok, bad, last, wrong: { вариант: n } } } — ответы складываются
   skills: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, { ok: add, bad: add, last: max, wrong: addMap })),
+  // { слово: { ok, bad, last, err, with } } — так же, как навыки
+  words: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, { ok: add, bad: add, last: max, err: addMap, with: addMap })),
+  errorTypes: addMap,
   // «Мои ошибки»: у кого попытка позже, тот и прав
   mistakes: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => clone(n(rr?.last) > n(ll?.last) ? rr : ll)),
   // домашка: новее та, что назначена позже; для того же задания — «сделано», если сделано где-нибудь

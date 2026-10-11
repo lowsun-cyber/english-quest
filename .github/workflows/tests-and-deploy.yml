@@ -40,6 +40,8 @@ jobs:
         run: node tests/merge.mjs
       - name: Разметка по карте программы
         run: node tests/curriculum.mjs
+      - name: Типы ошибок и мастерство
+        run: node tests/mastery.mjs
       - name: Сервер учителя (API) на SQLite
         run: node tests/api.mjs
       - name: Сервер учителя (API) на MySQL 8, как на хостинге

@@ -2209,6 +2209,17 @@ function levelFromXp(xp){
   while (lvl < MAX_LEVEL && xp >= totalXpForLevel(lvl+1)) lvl++;
   return lvl;
 }
+// ---------- ТИПЫ ОШИБОК ----------
+// Тип записывается к каждой ошибке («Мои ошибки», мастерство слов, отчёт); определяет его classifyError() в js/stats.js.
+// По нему реванш подберёт задание на эту путаницу, а взрослый и AI-анализ видят закономерности.
+const ERROR_TYPES = [
+  { id: 'unknown', title: 'не узнал', child: 'не узнал(а)', hint: 'слово не узнано: пропуск или вариант без сходства — повторить значение' },
+  { id: 'similar', title: 'перепутал с похожим', child: 'перепутал(а) с похожим', hint: 'выбрано похожее по написанию или звучанию — сравнить пару слов' },
+  { id: 'spelling', title: 'написание', child: 'ошибка в буквах', hint: 'слово узнано, но собрано с ошибкой в буквах' },
+  { id: 'form', title: 'форма', child: 'не та форма', hint: 'грамматика: неверная форма слова или конструкции (код навыка G2–G4)' },
+  { id: 'meaning', title: 'смысл текста', child: 'не понял(а) текст', hint: 'чтение: ответ не по тексту' },
+];
+
 // ---------- РЕГИОНЫ И РАНГИ ----------
 // Мир — три региона, по одному на учебник Spotlight (дорожка класса на карте).
 // У каждого региона 4 ранга; ранг открывается за темы и проверки этого региона, а не за XP
@@ -2362,40 +2373,41 @@ const CURRICULUM = {
     { id: 'g4-jobs', grade: 4, title: 'Профессии', section: 'сквозная', hours: null },
   ],
   // грамматические навыки: ошибка записывается с кодом навыка; навыки слоя frp до Spotlight — только на узнавание
+  // needs — на какие навыки опирается (граф навыков, предложение для сверки): слабый навык → сначала проверить опору
   skills: [
-    { code: 'G2-01', grade: 2, title: 'to be: am / is / are', where: 'вводный модуль', layer: 'base', error: 'I is, They is' },
-    { code: 'G2-02', grade: 2, title: 'have got / has got', where: 'M4', layer: 'base', error: 'He have got' },
-    { code: 'G2-03', grade: 2, title: 'can / can’t + глагол', where: 'M3', layer: 'base', error: 'He can swims' },
-    { code: 'G2-04', grade: 2, title: 'Множественное число по правилу', where: '', layer: 'base', error: 'two cat' },
-    { code: 'G2-05', grade: 2, title: 'Повелительное наклонение, Don’t', where: '', layer: 'base', error: 'Not sit down!' },
-    { code: 'G2-06', grade: 2, title: 'my / your / our, this', where: '', layer: 'base', error: 'It’s me book' },
-    { code: 'G2-07', grade: 2, title: 'Предлоги in / on / under', where: 'M1', layer: 'base', error: 'путаница in / on' },
-    { code: 'G2-08', grade: 2, title: 'there is / there are', where: '', layer: 'frp', error: 'There is two cats' },
-    { code: 'G2-09', grade: 2, title: 'I like / he likes', where: '', layer: 'frp', error: 'She like milk' },
-    { code: 'G3-01', grade: 3, title: 'Present Simple: -s в 3-м лице, do / does', where: 'M3, M8', layer: 'base', error: 'Does he likes?' },
-    { code: 'G3-02', grade: 3, title: 'some / any', where: 'M3', layer: 'base', error: 'I haven’t got some' },
-    { code: 'G3-03', grade: 3, title: 'a / an', where: 'M4', layer: 'base', error: 'a apple' },
-    { code: 'G3-04', grade: 3, title: 'this / that / these / those', where: 'M4', layer: 'base', error: 'this books' },
-    { code: 'G3-05', grade: 3, title: 'Притяжательный падеж ’s', where: 'M4', layer: 'base', error: 'the book of Ann' },
-    { code: 'G3-06', grade: 3, title: 'Исключения множественного числа', where: 'M5', layer: 'base', error: 'mouses, childs' },
-    { code: 'G3-07', grade: 3, title: 'Предлоги места, правописание -es', where: 'M6', layer: 'base', error: 'boxs' },
-    { code: 'G3-08', grade: 3, title: 'Present Continuous', where: 'M7', layer: 'base', error: 'He playing' },
-    { code: 'G3-09', grade: 3, title: 'Время по часам, дни недели', where: 'M8', layer: 'base', error: 'at Monday' },
-    { code: 'G3-10', grade: 3, title: 'Past Simple — узнавание', where: '', layer: 'frp', error: 'не узнаёт went как go' },
-    { code: 'G3-11', grade: 3, title: 'Притяжательные местоимения his / her / its / their', where: 'M2', layer: 'base', error: 'his вместо her' },
-    { code: 'G4-01', grade: 4, title: 'Present Simple или Continuous', where: 'M1–M2, M4', layer: 'base', error: 'He is play every day' },
-    { code: 'G4-02', grade: 4, title: 'much / many / a lot of', where: 'M3', layer: 'base', error: 'many milk' },
-    { code: 'G4-03', grade: 4, title: 'must / mustn’t', where: 'M4', layer: 'base', error: 'You must to go' },
-    { code: 'G4-04', grade: 4, title: 'Степени сравнения', where: 'M4', layer: 'base', error: 'more big, gooder' },
-    { code: 'G4-05', grade: 4, title: 'was / were, порядковые числа', where: 'M5', layer: 'base', error: 'They was' },
-    { code: 'G4-06', grade: 4, title: 'Past Simple правильных глаголов, did', where: 'M6', layer: 'base', error: 'Did you played?' },
-    { code: 'G4-07', grade: 4, title: 'Неправильные глаголы', where: 'M7', layer: 'base', error: 'goed' },
-    { code: 'G4-08', grade: 4, title: 'be going to, will / won’t', where: 'M8', layer: 'base', error: 'I going to' },
-    { code: 'G4-09', grade: 4, title: 'have to', where: 'M2', layer: 'base', error: 'He have to' },
+    { code: 'G2-01', grade: 2, title: 'to be: am / is / are', where: 'вводный модуль', layer: 'base', error: 'I is, They is', needs: [] },
+    { code: 'G2-02', grade: 2, title: 'have got / has got', where: 'M4', layer: 'base', error: 'He have got', needs: [] },
+    { code: 'G2-03', grade: 2, title: 'can / can’t + глагол', where: 'M3', layer: 'base', error: 'He can swims', needs: [] },
+    { code: 'G2-04', grade: 2, title: 'Множественное число по правилу', where: '', layer: 'base', error: 'two cat', needs: [] },
+    { code: 'G2-05', grade: 2, title: 'Повелительное наклонение, Don’t', where: '', layer: 'base', error: 'Not sit down!', needs: [] },
+    { code: 'G2-06', grade: 2, title: 'my / your / our, this', where: '', layer: 'base', error: 'It’s me book', needs: [] },
+    { code: 'G2-07', grade: 2, title: 'Предлоги in / on / under', where: 'M1', layer: 'base', error: 'путаница in / on', needs: [] },
+    { code: 'G2-08', grade: 2, title: 'there is / there are', where: '', layer: 'frp', error: 'There is two cats', needs: ['G2-01', 'G2-04'] },
+    { code: 'G2-09', grade: 2, title: 'I like / he likes', where: '', layer: 'frp', error: 'She like milk', needs: [] },
+    { code: 'G3-01', grade: 3, title: 'Present Simple: -s в 3-м лице, do / does', where: 'M3, M8', layer: 'base', error: 'Does he likes?', needs: ['G2-09'] },
+    { code: 'G3-02', grade: 3, title: 'some / any', where: 'M3', layer: 'base', error: 'I haven’t got some', needs: ['G2-02', 'G2-04'] },
+    { code: 'G3-03', grade: 3, title: 'a / an', where: 'M4', layer: 'base', error: 'a apple', needs: [] },
+    { code: 'G3-04', grade: 3, title: 'this / that / these / those', where: 'M4', layer: 'base', error: 'this books', needs: ['G2-06', 'G2-04'] },
+    { code: 'G3-05', grade: 3, title: 'Притяжательный падеж ’s', where: 'M4', layer: 'base', error: 'the book of Ann', needs: ['G2-06'] },
+    { code: 'G3-06', grade: 3, title: 'Исключения множественного числа', where: 'M5', layer: 'base', error: 'mouses, childs', needs: ['G2-04'] },
+    { code: 'G3-07', grade: 3, title: 'Предлоги места, правописание -es', where: 'M6', layer: 'base', error: 'boxs', needs: ['G2-07', 'G2-04'] },
+    { code: 'G3-08', grade: 3, title: 'Present Continuous', where: 'M7', layer: 'base', error: 'He playing', needs: ['G2-01'] },
+    { code: 'G3-09', grade: 3, title: 'Время по часам, дни недели', where: 'M8', layer: 'base', error: 'at Monday', needs: [] },
+    { code: 'G3-10', grade: 3, title: 'Past Simple — узнавание', where: '', layer: 'frp', error: 'не узнаёт went как go', needs: [] },
+    { code: 'G3-11', grade: 3, title: 'Притяжательные местоимения his / her / its / their', where: 'M2', layer: 'base', error: 'his вместо her', needs: ['G2-06'] },
+    { code: 'G4-01', grade: 4, title: 'Present Simple или Continuous', where: 'M1–M2, M4', layer: 'base', error: 'He is play every day', needs: ['G3-01', 'G3-08'] },
+    { code: 'G4-02', grade: 4, title: 'much / many / a lot of', where: 'M3', layer: 'base', error: 'many milk', needs: ['G3-02'] },
+    { code: 'G4-03', grade: 4, title: 'must / mustn’t', where: 'M4', layer: 'base', error: 'You must to go', needs: ['G2-03'] },
+    { code: 'G4-04', grade: 4, title: 'Степени сравнения', where: 'M4', layer: 'base', error: 'more big, gooder', needs: [] },
+    { code: 'G4-05', grade: 4, title: 'was / were, порядковые числа', where: 'M5', layer: 'base', error: 'They was', needs: ['G2-01'] },
+    { code: 'G4-06', grade: 4, title: 'Past Simple правильных глаголов, did', where: 'M6', layer: 'base', error: 'Did you played?', needs: ['G4-05', 'G3-01'] },
+    { code: 'G4-07', grade: 4, title: 'Неправильные глаголы', where: 'M7', layer: 'base', error: 'goed', needs: ['G4-06', 'G3-10'] },
+    { code: 'G4-08', grade: 4, title: 'be going to, will / won’t', where: 'M8', layer: 'base', error: 'I going to', needs: ['G2-01'] },
+    { code: 'G4-09', grade: 4, title: 'have to', where: 'M2', layer: 'base', error: 'He have to', needs: ['G3-01'] },
     // сверено по тематическому планированию Spotlight 4 (в карте модули 1–3 были «по памяти»)
-    { code: 'G4-10', grade: 4, title: 'may / may not (разрешение)', where: 'M3', layer: 'base', error: 'May I to have…' },
-    { code: 'G4-11', grade: 4, title: 'Наречия частотности: always, usually, sometimes, never', where: 'M2', layer: 'base', error: 'I go always to school' },
-    { code: 'G4-12', grade: 4, title: 'Вопросительные слова: who, what, where, when, why, how', where: 'M8', layer: 'base', error: 'Where you go?' },
+    { code: 'G4-10', grade: 4, title: 'may / may not (разрешение)', where: 'M3', layer: 'base', error: 'May I to have…', needs: ['G2-03'] },
+    { code: 'G4-11', grade: 4, title: 'Наречия частотности: always, usually, sometimes, never', where: 'M2', layer: 'base', error: 'I go always to school', needs: ['G3-01'] },
+    { code: 'G4-12', grade: 4, title: 'Вопросительные слова: who, what, where, when, why, how', where: 'M8', layer: 'base', error: 'Where you go?', needs: ['G3-01'] },
   ],
   // типы заданий: код → описание и редкость квеста; kinds — какие упражнения Quest уже им соответствуют
   taskTypes: [
@@ -2472,7 +2484,7 @@ window.EQ = {
   CHARACTERS, HERO_MOODS, DEFAULT_HERO: 'harlow',
   LESSONS,
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
-  REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf,
+  REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

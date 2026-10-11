@@ -25,6 +25,14 @@ check('темы: id g<класс>-…', CURRICULUM.topics.every(t => t.id.starts
 const KINDS = ['cards', 'vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak', 'picture', 'fill', 'build'];
 check('типы заданий: упражнения Quest существуют', CURRICULUM.taskTypes.every(t => t.kinds.every(k => KINDS.includes(k))));
 check('типы заданий: редкость из списка', CURRICULUM.taskTypes.every(t => ['common', 'rare', 'epic', 'legendary'].includes(t.rarity)));
+// граф навыков: опоры существуют, из своего или младшего класса, без циклов
+check('граф навыков: опоры — существующие навыки своего или младшего класса', CURRICULUM.skills.every(s => Array.isArray(s.needs) && s.needs.every(c => SKILLS[c] && SKILLS[c].grade <= s.grade && c !== s.code)), CURRICULUM.skills.filter(s => !(s.needs || []).every(c => SKILLS[c])).map(s => s.code));
+{
+  const state = {}, cyc = [];
+  const visit = c => { if (state[c] === 1) return cyc.push(c); if (state[c] === 2) return; state[c] = 1; (SKILLS[c].needs || []).forEach(visit); state[c] = 2; };
+  CURRICULUM.skills.forEach(s => visit(s.code));
+  check('граф навыков без циклов', !cyc.length, cyc);
+}
 check('чтение в 4 классе — тип 4-A', taskTypeFor('reading', 4) === '4-A' && taskTypeFor('cards', 2) === null);
 
 for (const l of LESSONS){

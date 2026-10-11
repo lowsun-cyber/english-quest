@@ -677,6 +677,13 @@ section { margin-top: 32px; }
 .q-text.q-sentence { font-size: 24px; font-weight: 800; text-align: center; margin: 10px 0; }
 .q-text.q-question { font-size: 22px; font-weight: 800; }
 .q-hint { color: var(--muted); font-size: 13px; text-align: center; }
+/* разбор неверного ответа (js/why.js) */
+.why { margin: 12px auto 0; max-width: 520px; padding: 10px 14px; border: 3px solid var(--line); border-radius: 12px; background: #fff3c2; color: var(--on-color); font-size: 17px; line-height: 1.4; text-align: left; animation: why-in .25s ease-out; }
+[data-theme="dark"] .why { background: #3a3320; color: var(--ink); }
+@keyframes why-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce){ .why { animation: none; } }
+/* тип ошибки в «Моих ошибках» */
+.mi-err { align-self: flex-start; display: inline-block; margin-top: 2px; padding: 1px 8px; border: 2px solid var(--line); border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; background: var(--surface); color: var(--ink); }
 .q-text.q-lead { margin-top: 12px; }
 .q-options-gap { margin-top: 10px; }
 .q-listen-icon { text-align: center; font-size: 56px; }

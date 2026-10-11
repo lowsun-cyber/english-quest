@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { CURRICULUM, LESSONS, MAX_LEVEL, RANK_STEPS, REGIONS, SKILLS, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { CURRICULUM, ERROR_TYPES, LESSONS, MAX_LEVEL, RANK_STEPS, REGIONS, SKILLS, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -112,9 +112,109 @@ export function skillStats(st){
   return Object.entries(st.skills || {}).filter(([code]) => SKILLS[code]).map(([code, v]) => {
     const ok = v.ok || 0, bad = v.bad || 0, pct = pctOf(ok, bad);
     const wrong = Object.entries(v.wrong || {}).sort((a, b) => b[1] - a[1]);
-    return { code, skill: SKILLS[code], ok, bad, pct, last: v.last || 0, wrong, weak: bad > 0 && (pct < SKILL_WEAK_PCT || bad >= 3) };
+    const m = masteryOf({ ok, bad, last: v.last });
+    return { code, skill: SKILLS[code], ok, bad, pct, last: v.last || 0, wrong, weak: bad > 0 && (pct < SKILL_WEAK_PCT || bad >= 3),
+      mastery: m.score, level: m.level, needs: (SKILLS[code].needs || []).filter(c => SKILLS[c]) };
+  }).map((x, _, all) => {
+    // опоры навыка (граф навыков): у слабого навыка взрослому видно, что проверить сначала
+    x.needs = x.needs.map(c => ({ code: c, skill: SKILLS[c], level: all.find(y => y.code === c)?.level || 'new' }));
+    return x;
   }).sort((a, b) => (b.weak - a.weak) || (a.weak ? a.pct - b.pct : 0) || a.code.localeCompare(b.code));
 }
+// ---------- типы ошибок ----------
+const ERR_IDS = new Set(ERROR_TYPES.map(t => t.id));
+export const errorType = id => ERROR_TYPES.find(t => t.id === id) || null;
+// Расстояние Левенштейна (сколько букв поменять, вставить или убрать)
+export function editDistance(a, b){
+  a = String(a).toLowerCase(); b = String(b).toLowerCase();
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++){
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// Похожие слова: отличаются одной буквой (в длинных — двумя) или одно начинается с другого (dog / dogs)
+export function similarWords(a, b){
+  const x = String(a || '').toLowerCase().trim(), y = String(b || '').toLowerCase().trim();
+  if (!x || !y || x === y) return false;
+  const d = editDistance(x, y), len = Math.max(x.length, y.length);
+  return d <= (len >= 6 ? 2 : 1) || (Math.min(x.length, y.length) >= 3 && (x.startsWith(y) || y.startsWith(x)) && d <= 2);
+}
+// Тип ошибки по ответу. type — word | grammar | reading; exercise — упражнение; chosen — выбранный вариант (нет — пропуск)
+export function classifyError({ type, exercise, answer, chosen, skill } = {}){
+  if (type === 'reading') return 'meaning';
+  if (type === 'grammar' || skill) return 'form';
+  if (exercise === 'spell') return 'spelling';
+  if (chosen && similarWords(answer, chosen)) return 'similar';
+  return 'unknown';
+}
+export const isErrorType = id => ERR_IDS.has(id);
+
+// ---------- мастерство (слова и навыки) ----------
+// Доля верных с поправкой на малое число ответов: (верно + 1) / (ответов + 2) — один верный ответ ещё не «освоено».
+// Давность: ответ старше 14 дней весит меньше (до ×0,75 через 64 дня) — давно не повторяли, значит, могли забыть.
+// Уровни: new — ответов не было, weak — до 50%, learning — до 80%, mastered — от 80% и не меньше 3 верных.
+export const MASTERY_LEVELS = [
+  { id: 'new', title: 'ещё не было' },
+  { id: 'weak', title: 'трудное' },
+  { id: 'learning', title: 'учим' },
+  { id: 'mastered', title: 'освоено' },
+];
+export const levelTitle = id => MASTERY_LEVELS.find(l => l.id === id)?.title || id;
+export function masteryOf({ ok = 0, bad = 0, last = 0 } = {}, now = Date.now()){
+  if (!ok && !bad) return { score: null, level: 'new' };
+  const days = last ? Math.max(0, (now - last) / 864e5) : 30;   // для старого прогресса без даты — «месяц назад»
+  const fresh = days <= 14 ? 1 : Math.max(0.75, 1 - (days - 14) / 200);
+  const score = (ok + 1) / (ok + bad + 2) * fresh;
+  const level = score >= 0.8 && ok >= 3 ? 'mastered' : score >= 0.5 ? 'learning' : 'weak';
+  return { score: Math.round(score * 100) / 100, level };
+}
+// Все слова уроков: en → { en, ru, emoji, grade, lessonId } (первое появление)
+let _words = null;
+export function lessonWords(){
+  if (_words) return _words;
+  _words = new Map();
+  for (const l of [...LESSONS].sort((a, b) => a.grade - b.grade || a.order - b.order))
+    for (const w of l.words) if (!_words.has(w.en)) _words.set(w.en, { ...w, grade: l.grade, lessonId: l.id });
+  return _words;
+}
+// Мастерство по словам. st.words — ответы с этого обновления; у старого прогресса берём то, что уже было:
+// верные — из коллекции слов (inventory), ошибки — из «Моих ошибок». Берётся большее, поэтому ничего не задваивается.
+export function wordStats(st, now = Date.now()){
+  const oldBad = {};
+  for (const m of Object.values(st.mistakes || {})) if (m.type === 'word') oldBad[m.ref] = Math.max(oldBad[m.ref] || 0, m.wrong || 0);
+  const out = [];
+  for (const [en, w] of lessonWords()){
+    const v = st.words?.[en] || {}, inv = st.inventory?.[en] || 0;
+    const ok = Math.max(v.ok || 0, inv), bad = Math.max(v.bad || 0, oldBad[en] || 0);
+    if (!ok && !bad) continue;
+    const m = masteryOf({ ok, bad, last: v.last || 0 }, now);
+    const err = Object.entries(v.err || {}).sort((a, b) => b[1] - a[1]);
+    const withW = Object.entries(v.with || {}).sort((a, b) => b[1] - a[1]);
+    out.push({ en, word: w, ok, bad, last: v.last || 0, score: m.score, level: m.level, err, with: withW });
+  }
+  return out.sort((a, b) => a.score - b.score || b.bad - a.bad || a.en.localeCompare(b.en));
+}
+// Сводка: сколько слов на каждом уровне, всего слов в уроках, типы ошибок
+export function masterySummary(st, now = Date.now()){
+  const words = wordStats(st, now), levels = { weak: 0, learning: 0, mastered: 0 };
+  for (const w of words) levels[w.level]++;
+  // типы ошибок за всё время с этого обновления (st.errorTypes пополняет logError в js/mistakes.js)
+  const errors = ERROR_TYPES.map(t => ({ type: t, n: st.errorTypes?.[t.id] || 0 })).filter(x => x.n).sort((a, b) => b.n - a.n);
+  return { words, levels, seen: words.length, total: lessonWords().size, errors };
+}
+
+// Подписи для отчётов: «не узнал ×5 · перепутал с похожим ×3»; у слова — главный тип и с чем путает
+export const errorsLine = errors => errors.map(e => `${e.type.title} ×${e.n}`).join(' · ');
+export function wordErrNote(w){
+  const t = errorType(w.err[0]?.[0]);
+  if (!t) return '';
+  return w.err[0][0] === 'similar' && w.with[0] ? `${t.title}: ${w.with[0][0]}` : t.title;
+}
+export const needsLine = x => x.needs.map(n => `${n.code} ${n.skill.title} (${levelTitle(n.level)})`).join('; ');
+
 // Что уже встречалось ребёнку по карте программы: темы и навыки начатых уроков
 export function curriculumCoverage(st){
   const started = LESSONS.filter(l => Object.keys(st.lessonProgress?.[l.id] || {}).length);
@@ -145,7 +245,7 @@ export function studentStats(st, n = 7){
     lessonsDone: lessons.filter(x => x.done).length,
     xp, level, maxLevel: MAX_LEVEL, rank: topRank(st), regions: regionRanks(st), gold: st.gold || 0, mastered: st.mastered || 0,
     collected: Object.keys(st.inventory || {}).length,
-    skills: skillStats(st), coverage: curriculumCoverage(st),
+    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st),
     allTime: { days: all, sec: allSec, min: minutes(allSec), ok: allOk, bad: allBad, pct: pctOf(allOk, allBad),
       activeDays: all.filter(d => d.sec > 0 || (d.ok || 0) + (d.bad || 0) > 0).length, first: allKeys[0] || null, last: allKeys[allKeys.length - 1] || null },
   };
@@ -166,6 +266,10 @@ export function reportText(st, who = '', s = studentStats(st), extra = []){
   if (words.length) lines.push(`Трудные слова: ${words.join(', ')}`);
   const weak = s.skills.filter(x => x.weak).slice(0, 3);
   if (weak.length) lines.push(`Грамматика, над чем поработать: ${weak.map(x => `${x.skill.title} (${x.pct}%${x.wrong[0] ? `, путает: ${x.wrong[0][0]}` : ''})`).join('; ')}`);
+  if (s.mastery?.seen){
+    const hardW = s.mastery.words.filter(w => w.level === 'weak').slice(0, 5).map(w => w.en);
+    lines.push(`Слова: освоено ${s.mastery.levels.mastered} из ${s.mastery.seen} встреченных${hardW.length ? `; трудные: ${hardW.join(', ')}` : ''}`);
+  }
   if (st.mastered) lines.push(`Выучено после ошибок: ${st.mastered}`);
   lines.push(...extra);
   const cpsDone = CHECKPOINTS.filter(cp => st.checkpoints?.[cp.id]?.passedAt);

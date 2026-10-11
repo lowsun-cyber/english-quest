@@ -6,11 +6,12 @@ import { heroPic, nextScreenMood, setHeroMood, takeScreenMood } from './heroes.j
 import { checkHomework } from './homework.js';
 import { isLessonComplete, penalty, renderHUD, reward } from './hud.js';
 import { renderMap } from './map.js';
-import { logSkill, recordMistake } from './mistakes.js';
+import { countError, logSkill, logWord, recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak, speakWordOrPhrase, stopSpeech } from './tts.js';
 import { afterFeedback, back, closeModal, modal, openModal, showGuide, toast } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle, uniqueByEmoji } from './util.js';
+import { WHY_MS, whyWrong } from './why.js';
 
 // === Карточки: слово за словом, потом все слова сеткой ===
 export function exCards(lesson, guide){
@@ -148,6 +149,7 @@ export function exSpell(lesson, guide){
       speak(w.en);
       if (ok){
         right++;
+        logWord(w.en, true);
         reward(12, 3, { item: w.en });
         markProgress(lesson.id, 'spell');
         toast(`✅ +12 XP · ${w.en}`);
@@ -155,7 +157,7 @@ export function exSpell(lesson, guide){
         const ans = document.getElementById('sp-answer');
         ans.hidden = false;
         ans.textContent = `Правильно: ${w.en}`;
-        recordMistake('word', lesson, w.en);
+        recordMistake('word', lesson, w.en, { exercise: 'spell', chosen: typed.map(t => tiles[t]).join('') });
         penalty();
       }
       afterFeedback(() => { idx++; render(); }, ok ? 1100 : 2000);
@@ -272,12 +274,13 @@ export function exVocab(lesson, guide){
       </div>
     `);
     document.getElementById('hear').onclick = () => speak(w.en);
-    document.getElementById('skip').onclick = () => { recordMistake('word', lesson, w.en); idx++; render(); };
+    document.getElementById('skip').onclick = () => { recordMistake('word', lesson, w.en, { exercise: 'vocab' }); idx++; render(); };
     document.querySelectorAll('.opt').forEach(btn => {
       btn.onclick = () => {
         if (btn.dataset.en === w.en){
           btn.classList.add('correct');
           speak(w.en);
+          logWord(w.en, true);
           reward(10, 2, { item: w.en });
           markProgress(lesson.id, 'vocab');
           toast(`✅ +10 XP · ${w.en}`);
@@ -286,10 +289,10 @@ export function exVocab(lesson, guide){
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-en="${w.en}"]`)?.classList.add('correct');
           speak(w.en);
-          recordMistake('word', lesson, w.en);
+          const error = recordMistake('word', lesson, w.en, { exercise: 'vocab', chosen: btn.dataset.en });
           penalty();
-          toast(`Правильно: ${w.en}`);
-          afterFeedback(() => { idx++; render(); }, 1400);
+          whyWrong({ lesson, error, answer: w.en, chosen: btn.dataset.en });
+          afterFeedback(() => { idx++; render(); }, WHY_MS);
         }
       };
     });
@@ -334,6 +337,7 @@ export function exListen(lesson, guide){
       btn.onclick = () => {
         if (btn.dataset.en === w.en){
           btn.classList.add('correct');
+          logWord(w.en, true);
           reward(12, 2, { item: w.en });
           markProgress(lesson.id, 'listen');
           toast(`✅ +12 XP`);
@@ -341,9 +345,10 @@ export function exListen(lesson, guide){
         } else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-en="${w.en}"]`)?.classList.add('correct');
-          recordMistake('word', lesson, w.en);
+          const error = recordMistake('word', lesson, w.en, { exercise: 'listen', chosen: btn.dataset.en });
           penalty();
-          afterFeedback(() => { idx++; render(); }, 1200);
+          whyWrong({ lesson, error, answer: w.en, chosen: btn.dataset.en });
+          afterFeedback(() => { idx++; render(); }, WHY_MS);
         }
       };
     });
@@ -386,6 +391,7 @@ export function exMatch(lesson, guide){
           const nextFree = [...document.querySelectorAll('.match-item:not(.done)')][0];
           if (nextFree) nextFree.focus();
           selL.disabled = true; selR.disabled = true;
+          logWord(selL.dataset.k, true);
           reward(14, 3, { item: selL.dataset.k });
           markProgress(lesson.id, 'match');
           speak(selL.dataset.k);
@@ -405,8 +411,8 @@ export function exMatch(lesson, guide){
         } else {
           selL.classList.add('wrong'); selR.classList.add('wrong');
           // перепутаны оба слова: и то, что выбрали слева, и то, чья картинка справа
-          recordMistake('word', lesson, selL.dataset.k);
-          recordMistake('word', lesson, selR.dataset.k);
+          recordMistake('word', lesson, selL.dataset.k, { exercise: 'match', chosen: selR.dataset.k });
+          recordMistake('word', lesson, selR.dataset.k, { exercise: 'match', chosen: selL.dataset.k });
           penalty();
           const l = selL, r = selR;
           setTimeout(() => {
@@ -462,9 +468,10 @@ export function exGrammar(lesson, guide){
         } else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${q.a}"]`)?.classList.add('correct');
-          recordMistake('grammar', lesson, q.q);
+          const error = recordMistake('grammar', lesson, q.q, { exercise: 'grammar', chosen: btn.dataset.o, skill: q.skill });
           penalty();
-          afterFeedback(() => { idx++; render(); }, 1400);
+          whyWrong({ lesson, error, answer: q.a, chosen: btn.dataset.o, q });
+          afterFeedback(() => { idx++; render(); }, WHY_MS);
         }
       };
     });
@@ -514,7 +521,7 @@ export function exBuild(lesson, guide){
       const ok = picked.map(x => x.t).join(' ') === it.text;
       logSkill(it, ok, ok ? null : picked.map(x => x.t).join(' '));
       if (ok){ right++; reward(15, 3); markProgress(lesson.id, 'build'); toast('✅ +15 XP'); }
-      else { penalty(); }
+      else { countError('form'); penalty(); }
       openModal(`
         ${lessonHeader(lesson, guide, '', ok ? 'happy' : 'hint')}
         <div class="question">
@@ -560,15 +567,16 @@ export function exFill(lesson, guide){
       btn.onclick = () => {
         document.querySelectorAll('.opt').forEach(b => b.disabled = true);
         const ok = btn.dataset.o === it.a;
-        if (ok){ btn.classList.add('correct'); right++; reward(10, 2); markProgress(lesson.id, 'fill'); }
+        if (ok){ btn.classList.add('correct'); right++; logWord(it.word, true); reward(10, 2); markProgress(lesson.id, 'fill'); }
         else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(it.a)}"]`)?.classList.add('correct');
-          recordMistake('word', lesson, it.word);
+          const error = recordMistake('word', lesson, it.word, { exercise: 'fill', chosen: btn.dataset.o });
           penalty();
+          whyWrong({ lesson, error, answer: it.a, chosen: btn.dataset.o });
         }
         speak(it.q.replace('___', it.a));
-        afterFeedback(() => { idx++; render(); }, ok ? 1200 : 1800);
+        afterFeedback(() => { idx++; render(); }, ok ? 1200 : WHY_MS);
       };
     });
   }
@@ -610,12 +618,14 @@ export function exPicture(lesson, guide){
         if (ok){
           btn.classList.add('correct');
           right++;
+          if (it.word && lesson.words.some(w => w.en === it.word)) logWord(it.word, true);
           reward(10, 2);
           markProgress(lesson.id, 'picture');
         } else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(it.right)}"]`)?.classList.add('correct');
-          if (it.word && lesson.words.some(w => w.en === it.word)) recordMistake('word', lesson, it.word);
+          if (it.word && lesson.words.some(w => w.en === it.word)) recordMistake('word', lesson, it.word, { exercise: 'picture', chosen: btn.dataset.o, skill: it.skill });
+          else countError(it.skill ? 'form' : 'unknown');
           penalty();
         }
         speak(it.right);
@@ -678,9 +688,10 @@ export function exReading(lesson, guide){
         } else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${q.a}"]`)?.classList.add('correct');
-          recordMistake('reading', lesson, q.q);
+          const error = recordMistake('reading', lesson, q.q, { exercise: 'reading', chosen: btn.dataset.o });
           penalty();
-          afterFeedback(() => { idx++; renderQ(); }, 1200);
+          whyWrong({ lesson, error, answer: q.a });
+          afterFeedback(() => { idx++; renderQ(); }, WHY_MS);
         }
       };
     });

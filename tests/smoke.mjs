@@ -117,10 +117,21 @@ try {
   await test('слова: 2 ошибки и 4 верных', () => js(`
     const L = window.EQ.LESSONS[0];
     document.querySelector('.map-node').click(); await __sleep(200); document.querySelector('.hub-ex[data-ex=vocab]').click(); await __sleep(300);
+    const why = [], wrongs = [];
     for (let i = 0; i < 6; i++){ const q = document.querySelector('.q-emoji'); const ans = __byEmoji(L.words, q.textContent);
-      [...document.querySelectorAll('.opt')].find(o => i < 2 ? o.dataset.en !== ans : o.dataset.en === ans).click(); await __sleep(i < 2 ? 1600 : 1000); }
+      const b = [...document.querySelectorAll('.opt')].find(o => i < 2 ? o.dataset.en !== ans : o.dataset.en === ans); b.click();
+      if (i < 2){ wrongs.push([ans, b.dataset.en]); await __sleep(150); why.push(document.querySelector('#modal .why')?.textContent || ''); }
+      await __sleep(i < 2 ? 2950 : 1000); }   // после ошибки — разбор (WHY_MS)
     const st = __ls(); __close();
     if (Object.keys(st.mistakes).length !== 2) throw new Error('ошибок: ' + Object.keys(st.mistakes).length);
+    // разбор: что значит выбранное и что было нужно; тип ошибки записан к слову, в карточку и в общий счёт
+    wrongs.forEach(([ans, chosen], k) => { if (!why[k].includes(ans) || !why[k].includes(chosen)) throw new Error('разбор: ' + why[k]); });
+    const [ans0, chosen0] = wrongs[0], w0 = st.words[ans0];
+    if (!w0 || w0.bad !== 1 || !Object.keys(w0.err || {}).length || w0.with?.[chosen0] !== 1) throw new Error('ответы по слову: ' + JSON.stringify(w0));
+    if (Object.values(st.errorTypes).reduce((a, b) => a + b, 0) !== 2) throw new Error('типы ошибок: ' + JSON.stringify(st.errorTypes));
+    const m0 = Object.values(st.mistakes).find(m => m.ref === ans0); if (!m0.lastErr) throw new Error('в карточке нет типа');
+    if (document.querySelectorAll('#mistakes .mi-err').length !== 2) throw new Error('в «Моих ошибках» нет типа ошибки');
+    if (Object.values(st.words).filter(w => w.ok).length !== 4) throw new Error('верные ответы по словам: ' + JSON.stringify(st.words));
     if (document.getElementById('stat-hearts')) throw new Error('сердечки всё ещё в шапке');
     if (st.lessonProgress['g2-letters'].vocab !== 4) throw new Error('прогресс: ' + JSON.stringify(st.lessonProgress));
     return 'XP ' + st.xp + ', ошибок 2, без штрафа';`));
@@ -262,9 +273,11 @@ try {
     await __gate();
     if (document.querySelector('.modal h2').textContent !== 'Режим репетитора') throw new Error('панель не открылась');
     const tiles = document.querySelectorAll('.t-tile').length; if (tiles !== 6) throw new Error('плиток: ' + tiles);
+    const body = document.querySelector('.modal').innerText;
+    if (!/Слова: освоение/.test(body) || !/Типы ошибок:/.test(body) || !/трудное|учим/.test(body)) throw new Error('в панели нет мастерства слов и типов ошибок');
     document.getElementById('t-report').click(); await __sleep(300);
     const rep = document.getElementById('t-report-out').value;
-    for (const s of ['Ответов:', 'Цель дня', 'Трудные слова', 'Сданы проверки']) if (!rep.includes(s)) throw new Error('в отчёте нет «' + s + '»');
+    for (const s of ['Ответов:', 'Цель дня', 'Трудные слова', 'Сданы проверки', 'Слова: освоено']) if (!rep.includes(s)) throw new Error('в отчёте нет «' + s + '»');
     __close(); return tiles + ' плиток, отчёт полный';`));
 
   await test('начатая тема не закрывается, если перед ней появилась новая', () => js(`
@@ -290,7 +303,8 @@ try {
     const txt = document.getElementById('modal-body').innerText;
     if (!/Грамматика по навыкам/.test(txt) || !/Неправильные глаголы/.test(txt) || !/путает: goed/.test(txt)) throw new Error('в панели нет навыка');
     document.getElementById('t-report').click(); await __sleep(300);
-    if (!/Грамматика, над чем поработать: Неправильные глаголы/.test(document.getElementById('t-report-out').value)) throw new Error('в отчёте нет слабого навыка');
+    const rep = document.getElementById('t-report-out').value;
+    if (!/Грамматика, над чем поработать: Неправильные глаголы/.test(rep)) throw new Error('в отчёте нет слабого навыка: ' + rep.split(String.fromCharCode(10)).filter(l => l.includes('Грамматика')).join(' | '));
     __close(); return 'G4-07: 1 верно, 2 ошибки (goed)';`));
 
   await test('словарь: поиск в обе стороны, фраза, поверх урока', () => js(`
@@ -532,7 +546,7 @@ try {
     const right = __byEmoji(L.words, document.querySelector('.q-emoji').textContent);
     [...document.querySelectorAll('.opt')].find(o => o.dataset.en !== right).click(); await __sleep(100);
     if (mood() !== 'hint' || !/-hint\\.svg$/.test(document.querySelector('#modal .hero-img[data-mood]').src)) throw new Error('после ошибки: ' + mood());
-    await __sleep(1700);
+    await __sleep(3100);
     if (mood() !== 'thinking') throw new Error('следующий вопрос: ' + mood());
     const right2 = __byEmoji(L.words, document.querySelector('.q-emoji').textContent);
     [...document.querySelectorAll('.opt')].find(o => o.dataset.en === right2).click(); await __sleep(100);
