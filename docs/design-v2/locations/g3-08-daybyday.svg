@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-62" y="-10" width="34" height="34" fill="#f3dcb5" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><polygon points="-66,-10 -45,-30 -24,-10" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="28" y="-4" width="32" height="28" fill="#f3dcb5" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><polygon points="24,-4 44,-22 64,-4" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-20" y="-72" width="40" height="96" fill="#e8d8c4" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><polygon points="-27,-72 0,-100 27,-72" fill="#2a7cb4" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="0" cy="-48" r="14" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><path d="M0 -48 V-57 M0 -48 H7" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M-9 24 V2 a9 9 0 0 1 18 0 V24 Z" fill="#8b6f5a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

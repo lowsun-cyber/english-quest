@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-46" y="-34" width="92" height="56" fill="#f3dcb5" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="-56,-34 0,-68 56,-34" fill="#e5483b" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="0" cy="-46" r="9" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><path d="M0 -51 V-46 H4" stroke="#1c2b1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+<rect x="-38" y="-24" width="20" height="16" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><rect x="18" y="-24" width="20" height="16" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-12" y="-6" width="24" height="28" fill="#8b6f5a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<line x1="50" y1="-34" x2="50" y2="-82" stroke="#1c2b1a" stroke-width="3"/><polygon points="50,-82 72,-75 50,-68" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

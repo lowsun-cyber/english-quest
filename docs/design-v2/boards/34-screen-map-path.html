@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Карта-путь</title>
+<script src="./dc-shim.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Baloo+2:wght@500;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1c2b1a;text-decoration:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 2144px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Baloo 2', system-ui, sans-serif; color: #1c2b1a; background: #b6e09c;">
+<div style="height: 70px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #fffdf6; border-bottom: 3px solid #1c2b1a; position: relative; z-index: 3;">
+<div style="width: 46px; height: 46px; flex-shrink: 0; background: #d6ecfb; border: 3px solid #3a9fe0; border-radius: 6px; overflow: hidden; display: flex; align-items: flex-start; justify-content: center;"><img src="../heroes/max.svg" alt="Аватар: Miner Max" style="width: 52px; height: 62px; margin-top: 2px;"></div>
+<div style="flex: 1; min-width: 0;"><div style="font-size: 20px; font-weight: 800; line-height: 1;">Лёва</div><div style="font-size: 13px; font-weight: 700; color: #2a7cb4;">Подмастерье</div></div>
+<div style="font-family: 'Press Start 2P', monospace; font-size: 11px; padding: 7px 6px; background: #f5c02b; border: 3px solid #1c2b1a; border-radius: 4px;">L14</div>
+<div style="display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #fff4cc; border: 3px solid #1c2b1a; border-radius: 999px; font-size: 16px; font-weight: 800;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5"/><path d="M12 7v10" stroke="#d69f0a" stroke-width="2.5" stroke-linecap="round"/></svg>120</div>
+</div>
+<div style="position: relative; height: 2010px; overflow: hidden;">
+<svg width="390" height="2010" viewBox="0 0 390 2010" style="position:absolute;left:0;top:0" aria-hidden="true">
+<defs><filter id="mute"><feColorMatrix type="saturate" values="0.12"/></filter>
+<pattern id="tiles" width="48" height="48" patternUnits="userSpaceOnUse"><rect width="48" height="48" fill="#b6e09c"/><path d="M48 0H0V48" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="1"/></pattern></defs>
+<rect width="390" height="2010" fill="url(#tiles)"/>
+<circle cx="30" cy="180" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="42" cy="186" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="360" cy="300" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="372" cy="306" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="355" cy="560" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="367" cy="566" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="28" cy="440" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="40" cy="446" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="36" cy="780" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="48" cy="786" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="352" cy="960" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="364" cy="966" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="30" cy="1220" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="42" cy="1226" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="358" cy="1380" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="370" cy="1386" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="34" cy="1540" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="46" cy="1546" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<circle cx="352" cy="1700" r="13" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/><circle cx="364" cy="1706" r="9" fill="#7cc35c" stroke="#1c2b1a" stroke-width="2.5"/>
+<path d="M110 215 C110 290 110 221 110 296 C110 371 280 381 280 456 C280 531 110 541 110 616 C110 691 280 701 280 776 C280 851 195 871 195 946 C195 1021 110 1041 110 1116 C110 1191 280 1201 280 1276 C280 1351 110 1361 110 1436 C110 1511 280 1521 280 1596 C280 1671 195 1691 195 1766 C195 1841 195 1815 195 1890" fill="none" stroke="#1c2b1a" stroke-width="34" stroke-linecap="round"/>
+<path d="M110 215 C110 290 110 221 110 296 C110 371 280 381 280 456 C280 531 110 541 110 616 C110 691 280 701 280 776 C280 851 195 871 195 946 C195 1021 110 1041 110 1116 C110 1191 280 1201 280 1276 C280 1351 110 1361 110 1436 C110 1511 280 1521 280 1596 C280 1671 195 1691 195 1766 C195 1841 195 1815 195 1890" fill="none" stroke="#d6dcd8" stroke-width="27" stroke-linecap="round"/>
+<path d="M110 215 C110 290 110 221 110 296 C110 371 280 381 280 456 C280 531 110 541 110 616 C110 691 280 701 280 776" fill="none" stroke="#f3dcb5" stroke-width="27" stroke-linecap="round"/>
+<path d="M110 215 C110 290 110 221 110 296 C110 371 280 381 280 456 C280 531 110 541 110 616 C110 691 280 701 280 776 C280 851 195 871 195 946 C195 1021 110 1041 110 1116 C110 1191 280 1201 280 1276 C280 1351 110 1361 110 1436 C110 1511 280 1521 280 1596 C280 1671 195 1691 195 1766 C195 1841 195 1815 195 1890" fill="none" stroke="#9fb0b8" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round"/>
+<path d="M110 215 C110 290 110 221 110 296 C110 371 280 381 280 456 C280 531 110 541 110 616 C110 691 280 701 280 776" fill="none" stroke="#c0742c" stroke-width="4" stroke-dasharray="2 14" stroke-linecap="round"/>
+<g transform="translate(110 250)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-46" y="-34" width="92" height="56" fill="#f3dcb5" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="-56,-34 0,-68 56,-34" fill="#e5483b" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="0" cy="-46" r="9" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><path d="M0 -51 V-46 H4" stroke="#1c2b1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+<rect x="-38" y="-24" width="20" height="16" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><rect x="18" y="-24" width="20" height="16" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-12" y="-6" width="24" height="28" fill="#8b6f5a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<line x1="50" y1="-34" x2="50" y2="-82" stroke="#1c2b1a" stroke-width="3"/><polygon points="50,-82 72,-75 50,-68" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/></g>
+<g transform="translate(280 410)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><path d="M-30 24 L-12 -36 M30 24 L12 -36" stroke="#8b6f5a" stroke-width="6" stroke-linecap="round"/>
+<rect x="-44" y="-62" width="88" height="58" rx="3" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-37" y="-55" width="74" height="44" fill="#cfe9f6" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-27" y="-28" width="14" height="17" fill="#ff7bb0" stroke="#1c2b1a" stroke-width="2"/><circle cx="-20" cy="-35" r="7" fill="#f3a07c" stroke="#1c2b1a" stroke-width="2"/>
+<rect x="-7" y="-31" width="14" height="20" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2"/><circle cx="0" cy="-39" r="8" fill="#e9d3a8" stroke="#1c2b1a" stroke-width="2"/>
+<rect x="14" y="-25" width="11" height="14" fill="#3fb650" stroke="#1c2b1a" stroke-width="2"/><circle cx="19.5" cy="-31" r="6" fill="#ffc9a3" stroke="#1c2b1a" stroke-width="2"/>
+<path d="M0 -76 c-4 -8 -14 -4 -10 3 l10 9 l10 -9 c4 -7 -6 -11 -10 -3z" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/></g>
+<g transform="translate(110 570)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-52" y="-12" width="104" height="36" fill="#e8d8c4" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<line x1="-46" y1="-40" x2="-46" y2="-12" stroke="#1c2b1a" stroke-width="3"/><line x1="46" y1="-40" x2="46" y2="-12" stroke="#1c2b1a" stroke-width="3"/>
+<rect x="-58" y="-58" width="116" height="20" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-44" y="-56" width="12" height="16" fill="#e5483b"/><rect x="-20" y="-56" width="12" height="16" fill="#e5483b"/><rect x="4" y="-56" width="12" height="16" fill="#e5483b"/><rect x="28" y="-56" width="12" height="16" fill="#e5483b"/>
+<rect x="-58" y="-58" width="116" height="20" fill="none" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="-28" cy="-21" r="8" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><path d="M-28 -29 l3 -5" stroke="#3fb650" stroke-width="3" stroke-linecap="round"/>
+<rect x="-8" y="-30" width="20" height="18" rx="2" fill="#ffb3d1" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="2" cy="-33" r="4" fill="#e5483b" stroke="#1c2b1a" stroke-width="2"/>
+<polygon points="22,-26 38,-26 30,-12" fill="#e89a4c" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="30" cy="-30" r="8" fill="#fff4cc" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/></g>
+<g transform="translate(280 730)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-58" y="-62" width="46" height="80" fill="#c0742c" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<line x1="-58" y1="-34" x2="-12" y2="-34" stroke="#1c2b1a" stroke-width="3"/><line x1="-58" y1="-6" x2="-12" y2="-6" stroke="#1c2b1a" stroke-width="3"/>
+<circle cx="-35" cy="-45" r="8" fill="#c88a4a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="-41" cy="-52" r="3.5" fill="#c88a4a" stroke="#1c2b1a" stroke-width="2"/><circle cx="-29" cy="-52" r="3.5" fill="#c88a4a" stroke="#1c2b1a" stroke-width="2"/>
+<rect x="-50" y="-26" width="12" height="12" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><rect x="-34" y="-26" width="12" height="12" fill="#3fb650" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="6" y="-34" width="46" height="28" fill="#b89a64" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><path d="M6 -34 q23 -18 46 0" fill="#d69f0a" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="25" y="-26" width="8" height="8" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2"/>
+<circle cx="0" cy="8" r="13" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><path d="M-12 4 q12 8 24 0" stroke="#fffdf6" stroke-width="3" fill="none"/></g>
+<g transform="translate(195 900)" filter="url(#mute)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-50" y="-58" width="100" height="82" fill="#9fb0b8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-50 -58 v-10 h14 v8 h14 v-8 h16 v8 h14 v-8 h14 v8 h14 v-8 h14 v10" fill="#9fb0b8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-22 24 V-14 a22 22 0 0 1 44 0 V24 Z" fill="#4a3018" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-40" y="-50" width="80" height="16" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><text x="0" y="-38" text-anchor="middle" font-family="'Baloo 2', sans-serif" font-weight="800" font-size="11" fill="#1c2b1a">ИСПЫТАНИЕ</text></g>
+<g transform="translate(110 1070)" filter="url(#mute)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-50" y="-22" width="54" height="44" fill="#e9d3a8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><polygon points="-58,-20 -23,-54 12,-20" fill="#e5483b" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-34 22 V2 a11 11 0 0 1 22 0 V22 Z" fill="#3a2618" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<ellipse cx="34" cy="12" rx="16" ry="11" fill="#f3a07c" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="-8" r="12" fill="#f3a07c" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="23,-15 22,-28 31,-19" fill="#f3a07c" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><polygon points="41,-15 42,-28 33,-19" fill="#f3a07c" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="28" cy="-9" r="1.8" fill="#1c2b1a"/><circle cx="36" cy="-9" r="1.8" fill="#1c2b1a"/>
+<path d="M44 26 h14 m-12 -3 a3 3 0 1 1 0 6 m10 -6 a3 3 0 1 0 0 6" stroke="#1c2b1a" stroke-width="2" fill="#fffdf6"/></g>
+<g transform="translate(280 1230)" filter="url(#mute)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-34" y="-66" width="44" height="30" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><line x1="-12" y1="-66" x2="-12" y2="-36" stroke="#1c2b1a" stroke-width="2.5"/>
+<rect x="-56" y="-28" width="78" height="22" rx="4" fill="#5cbaee" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-56" y="-8" width="78" height="22" rx="3" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-62" y="-14" width="12" height="28" rx="3" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><rect x="16" y="-14" width="12" height="28" rx="3" fill="#3a9fe0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<line x1="44" y1="-48" x2="44" y2="20" stroke="#1c2b1a" stroke-width="3"/><polygon points="30,-48 58,-48 52,-64 36,-64" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<ellipse cx="-12" cy="24" rx="44" ry="6" fill="#ff7bb0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/></g>
+<g transform="translate(110 1390)" filter="url(#mute)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-44" y="-10" width="12" height="34" fill="#8b6f5a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="-54" cy="-24" r="16" fill="#2e8a3d" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="-22" cy="-24" r="16" fill="#2e8a3d" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="-38" cy="-40" r="22" fill="#3fb650" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="4" y="2" width="48" height="8" rx="2" fill="#c88a4a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="-10" width="48" height="7" rx="2" fill="#c88a4a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<line x1="10" y1="10" x2="10" y2="22" stroke="#1c2b1a" stroke-width="3"/><line x1="46" y1="10" x2="46" y2="22" stroke="#1c2b1a" stroke-width="3"/>
+<path d="M36 -40 Q30 -20 40 -10" stroke="#1c2b1a" stroke-width="1.5" fill="none"/><polygon points="36,-74 48,-60 36,-46 24,-60" fill="#ff7bb0" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><line x1="24" y1="-60" x2="48" y2="-60" stroke="#1c2b1a" stroke-width="1.5"/></g>
+<g transform="translate(280 1550)" filter="url(#mute)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#8fcf6e" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-62" y="-10" width="34" height="34" fill="#f3dcb5" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><polygon points="-66,-10 -45,-30 -24,-10" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="28" y="-4" width="32" height="28" fill="#f3dcb5" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><polygon points="24,-4 44,-22 64,-4" fill="#e5483b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-20" y="-72" width="40" height="96" fill="#e8d8c4" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><polygon points="-27,-72 0,-100 27,-72" fill="#2a7cb4" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="0" cy="-48" r="14" fill="#fffdf6" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><path d="M0 -48 V-57 M0 -48 H7" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M-9 24 V2 a9 9 0 0 1 18 0 V24 Z" fill="#8b6f5a" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/></g>
+<g transform="translate(195 1720)" filter="url(#mute)"><ellipse cx="0" cy="30" rx="86" ry="26" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-62" y="-60" width="30" height="84" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="32" y="-60" width="30" height="84" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-62 -60 v-10 h10 v8 h10 v-8 h10 v10 M32 -60 v-10 h10 v8 h10 v-8 h10 v10" fill="#c9d6dc" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-32" y="-40" width="64" height="64" fill="#dfe6e2" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-18 24 V-6 a18 18 0 0 1 36 0 V24 Z" fill="#4a3018" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="-16,-52 -16,-70 -8,-60 0,-74 8,-60 16,-70 16,-52" fill="#f5c02b" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="-50,-76 -50,-92 -36,-86 -50,-80" fill="#a870ff" stroke="#1c2b1a" stroke-width="2"/><polygon points="44,-76 44,-92 58,-86 44,-80" fill="#a870ff" stroke="#1c2b1a" stroke-width="2"/></g>
+<rect x="0" y="1820" width="390" height="190" fill="#3a4150"/>
+<path d="M0 1820 q30 -26 60 0 q30 -30 66 0 q34 -24 66 0 q32 -30 66 0 q30 -24 66 0 q32 -28 66 0 V1830 H0 Z" fill="#3a4150"/>
+<polygon points="40,1940 110,1860 180,1940" fill="#4b5566" stroke="#5d6778" stroke-width="3"/><polygon points="150,1940 240,1840 330,1940" fill="#4b5566" stroke="#5d6778" stroke-width="3"/>
+</svg>
+<div style="position: absolute; left: 16px; right: 16px; top: 14px; display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #e4f7e7; border: 3px solid #1c2b1a; border-radius: 6px; font-size: 14px; font-weight: 800; color: #2e5e35;">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#3fb650" stroke="#1c2b1a" stroke-width="2.5"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#1c2b1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<span style="flex: 1;">Зелёная долина пройдена</span><span>2 класс ↑</span></div>
+<div style="position: absolute; left: 16px; right: 16px; top: 64px; padding: 10px 12px; background: #fffdf6; border: 3px solid #1c2b1a; border-radius: 6px; box-shadow: 4px 4px 0 #1c2b1a;">
+<div style="font-size: 12px; font-weight: 800; color: #2a7cb4; letter-spacing: 0.06em;">РЕГИОН · 3 КЛАСС</div>
+<div style="display: flex; align-items: baseline; gap: 8px;"><div style="flex: 1; font-size: 22px; font-weight: 800; line-height: 1.1;">Город мастеров</div><div style="font-size: 14px; font-weight: 800;">3 из 8</div></div>
+</div>
+<div style="position: absolute; left: 120px; top: 678px; padding: 1px 8px; background: #f5c02b; border: 2px solid #1c2b1a; border-radius: 999px; font-size: 13px; font-weight: 800; z-index: 2;">Ты здесь</div>
+<img src="../heroes/max.svg" alt="Miner Max стоит у Игровой комнаты" style="position: absolute; left: 142px; top: 712px; width: 58px; height: 70px; z-index: 1;">
+<sc-for list="{{stops}}" as="s" hint-placeholder-count="10">
+<button type="button" onClick="{{s.pick}}" aria-label="{{s.aria}}" style="position: absolute; box-sizing: border-box; padding: 0; border: 4px solid #1c2b1a; font-family: 'Baloo 2', system-ui, sans-serif; font-size: 20px; font-weight: 800; color: #1c2b1a; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; {{s.style}}">
+<sc-if value="{{s.isLocked}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="#4a5a48" stroke-width="3"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#4a5a48" stroke-width="3" stroke-linecap="round"/></svg></sc-if>
+<sc-if value="{{s.showMark}}" hint-placeholder-val="{{ true }}">{{s.mark}}</sc-if>
+</button>
+<div style="position: absolute; transform: translateX(-50%); padding: 1px 10px; background: #fffdf6; border: 2px solid #1c2b1a; border-radius: 999px; font-size: 14px; font-weight: 800; white-space: nowrap; z-index: 1; {{s.labelStyle}}">{{s.name}}</div>
+</sc-for>
+<sc-if value="{{hasSel}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; width: 236px; box-sizing: border-box; padding: 10px 12px; background: #fffdf6; border: 3px solid #1c2b1a; border-radius: 6px; box-shadow: 4px 4px 0 #1c2b1a; display: flex; flex-direction: column; gap: 4px; z-index: 4; {{sel.pos}}">
+<div style="font-size: 12px; font-weight: 800; color: #3a4a38; letter-spacing: 0.04em;">{{sel.kicker}}</div>
+<div style="font-size: 20px; font-weight: 800; line-height: 1.05;">{{sel.name}}</div>
+<div style="font-size: 17px; font-weight: 700; color: #2a7cb4;">{{sel.en}}</div>
+<div style="font-size: 14px; font-weight: 700; color: #3a4a38;">{{sel.prog}}</div>
+<sc-if value="{{sel.isOpen}}" hint-placeholder-val="{{ true }}"><a href="Board.dc.html" style="margin-top: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; background: #3fb650; border: 3px solid #1c2b1a; border-radius: 6px; box-shadow: 0 4px 0 #1c2b1a; font-size: 19px; font-weight: 800;">Войти в локацию</a></sc-if>
+<sc-if value="{{sel.isDone}}" hint-placeholder-val="{{ false }}"><a href="Board.dc.html" style="margin-top: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; background: #fffdf6; border: 3px solid #1c2b1a; border-radius: 6px; box-shadow: 0 4px 0 #1c2b1a; font-size: 17px; font-weight: 800;">Повторить</a></sc-if>
+<sc-if value="{{sel.isLocked}}" hint-placeholder-val="{{ false }}"><div style="margin-top: 4px; display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #eef1ef; border-radius: 6px; font-size: 14px; font-weight: 700; color: #3a4a38;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="#3a4a38" stroke-width="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#3a4a38" stroke-width="2.5" stroke-linecap="round"/></svg>{{sel.lock}}</div></sc-if>
+</div>
+</sc-if>
+<div style="position: absolute; left: 16px; right: 16px; top: 1880px; padding: 12px; border: 3px solid #9ff2f5; border-radius: 6px; background: rgba(28,43,26,0.55); color: #fffdf6; display: flex; align-items: center; gap: 10px; z-index: 1;">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="#9ff2f5" stroke-width="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#9ff2f5" stroke-width="2.5" stroke-linecap="round"/></svg>
+<div style="flex: 1;"><div style="font-size: 17px; font-weight: 800; line-height: 1.1;">Большая экспедиция</div><div style="font-size: 13px; font-weight: 600; color: #dfe6e2;">Дорога откроется за Хранителем города · 4 класс</div></div>
+</div>
+</div>
+<nav style="height: 64px; display: flex; background: #fffdf6; border-top: 3px solid #1c2b1a; position: relative; z-index: 3;">
+<a href="MapPath.dc.html" aria-current="page" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: #d6ecfb; font-size: 13px; font-weight: 800;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Карта</a>
+<a href="Clinic.dc.html" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700; color: #3a4a38;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v10H3z"/><path d="M12 11v6M9 14h6"/></svg>Клиника</a>
+<a href="MapPath.dc.html" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700; color: #3a4a38;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 9a9 5 0 0 1 18 0M11 13h2"/></svg>Сундук</a>
+<a href="MapPath.dc.html" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 700; color: #3a4a38;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1c2b1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/></svg>Ошибки</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2144}}'>
+class Component extends DCLogic {
+renderVals() {
+const S = [{"id": 1, "kind": "stop", "cx": 110, "cy": 250, "st": "done", "name": "Школа", "en": "School Days!", "prog": "6 из 6 квестов"}, {"id": 2, "kind": "stop", "cx": 280, "cy": 410, "st": "done", "name": "Семейный альбом", "en": "Family Moments!", "prog": "6 из 6 квестов"}, {"id": 3, "kind": "stop", "cx": 110, "cy": 570, "st": "done", "name": "Кафе вкусностей", "en": "All the Things I Like!", "prog": "5 из 6 · остался эпический"}, {"id": 4, "kind": "stop", "cx": 280, "cy": 730, "st": "open", "name": "Игровая комната", "en": "Come in and Play!", "prog": "1 из 6 квестов"}, {"id": 41, "kind": "boss", "cx": 195, "cy": 900, "st": "locked", "name": "Ворота мастеров", "en": "Испытание: темы 1–4", "prog": "легендарный · босс", "lock": "Пройди «Игровую комнату»"}, {"id": 5, "kind": "stop", "cx": 110, "cy": 1070, "st": "locked", "name": "Питомник", "en": "Furry Friends!", "prog": "0 из 6", "lock": "Сначала открой Ворота мастеров"}, {"id": 6, "kind": "stop", "cx": 280, "cy": 1230, "st": "locked", "name": "Уютный дом", "en": "Home, Sweet Home!", "prog": "0 из 6", "lock": "Пройди «Питомник»"}, {"id": 7, "kind": "stop", "cx": 110, "cy": 1390, "st": "locked", "name": "Парк", "en": "A Day Off!", "prog": "0 из 6", "lock": "Пройди «Уютный дом»"}, {"id": 8, "kind": "stop", "cx": 280, "cy": 1550, "st": "locked", "name": "Часовая башня", "en": "Day by Day!", "prog": "0 из 6", "lock": "Пройди «Парк»"}, {"id": 81, "kind": "boss", "cx": 195, "cy": 1720, "st": "locked", "name": "Хранитель города", "en": "Испытание: темы 5–8", "prog": "легендарный · босс", "lock": "Пройди все темы города"}];
+const selId = this.state.sel === undefined ? null : this.state.sel;
+const stops = S.map((s) => {
+const boss = s.kind === 'boss';
+const size = boss ? 54 : 52;
+const nx = s.cx - size / 2, ny = s.cy + 46 - size / 2;
+const fill = s.st === 'done' ? '#3fb650' : s.st === 'open' ? '#fffdf6' : (boss ? '#efe3c2' : '#dfe6e2');
+const border = s.st === 'locked' ? (boss ? 'border-color: #d69f0a;' : 'border-color: #9fb0b8;') : '';
+const shape = boss ? 'border-radius: 8px 8px 27px 27px;' : 'border-radius: 26px;';
+const isSel = s.id === selId;
+const ring = isSel ? 'box-shadow: 0 0 0 4px #fffdf6, 0 0 0 8px #f5c02b;' : 'box-shadow: 3px 3px 0 #1c2b1a;';
+return {
+style: 'left: ' + nx + 'px; top: ' + ny + 'px; width: ' + size + 'px; height: ' + size + 'px; background: ' + fill + '; ' + shape + ' ' + ring + ' ' + border,
+labelStyle: 'left: ' + s.cx + 'px; top: ' + (s.cy + 78) + 'px;' + (s.st === 'locked' ? ' color: #4a5a48; border-color: #9fb0b8;' : ''),
+name: s.name,
+isLocked: s.st === 'locked',
+showMark: s.st !== 'locked',
+mark: s.st === 'done' ? '★' : (boss ? '♛' : String(s.id)),
+aria: s.name + ', ' + s.en + (s.st === 'locked' ? ', закрыто' : s.st === 'done' ? ', пройдено' : ', сейчас здесь'),
+pick: () => this.setState({ sel: isSel ? null : s.id })
+};
+});
+const s = S.find((x) => x.id === selId);
+if (!s) return { stops, hasSel: false, sel: {} };
+const left = Math.max(16, Math.min(390 - 16 - 236, s.cx - 118));
+return {
+stops,
+hasSel: true,
+sel: {
+pos: 'left: ' + left + 'px; top: ' + (s.cy + 108) + 'px;',
+kicker: s.kind === 'boss' ? 'ИСПЫТАНИЕ · ЛЕГЕНДАРНЫЙ' : 'ЛОКАЦИЯ ' + s.id + ' ИЗ 8',
+name: s.name, en: s.en, prog: s.prog, lock: s.lock || '',
+isOpen: s.st === 'open', isDone: s.st === 'done', isLocked: s.st === 'locked'
+}
+};
+}
+}
+</script>
+</body>
+</html>

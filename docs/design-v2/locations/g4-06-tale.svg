@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#e9d3a8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M0 -6 Q-30 -20 -60 -10 V20 Q-30 10 0 24 Z" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><path d="M0 -6 Q30 -20 60 -10 V20 Q30 10 0 24 Z" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<path d="M-50 0 Q-28 -8 -8 2 M-50 8 Q-28 0 -8 10 M8 2 Q28 -8 50 0 M8 10 Q28 0 50 8" fill="none" stroke="#9fb0b8" stroke-width="2"/>
+<rect x="-14" y="-62" width="28" height="56" fill="#c9b3ff" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><polygon points="-20,-62 0,-90 20,-62" fill="#7c4bd6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><path d="M-6 -6 V-22 a6 6 0 0 1 12 0 V-6" fill="#4a3018" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<polygon points="0,-90 0,-104 12,-98 0,-94" fill="#f5c02b" stroke="#1c2b1a" stroke-width="1.5"/>
+<polygon points="-40,-44 -37,-38 -30,-37 -35,-32 -34,-25 -40,-29 -46,-25 -45,-32 -50,-37 -43,-38" fill="#f5c02b" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="-100 -112 200 170">
+<ellipse cx="0" cy="30" rx="86" ry="26" fill="#e9d3a8" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-52" y="-46" width="104" height="70" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><rect x="-58" y="-56" width="116" height="12" fill="#dfe6e2" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/>
+<rect x="-16" y="-84" width="32" height="32" rx="4" fill="#fffdf6" stroke="#1c2b1a" stroke-width="3" stroke-linejoin="round"/><path d="M-4 -78 h8 v10 h10 v8 h-10 v10 h-8 v-10 h-10 v-8 h10z" fill="#e5483b"/>
+<rect x="-42" y="-34" width="18" height="16" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><rect x="24" y="-34" width="18" height="16" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="-14" y="-6" width="28" height="30" fill="#a4d5ee" stroke="#1c2b1a" stroke-width="2.5" stroke-linejoin="round"/><line x1="0" y1="-6" x2="0" y2="24" stroke="#1c2b1a" stroke-width="2"/>
+</svg>
