@@ -5,7 +5,7 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v27';
+const SHELL_CACHE = 'eq-shell-v29';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
@@ -52,9 +52,14 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // API сервера учителя (тот же адрес, что у сайта: /api/…) — мимо кэша и без перезапроса: иначе теряется
+  // заголовок входа X-EQ-Token (вход «слетал» сразу после ввода), а ответы с данными учеников попадали бы в кэш
+  if (url.origin === self.location.origin && /^\/api(\/|$)/.test(url.pathname)) return;
 
   if (url.origin === self.location.origin && url.pathname.includes('/tts_cache/')){
     event.respondWith(audio(req));
+  } else if (url.origin === self.location.origin && req.mode === 'navigate'){
+    event.respondWith(navigate(req, url));
   } else if (url.origin === self.location.origin){
     event.respondWith(shellFirstNetwork(req));
   } else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com'){
@@ -72,7 +77,22 @@ async function shellFirstNetwork(req){
     if (res.ok && res.type === 'basic') cache.put(stripSearch(req), res.clone());
     return res;
   } catch (e) {
-    const hit = await cache.match(stripSearch(req)) || (req.mode === 'navigate' && await cache.match('index.html'));
+    const hit = await cache.match(stripSearch(req));
+    return hit || new Response('Нет интернета', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+}
+// Переход на страницу: сам запрос браузера (перенаправления он проходит сам — например, /admin → /admin/).
+// Без сети — страница из кэша; главная приложения подставляется только для его собственных адресов,
+// кабинет учителя (/admin/) и API ею не подменяются.
+async function navigate(req, url){
+  const cache = await caches.open(SHELL_CACHE);
+  try {
+    const res = await fetch(req);
+    if (res.ok && res.type === 'basic' && !res.redirected) cache.put(stripSearch(req), res.clone());
+    return res;
+  } catch (e) {
+    const own = !/\/(admin|api)(\/|$)/.test(url.pathname);
+    const hit = await cache.match(stripSearch(req)) || (own && await cache.match('index.html'));
     return hit || new Response('Нет интернета', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
 }

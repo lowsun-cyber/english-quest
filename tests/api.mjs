@@ -358,6 +358,18 @@ if (import.meta.url === `file://${process.argv[1]}`){
       } finally { await v2.stop(); }
     } finally { rmSync(old, { recursive: true, force: true }); }
   }
+  // sw.js на сайте с API по тому же адресу (quest.logiqa.ru/api): запросы к API идут мимо sw.js —
+  // иначе он перезапрашивает их без заголовка входа X-EQ-Token и админ-панель «просит войти заново»
+  {
+    const { default: vm } = await import('node:vm');
+    const handlers = {};
+    const self = { location: new URL('https://quest.logiqa.ru/sw.js'), addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting(){}, clients: { claim(){} } };
+    vm.runInNewContext(readFileSync(join(ROOT, 'sw.js'), 'utf8'), { self, caches: {}, fetch(){}, URL, Response: class {}, console });
+    const handled = (url, method = 'GET', mode = 'cors') => { let r = false; handlers.fetch({ request: { url, method, mode, headers: new Map() }, respondWith(){ r = true; } }); return r; };
+    check('sw.js: GET /api/… с того же адреса — мимо sw.js', !handled('https://quest.logiqa.ru/api/me') && !handled('https://quest.logiqa.ru/api/students/s1/progress'));
+    check('sw.js: файлы сайта и переходы — через sw.js', handled('https://quest.logiqa.ru/js/admin.js') && handled('https://quest.logiqa.ru/admin/', 'GET', 'navigate'));
+    check('sw.js: адрес, похожий на api, — через sw.js', handled('https://quest.logiqa.ru/apiary.html'));
+  }
   console.log(`\n${total - fail} из ${total} проверок сервера прошли (база: ${process.env.EQ_TEST_MYSQL ? 'MySQL' : 'SQLite'})`);
   process.exit(fail ? 1 : 0);
 }
