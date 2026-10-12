@@ -90,8 +90,11 @@ const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
 
 try {
   let list;
-  for (let t = 0; t < 60; t++){ try { list = await (await fetch('http://127.0.0.1:9335/json/list')).json(); if (list.some(p => p.type === 'page')) break; } catch (e) {} await sleep(200); }
-  ws = new WebSocket(list.find(p => p.type === 'page').webSocketDebuggerUrl);
+  // на сервере GitHub Chrome изредка стартует дольше 12 с — ждём до 30 с и говорим понятно, если не дождались
+  for (let t = 0; t < 150; t++){ try { list = await (await fetch('http://127.0.0.1:9335/json/list')).json(); if (list.some(p => p.type === 'page')) break; } catch (e) {} await sleep(200); }
+  const page = Array.isArray(list) && list.find(p => p.type === 'page');
+  if (!page) throw new Error('Chrome не запустился за 30 с');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise(r => ws.onopen = r);
   ws.onmessage = m => {
     const d = JSON.parse(m.data);
@@ -1238,26 +1241,28 @@ try {
     if (document.querySelectorAll('[data-pg]').length !== S.GRADES.length) throw new Error('нет выбора класса');
     document.querySelector('[data-pg="3"]').click(); await __sleep(400);
     const mist0 = JSON.stringify(state.mistakes), xp0 = state.xp;
-    // часть вопроса — по теме, откуда слово или вопрос; игрок знает части 1–3 (индексы 0–2)
-    const partOf = l => Math.floor(G3.indexOf(l) / 4);
-    const parts = [];
-    for (let i = 0; i < 15 && document.querySelector('.opt'); i++){
+    // игрок знает части 1–3 (индексы 0–2): с середины (2) выше (3, не сдана), затем ниже границы (1); по 4 вопроса.
+    // Ответ ищем в темах ожидаемой части: одно слово бывает в нескольких темах, и «первая тема со словом» путала части.
+    const route = [2, 3, 1], PP = S.placementParts(3);
+    let i = 0;
+    for (; i < 15 && document.querySelector('.opt'); i++){
+      const want = route[Math.floor(i / 4)]; if (want == null) throw new Error('вопрос ' + (i + 1) + ' сверх маршрута ' + route.join('→'));
+      const G = PP[want];
       if (!document.querySelector('.opt-skip')) throw new Error('нет кнопки «Не знаю»');
       const opts = [...document.querySelectorAll('.opt:not(.opt-skip)')].map(o => o.dataset.o); let ans, l;
       const em = document.querySelector('.q-emoji'), sn = document.querySelector('.q-sentence');
-      if (sn){ l = G3.find(x => x.grammar.some(g => g.q === sn.textContent && opts.includes(g.a))); ans = l.grammar.find(g => g.q === sn.textContent && opts.includes(g.a)).a; }
-      else if (em){ l = G3.find(x => x.words.some(w => w.emoji === em.textContent && opts.includes(w.en))); ans = l?.words.find(w => w.emoji === em.textContent && opts.includes(w.en))?.en; }
-      else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o === String(__said)); l = G3.find(x => x.words.some(w => w.en === ans)); }
-      if (!ans || !l) throw new Error('вопрос ' + (i + 1) + ': нет ответа среди ' + opts.join('/') + ' (картинка ' + (em?.textContent || '—') + ', фраза ' + (sn?.textContent || '—') + ')');
-      const p = partOf(l); if (parts[parts.length - 1] !== p) parts.push(p);
+      if (sn){ l = G.find(x => x.grammar.some(g => g.q === sn.textContent && opts.includes(g.a))); ans = l?.grammar.find(g => g.q === sn.textContent && opts.includes(g.a)).a; }
+      else if (em){ l = G.find(x => x.words.some(w => w.emoji === em.textContent && opts.includes(w.en))); ans = l?.words.find(w => w.emoji === em.textContent && opts.includes(w.en))?.en; }
+      else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o === String(__said)); l = G.find(x => x.words.some(w => w.en === ans)); }
+      if (!ans || !l) throw new Error('порядок частей не адаптивный: вопрос ' + (i + 1) + ' не из части ' + (want + 1) + ' (варианты ' + opts.join('/') + ', картинка ' + (em?.textContent || '—') + ', фраза ' + (sn?.textContent || '—') + ')');
       window.__said = null;
-      if (p <= 2) [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans).click();
+      if (want <= 2) [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans).click();
       else document.querySelector('.opt-skip').click();   // «Не знаю»
       const sig = document.querySelector('.review-progress')?.getAttribute('aria-label');
       for (let k = 0; k < 40 && document.querySelector('.review-progress')?.getAttribute('aria-label') === sig; k++) await __sleep(100);   // ждём следующий вопрос
       await __sleep(150);
     }
-    if (parts[0] !== 2 || parts[1] !== 3) throw new Error('порядок частей не адаптивный: ' + parts.join(','));
+    if (i !== route.length * 4) throw new Error('испытание закончилось на вопросе ' + i + ', ждали ' + route.length * 4);
     const res = f('modal').innerText;
     if (!/Ворота открыты/.test(res) || !res.includes(G3[12].title) || /Часть \d/.test(res)) throw new Error('итог для ребёнка: ' + res.slice(0, 240));
     if (state.placement?.startIdx !== 12) throw new Error('старт: ' + JSON.stringify(state.placement));
@@ -1278,7 +1283,7 @@ try {
     if (back.p) state.placement = back.p; else delete state.placement;
     state.lessonProgress = back.lp; state.skills = back.sk; state.mistakes = back.mi; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null; state.settings.unlockAll = back.u;
     await saveState(); map.renderMap();
-    return 'класс 3 → части ' + parts.map(x => x + 1).join('→') + ' (с середины, «Не знаю») → «Ворота открыты», старт с темы 13, +30 XP; разбор взрослому; «Не сейчас»';`)));
+    return 'класс 3 → части ' + route.map(x => x + 1).join('→') + ' (с середины, «Не знаю») → «Ворота открыты», старт с темы 13, +30 XP; разбор взрослому; «Не сейчас»';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {
