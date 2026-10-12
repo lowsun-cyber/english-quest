@@ -5,6 +5,7 @@ import { lessonHeader, startExercise } from './exercises.js';
 import { renderSecret } from './mines.js';
 import { hideCard, renderPath, showCard } from './path.js';
 import { OBJECTS, renderScene } from './scene.js';
+import { parcelBanner } from './parcels.js';
 import { playerHero } from './heroes.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
@@ -83,7 +84,7 @@ export function renderMap(){
     t.classList.toggle('active', r === secret);
     t.setAttribute('aria-pressed', r === secret ? 'true' : 'false');
   });
-  if (secret){ renderSecret(wrap, secret, renderMap); updateContinue(); return; }
+  if (secret){ renderSecret(wrap, secret, renderMap); wrap.insertAdjacentHTML('afterbegin', parcelBanner()); updateContinue(); return; }
   document.querySelectorAll('#grade-tabs .tab[data-grade]').forEach(t => {
     const on = +t.dataset.grade === grade, rg = regionOfGrade(+t.dataset.grade);
     if (rg) t.innerHTML = `<span aria-hidden="true">${rg.emoji}</span> ${rg.name} <small>${t.dataset.grade} класс</small>`;
@@ -121,7 +122,7 @@ export function renderMap(){
     ? `<button type="button" class="path-next" data-grade="${next.grade}"><span aria-hidden="true">🔒</span><span><b>${escapeHtml(next.name)}</b><small>Дорога дальше — ${next.grade} класс. Нажми, чтобы посмотреть</small></span></button>`
     : `<button type="button" class="path-next" data-secret="${mines?.id}"><span aria-hidden="true">❔</span><span><b>Тайное место</b><small>Кто-то стучит под землёй… Пройди 10 редких квестов</small></span></button>`;
   const revenge = revengeReady(state) ? `<button class="revenge-banner" data-revenge>⚔️ <b>Квест-реванш!</b> ${revengeItems(state).length} самых трудных слов и вопросов — одолей их</button>` : '';
-  const { pts, H } = renderPath(wrap, { grade, nodes, st, label, hero: playerHero(state), head: revenge + head, tail });
+  const { pts, H } = renderPath(wrap, { grade, nodes, st, label, hero: playerHero(state), head: parcelBanner() + revenge + head, tail });
   // метка → карточка рядом: «Войти в локацию», «Повторить» или замок с условием
   let open = -1;
   wrap.querySelectorAll('.path-mark').forEach(b => b.onclick = () => {

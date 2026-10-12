@@ -2,19 +2,19 @@
 import { logAnswer } from './activity.js';
 import { addItem, renderHUD, renderInventory, reward } from './hud.js';
 import { BLOCK, CHECKPOINT_PASS, CHECKPOINT_SIZE, lessonsOf, renderMap } from './map.js';
-import { logSkill, logWord, recordMistake } from './mistakes.js';
+import { countError, logSkill, logWord, recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { afterFeedback, closeModal, confetti, openModal } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
 import { SKILLS } from './eq.js';
-import { skillItems, skillWeak } from './stats.js';
+import { classifyError, errorCodeOf, skillItems, skillWeak } from './stats.js';
 
 // === Смешанная викторина по темам: проверки-боссы и «Шахты» ===
 // mix — сколько вопросов каждого вида: { word, listen, grammar }; недостающие добираются словами.
 // onFinish(right, total) рисует итог.
-export function runQuiz({ header, lessons, size, mix, onFinish }){
+export function runQuiz({ header, lessons, size, mix, onFinish, record = true }){
   const words = lessons.flatMap(l => l.words.map(w => ({ w, l })));
   const grammar = lessons.flatMap(l => l.grammar.map(q => ({ q, l })));
   const picked = shuffle(words);
@@ -75,7 +75,11 @@ export function runQuiz({ header, lessons, size, mix, onFinish }){
         else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(answer)}"]`)?.classList.add('correct');
-          const error = item.type === 'grammar'
+          // record: false — темы нет в учебнике (особые квесты): в «Мои ошибки» не пишем, но тип и код ошибки считаем
+          const info = { exercise: item.type === 'listen' ? 'listen' : 'checkpoint', chosen: btn.dataset.o, skill: item.q?.skill };
+          const error = !record
+            ? (() => { const e = classifyError({ type: item.type === 'grammar' ? 'grammar' : 'word', ...info, answer }); countError(e, errorCodeOf({ ...info, error: e })); return e; })()
+            : item.type === 'grammar'
             ? recordMistake('grammar', item.l, item.q.q, { exercise: 'checkpoint', chosen: btn.dataset.o, skill: item.q.skill })
             : recordMistake('word', item.l, item.w.en, { exercise: 'checkpoint', chosen: btn.dataset.o });
           whyWrong({ lesson: item.l, error, answer, chosen: btn.dataset.o, q: item.q });

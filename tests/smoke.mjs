@@ -1148,6 +1148,84 @@ try {
     await saveState(); map.renderMap();
     return 'своё объяснение «' + wrongOpt + '», замок G2-01 → тренировка 6/6 → открыто';`)));
 
+  await test('посылка от Dr. Harlow: баннер, письмо, особые квесты, уникальный приз', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState, activeId } = await import('./js/state.js'), map = await import('./js/map.js'), A = await import('./js/aipack.js');
+    const saved = JSON.stringify({ q: state.quests, p: state.parcels || null, m: state.mistakes, xp: state.xp });
+    const pk = await (await fetch('docs/ai-pack/example-parcel.json')).json();
+    pk.student = activeId();
+    state.parcels = A.addParcel(state, pk); await saveState(); map.renderMap();
+    const banner = document.querySelector('.parcel-banner');
+    if (!banner || !/Посылка от Dr. Harlow/.test(banner.textContent)) throw new Error('нет баннера посылки');
+    banner.click(); await __sleep(200);
+    const letter = f('modal').innerText;
+    if (!letter.includes('cat и cap') || !letter.includes(pk.reward.title) || document.querySelectorAll('[data-sq]').length !== 2) throw new Error('письмо: ' + letter.slice(0, 200));
+    if (!state.parcels[pk.id].opened) throw new Error('посылка не отмечена открытой');
+    const xp0 = state.xp, mist0 = Object.keys(state.mistakes).length;
+    const answer = async (q, wrongFirst) => {
+      for (let i = 0; i < A.questSize(q); i++){
+        const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.o); let ans;
+        const em = document.querySelector('.q-emoji'), s = document.querySelector('.q-sentence');
+        if (em) ans = (q.words || []).find(w => w.emoji === em.textContent)?.en;
+        else if (s) ans = (q.grammar || []).find(g => g.q === s.textContent)?.a;
+        else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o.toLowerCase() === String(__said).toLowerCase()); }
+        if (wrongFirst && i === 0 && s){
+          const g = q.grammar.find(g => g.q === s.textContent), w = g.options.find(o => o !== g.a);
+          [...document.querySelectorAll('.opt')].find(o => o.dataset.o === w).click(); await __sleep(150);
+          if (!(document.querySelector('.why')?.textContent || '').includes(g.why[w])) throw new Error('нет объяснения варианта в особом квесте');
+          await __sleep(3000); continue;
+        }
+        const btn = [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans);
+        if (!btn) throw new Error('вопрос ' + (i + 1) + ': не нашёл ответ среди ' + opts.join('/'));
+        window.__said = null; btn.click(); await __sleep(1300);
+      }
+    };
+    // квест 2 (5 вопросов): одна ошибка — 80%, всё равно пройден
+    document.querySelector('[data-sq="am-is-are"]').click(); await __sleep(300);
+    await answer(pk.quests[1], true);
+    if (!/Особый квест пройден/.test(f('modal').innerText)) throw new Error('итог квеста 2: ' + f('modal').innerText.slice(0, 160));
+    if (state.xp !== xp0 + 40) throw new Error('XP за особый квест: ' + (state.xp - xp0));
+    if (Object.keys(state.mistakes).length !== mist0) throw new Error('ошибка особого квеста попала в «Мои ошибки»');
+    if (!(state.errorCodes?.B1 > 0)) throw new Error('ошибка особого квеста не попала в карту пробелов');
+    f('sq-back').click(); await __sleep(200);
+    document.querySelector('[data-sq="cat-cap"]').click(); await __sleep(300);
+    await answer(pk.quests[0], false);
+    const fin = f('modal').innerText;
+    if (!/Посылка пройдена/.test(fin) || !fin.includes(pk.reward.title)) throw new Error('итог посылки: ' + fin.slice(0, 200));
+    __close(); await __sleep(150);
+    if (document.querySelector('.parcel-banner')) throw new Error('баннер остался после прохождения');
+    const sp = f('specials');
+    if (sp.hidden || !sp.textContent.includes(pk.reward.title)) throw new Error('уникального приза нет в сундуке');
+    const back = JSON.parse(saved); state.quests = back.q; state.mistakes = back.m; if (back.p) state.parcels = back.p; else delete state.parcels;
+    await saveState(); map.renderMap(); (await import('./js/achievements.js')).renderAchievements();
+    return 'баннер → письмо → 2 квеста (ошибка с объяснением, 80%) → приз в сундуке, «Мои ошибки» не тронуты';`)));
+
+  await test('посылка: задание для AI и загрузка в панели репетитора', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState, activeId } = await import('./js/state.js');
+    const saved = JSON.stringify(state.parcels || null);
+    await __gate('1357');   // PIN задан в сценарии «несколько учеников»
+    if (!f('t-ai-copy')) throw new Error('нет раздела посылки в панели: ' + (f('modal')?.innerText || '').slice(0, 200));
+    f('t-ai-copy').click(); await __sleep(200);
+    const out = f('t-ai-out').value;
+    if (!out.includes('посылку от Dr. Harlow') && !out.includes('посылка от Dr. Harlow') && !out.includes('«посылку от Dr. Harlow»')) throw new Error('нет шаблона: ' + out.slice(0, 80));
+    const code = (await import('./js/cloud.js')).cloudLink()?.studentId || activeId();   // подключённый к серверу — код с сервера
+    if (!out.includes('"format": "eq-ai-export/1"') || !out.includes('"student": "' + code + '"')) throw new Error('нет выгрузки: ' + out.slice(out.indexOf('Выгрузка:'), out.indexOf('Выгрузка:') + 160));
+    const pk = await (await fetch('docs/ai-pack/example-parcel.json')).json();
+    f('t-parcel-in').value = JSON.stringify({ ...pk, quests: [] }); f('t-parcel-add').click(); await __sleep(100);
+    if (!/нельзя добавить/.test(f('t-parcel-msg').innerText)) throw new Error('кривая посылка принята');
+    f('t-parcel-in').value = JSON.stringify({ ...pk, student: 'чужой' }); f('t-parcel-add').click(); await __sleep(100);
+    if (!/другого ученика/.test(f('t-parcel-msg').innerText)) throw new Error('посылка для другого ученика принята');
+    f('t-parcel-in').value = JSON.stringify(pk); f('t-parcel-add').click(); await __sleep(400);
+    if (!state.parcels?.[pk.id]) throw new Error('посылка не добавлена');
+    const off = document.querySelector('[data-parcel-off="' + pk.id + '"]'); if (!off) throw new Error('нет кнопки «Убрать»');
+    off.click(); await __sleep(300);
+    if (!state.parcels[pk.id].withdrawn) throw new Error('посылка не убрана');
+    __close(); await __sleep(100);
+    if (document.querySelector('.parcel-banner')) throw new Error('убранная посылка на карте');
+    const back = JSON.parse(saved); if (back) state.parcels = back; else delete state.parcels; await saveState();
+    return 'задание для AI с кодом ученика, проверка, добавление и «Убрать»';`)));
+
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {
   results.push({ ok: false, name: 'запуск', info: e.message });

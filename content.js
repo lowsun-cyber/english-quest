@@ -2680,6 +2680,8 @@ const QUEST_RARITY = [
   { id: 'rare', title: 'Редкий', color: 'var(--rarity-rare)', pill: 'var(--rarity-rare-bg)', coins: 15, xp: 25, prize: 'монеты и опыт' },
   { id: 'epic', title: 'Эпический', color: 'var(--rarity-epic)', pill: 'var(--rarity-epic-bg)', coins: 30, xp: 50, prize: 'большой сундук монет' },
   { id: 'legendary', title: 'Легендарный', color: 'var(--rarity-legend)', pill: 'var(--rarity-legend-bg)', coins: 0, xp: 0, prize: 'кубок' },
+  // особый — квесты из посылки Dr. Harlow (AI-пакет под слабые места ученика, js/aipack.js)
+  { id: 'special', title: 'Особый', color: 'var(--rarity-special)', pill: 'var(--rarity-special-bg)', coins: 20, xp: 40, prize: 'уникальный приз' },
 ];
 const QUEST_PASS_PCT = 80;
 const KIND_RARITY = { cards: 'common', vocab: 'common', listen: 'common', match: 'common', fill: 'common', build: 'common',

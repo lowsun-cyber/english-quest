@@ -5,6 +5,7 @@ import { activeId, saveState, state } from './state.js';
 import { achievementsOf, rarityOf } from './stats.js';
 import { confetti, toast } from './ui.js';
 import { escapeHtml } from './util.js';
+import { renderSpecials } from './parcels.js';
 
 // Новые достижения записываются в прогресс. Первый расчёт для ученика (запуск, смена ученика, старый
 // прогресс после обновления) выдаёт заслуженное тихо, без поздравлений.
@@ -38,4 +39,5 @@ export function renderAchievements(){
       <small>${hidden ? 'секрет' : has ? r.title : escapeHtml(a.text)}</small>
     </li>`;
   }).join('');
+  renderSpecials();   // уникальные призы посылок Dr. Harlow
 }

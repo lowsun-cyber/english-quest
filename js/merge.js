@@ -122,6 +122,13 @@ const RULES = {
     for (const k of keysOf(b, l, r)){ const v = [l?.[k], r?.[k]].filter(Number.isFinite); if (v.length) out[k] = Math.min(...v); }
     return out;
   },
+  // посылки Dr. Harlow (js/aipack.js): объединение; содержимое — с любой стороны, отправка и открытие — самые
+  // ранние, отзыв — если отозвана где-нибудь (из админ-панели)
+  parcels: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => {
+    const x = isObj(ll) ? ll : {}, y = isObj(rr) ? rr : {};
+    const first = (a, c) => (a && c) ? Math.min(a, c) : (a || c || null);
+    return { pack: clone(x.pack ?? y.pack ?? null), sent: first(x.sent, y.sent), opened: first(x.opened, y.opened), withdrawn: first(x.withdrawn, y.withdrawn) };
+  }),
   // «Мои ошибки»: у кого попытка позже, тот и прав
   mistakes: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => clone(n(rr?.last) > n(ll?.last) ? rr : ll)),
   // домашка: новее та, что назначена позже; для того же задания — «сделано», если сделано где-нибудь
