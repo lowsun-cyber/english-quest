@@ -1,6 +1,8 @@
 // English Quest — Квест-реванш: самые трудные слова и вопросы из «Моих ошибок» на ступень проще,
 // чем там, где была ошибка (revengeFormat в stats.js). Верный ответ — удачное повторение.
 import { logAnswer } from './activity.js';
+import { heroLine } from './eq.js';
+import { sayRow, selfRow } from './heroes.js';
 import { reward } from './hud.js';
 import { dueFor, logSkill, logWord, noteError, renderMistakes } from './mistakes.js';
 import { saveState, state } from './state.js';
@@ -52,6 +54,7 @@ export function startRevenge(){
     }
     openModal(`
       ${header}
+      ${idx === 0 ? sayRow(heroLine('luna', 'revenge', { id: 'start' })) : ''}
       <div class="review-progress" aria-label="Вопрос ${idx + 1} из ${queue.length}"><span style="width:${Math.round(idx * 100 / queue.length)}%"></span></div>
       <div class="question">
         ${body}
@@ -99,6 +102,8 @@ export function startRevenge(){
         <h3>${won ? 'Реванш взят! ⚔️' : 'Почти! Попробуем ещё раз'}</h3>
         <p>Верно: <b>${right}</b> из ${queue.length} (${pct}%).${won ? ` <b>+${REVENGE_PRIZE.xp} XP, +${REVENGE_PRIZE.coins} 🪙</b>` : ' Трудные слова остались в «Моих ошибках».'}</p>
       </div>
+      ${won ? sayRow(heroLine('luna', 'revenge', { id: 'won' })) : ''}
+      ${selfRow(won ? 'win' : 'oops')}
       <div class="controls"><button class="btn" id="rv-close">Готово</button></div>
     `);
     document.getElementById('rv-close').onclick = closeModal;

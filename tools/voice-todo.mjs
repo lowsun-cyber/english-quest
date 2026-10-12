@@ -16,19 +16,19 @@ const dir = resolve((process.argv[2] || join(process.env.HOME, 'Downloads', 'que
 const BATCH = 20, WORD_BATCH = 40, TEXT_BATCH = 5;   // слова режутся по паузам надёжнее всего, длинные тексты — хуже
 
 // контент и все пакеты локаций (packs/*.json): новые пакеты озвучиваются до подключения
-const sandbox = { window: { EQ: loadContent({ packs: 'all' }) } };
-const items = sandbox.window.EQ.voiceLines();
+const EQ = loadContent({ packs: 'all' });
+const items = EQ.voiceLines();
 // слова словаря (js/dict-data.js): тот же голос, звучат по кнопке 🔊 в словаре
 const { DICT } = await import(join(ROOT, 'js/dict-data.js'));
 const known = new Set(items.map(x => x.text));
 for (const line of DICT.split('\n')){
   const en = line.startsWith('#') ? '' : line.split('|')[0].trim();
-  if (en && !known.has(en)){ known.add(en); items.push({ speaker: 'harlow', lang: 'en', kind: 'dict', text: en }); }
+  if (en && !known.has(en)){ known.add(en); items.push({ speaker: 'harlow', lang: 'en', kind: 'dict', text: en, key: en }); }
 }
 const read = f => existsSync(join(ROOT, f)) ? JSON.parse(readFileSync(join(ROOT, f), 'utf8')) : {};
 const voices = read('tts_voices.json'), lessonAudio = read('tts_manifest.json');
 // озвучено: запись героя или (для слов и фраз уроков) старая английская запись
-const recorded = x => !!voices[x.text] || (x.lang === 'en' && !!(lessonAudio[x.text] || lessonAudio[x.text.replace(/(^|\s)I(?=[\s'’.,!?]|$)/g, '$1i')]));
+const recorded = x => !!voices[x.key] || (x.lang === 'en' && !!(lessonAudio[x.text] || lessonAudio[x.text.replace(/(^|\s)I(?=[\s'’.,!?]|$)/g, '$1i')]));
 const todo = items.filter(x => !recorded(x));
 if (!todo.length){ console.log('Всё уже озвучено ✓'); process.exit(0); }
 
@@ -54,19 +54,32 @@ const PROMPTS = {
 Прочитай каждую реплику один раз, строго по порядку, и после каждой сделай паузу 2 секунды.
 Ничего не добавляй от себя: без вступления, без номеров, без комментариев. Нужен один аудиофайл.`,
 };
+// голоса героев — те же, что в tools/gen-voices.mjs
+const HERO_VOICES = {
+  luna: ['Leda', 'ласковая молодая медсестра-зайчиха Nurse Luna, мягко и заботливо, с улыбкой'],
+  max: ['Puck', 'бодрый весёлый шахтёр-мальчишка Miner Max, энергично и с азартом'],
+  owl: ['Charon', 'мудрый добрый профессор-сова Prof. Owl, неторопливо, чуть торжественно'],
+  robo: ['Fenrir', 'весёлый робот-диджей DJ Robo, ритмично и задорно, слегка «механически»'],
+};
+for (const [id, [voice, style]] of Object.entries(HERO_VOICES)) PROMPTS[id] = `Озвучь реплики героя для детей 7–10 лет. Реплики по-русски; английские слова и фразы — с естественным английским произношением.
+Озвучка: Google Gemini TTS (gemini-2.5-pro-tts), голос ${voice}.
+Манера: ${style}.
+Прочитай каждую реплику один раз, строго по порядку, и после каждой сделай паузу 2 секунды.
+Ничего не добавляй от себя: без вступления, без номеров, без комментариев. Нужен один аудиофайл.`;
 const batches = {};
 let md = `# Озвучка English Quest\n\nВсего фраз: ${todo.length}. Пачек: см. ниже.\n\n` +
   `Как сделать: для каждой пачки вставьте в Perplexity промпт и фразы пачки, скачайте аудио и сохраните\n` +
   `в эту папку под именем пачки (например, \`en-01.mp3\`). Потом скажите Claude — он подключит записи.\n` +
   `Если в записи окажется лишняя или пропущенная фраза, пачка не подключится — её можно переозвучить отдельно.\n`;
-const group = x => x.lang === 'ru' ? 'ru' : x.kind === 'dict' ? 'dict' : x.text.length > 160 ? 'text' : 'en';
-for (const lang of ['ru', 'en', 'text', 'dict']){
+// реплики Luna, Max, Owl и Robo — отдельными пачками на каждого героя (свой голос), по-русски и по-английски вместе
+const group = x => x.speaker !== 'harlow' ? x.speaker : x.lang === 'ru' ? 'ru' : x.kind === 'dict' ? 'dict' : x.text.length > 160 ? 'text' : 'en';
+for (const lang of ['ru', 'en', 'text', 'dict', ...Object.keys(HERO_VOICES)]){
   const list = todo.filter(x => group(x) === lang), size = { dict: WORD_BATCH, text: TEXT_BATCH }[lang] || BATCH;
   for (let i = 0; i < list.length; i += size){
     const id = `${lang}-${String(i / size + 1).padStart(2, '0')}`;
     const part = list.slice(i, i + size);
-    batches[id] = part.map(x => ({ text: x.text, speaker: x.speaker }));
-    md += `\n## ${id} — ${part.length} ${{ ru: 'реплик по-русски', dict: 'слов словаря', text: 'рассказов по-английски' }[lang] || 'фраз по-английски'}\n\n` +
+    batches[id] = part.map(x => ({ text: x.text, speaker: x.speaker, key: x.key }));
+    md += `\n## ${id} — ${part.length} ${{ ru: 'реплик по-русски', dict: 'слов словаря', text: 'рассказов по-английски' }[lang] || (HERO_VOICES[lang] ? `реплик: ${EQ.CHARACTERS[lang].name}` : 'фраз по-английски')}\n\n` +
       '```\n' + PROMPTS[lang] + '\n\n' + part.map(x => x.text).join('\n') + '\n```\n';
   }
 }

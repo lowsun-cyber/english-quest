@@ -4,13 +4,15 @@
 //   node tools/import-voices.mjs ~/Downloads/quest-voice
 //
 // Подходят два вида файлов (wav, mp3, m4a, aiff); всё сжимается в AAC, записывается в tts_cache/,
-// словарь «фраза → файл» — в tts_voices.json.
+// словарь «ключ → файл» — в tts_voices.json (ключ — фраза у Dr. Harlow, «герой|фраза» у остальных).
+// Пачки реплик героев называются по герою: luna-01.wav, max-01.wav …
+// • Папка из `node tools/gen-voices.mjs --out <папка>`: готовые .m4a и generated.json — файлы копируются как есть.
 // • Пачки из `node tools/voice-todo.mjs`: en-01.mp3, ru-01.wav … — одна запись на пачку, фразы через паузы.
 //   Запись режется по тишине; кусков должно быть ровно столько, сколько фраз в пачке (batches.json),
 //   иначе пачка пропускается — её лучше переозвучить.
 // • Отдельные файлы с номером фразы в начале имени: 01.wav, 02.mp3, 31 луна.m4a … Номера — как в
 //   `node tools/gen-voices.mjs --list` (1–30 — Dr. Harlow, 31–38 — остальные герои, 39–64 — буквы, дальше слова и фразы уроков).
-import { readFileSync, writeFileSync, existsSync, readdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdtempSync, rmSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -22,19 +24,36 @@ const dir = process.argv[2] && resolve(process.argv[2].replace(/^~/, process.env
 if (!dir || !existsSync(dir)){ console.error('Укажите папку с файлами: node tools/import-voices.mjs <папка>'); process.exit(1); }
 
 // контент и все пакеты локаций (packs/*.json): новые пакеты озвучиваются до подключения
-const sandbox = { window: { EQ: loadContent({ packs: 'all' }) } };
-const items = sandbox.window.EQ.voiceLines();
+const EQ = loadContent({ packs: 'all' });
+const items = EQ.voiceLines();
 const lines = items.map(x => x.text);
 const MANIFEST = join(ROOT, 'tts_voices.json');
 const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
 
 const AUDIO = /\.(wav|mp3|m4a|aiff?|aac)$/i;
-const toM4a = (src, text, speaker) => {
-  const out = createHash('sha1').update(`${speaker}|import|${text}`).digest('hex') + '.m4a';
+// ключ записи — фраза (Dr. Harlow) или «герой|фраза» (voiceKey в content.js); в старых batches.json ключа нет
+const keyOf = x => x.key || EQ.voiceKey(x.speaker, x.text);
+const toM4a = (src, x) => {
+  const out = createHash('sha1').update(`${x.speaker}|import|${x.text}`).digest('hex') + '.m4a';
   execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '64000', src, join(ROOT, 'tts_cache', out)]);
-  manifest[text] = out;
+  manifest[keyOf(x)] = out;
 };
 let ok = 0;
+
+// ---------- папка из gen-voices --out: готовые файлы и generated.json ----------
+const genFile = join(dir, 'generated.json');
+if (existsSync(genFile)){
+  const keys = new Set(items.map(x => x.key));
+  let stale = 0, lost = 0;
+  for (const [key, x] of Object.entries(JSON.parse(readFileSync(genFile, 'utf8')))){
+    if (!keys.has(key)){ stale++; continue; }                         // фразу уже убрали или поменяли в контенте
+    if (!existsSync(join(dir, x.file))){ lost++; continue; }
+    copyFileSync(join(dir, x.file), join(ROOT, 'tts_cache', x.file));
+    manifest[key] = x.file;
+    ok++;
+  }
+  console.log(`✓ generated.json: подключено ${ok}${stale ? `, устарело (фразы нет в контенте) ${stale}` : ''}${lost ? `, нет файла ${lost}` : ''}`);
+}
 
 // ---------- пачки: одна запись — несколько фраз через паузы ----------
 const batchesFile = join(dir, 'batches.json');
@@ -62,11 +81,11 @@ function speechParts(wav, noise, minPause){
   return parts;
 }
 // имя пачки — в начале имени файла: «en-01.mp3», «dict-03.mp3» и «en-01 — 5 фраз.mp3» подходят все
-const batchId = f => /^((?:en|ru|dict|text)-\d+)/i.exec(f)?.[1].toLowerCase();
+const batchId = f => /^((?:en|ru|dict|text|luna|max|owl|robo)-\d+)/i.exec(f)?.[1].toLowerCase();
 for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)])){
   const id = batchId(f), list = batches[id];
   // уже подключённую пачку не перекодируем заново (иначе файлы меняются без нужды); --force — подключить снова
-  if (!process.argv.includes('--force') && list.every(x => manifest[x.text] && existsSync(join(ROOT, 'tts_cache', manifest[x.text])))){ console.log(`· ${f}: уже подключена`); continue; }
+  if (!process.argv.includes('--force') && list.every(x => manifest[keyOf(x)] && existsSync(join(ROOT, 'tts_cache', manifest[keyOf(x)])))){ console.log(`· ${f}: уже подключена`); continue; }
   const wav = join(tmp, id + '.wav');
   ffmpeg(['-i', join(dir, f), '-ac', '1', '-ar', '24000', wav]);
   // подбираем порог тишины и длину паузы, пока кусков не станет столько, сколько фраз
@@ -90,7 +109,7 @@ for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)
   parts.forEach(([a, b], i) => {
     const seg = join(tmp, `${id}-${i}.wav`);
     ffmpeg(['-i', wav, '-ss', String(Math.max(0, a - 0.08)), '-to', String(b + 0.12), seg]);
-    toM4a(seg, list[i].text, list[i].speaker);
+    toM4a(seg, list[i]);
     ok++;
   });
   console.log(`✓ ${f}: ${list.length} фраз`);
@@ -98,13 +117,14 @@ for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)
 rmSync(tmp, { recursive: true, force: true });
 
 // ---------- отдельные файлы с номером фразы ----------
-const files = readdirSync(dir).filter(f => /^\d+/.test(f) && AUDIO.test(f));
+// готовые записи gen-voices (40 знаков sha1: «9f12…c4.m4a») — не номера фраз, их подключил generated.json выше
+const files = readdirSync(dir).filter(f => /^\d+/.test(f) && AUDIO.test(f) && !/^[0-9a-f]{40}\./.test(f));
 for (const f of files){
   const n = parseInt(f, 10);
   const text = lines[n - 1];
   if (!text){ console.log(`✗ ${f}: реплики №${n} нет (всего ${lines.length})`); continue; }
   try {
-    toM4a(join(dir, f), text, items[n - 1].speaker);
+    toM4a(join(dir, f), items[n - 1]);
     ok++;
     console.log(`✓ ${String(n).padStart(2)}  [${items[n - 1].speaker}] ${text.slice(0, 60)}`);
   } catch (e) { console.log(`✗ ${f}: не удалось конвертировать (${e.message.split('\n')[0]})`); }
@@ -112,5 +132,5 @@ for (const f of files){
 writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
 // без записи: нет ни голоса героя, ни (для английских слов и фраз) старой записи из tts_manifest.json
 const lessonAudio = existsSync(join(ROOT, 'tts_manifest.json')) ? JSON.parse(readFileSync(join(ROOT, 'tts_manifest.json'), 'utf8')) : {};
-const missing = items.filter(x => !manifest[x.text] && !(x.lang === 'en' && (lessonAudio[x.text] || lessonAudio[x.text.replace(/(^|\s)I(?=[\s'’.,!?]|$)/g, '$1i')])));
+const missing = items.filter(x => !manifest[x.key] && !(x.lang === 'en' && (lessonAudio[x.text] || lessonAudio[x.text.replace(/(^|\s)I(?=[\s'’.,!?]|$)/g, '$1i')])));
 console.log(`\nПодключено: ${ok}. ${missing.length ? `Ещё без записи: ${missing.length} (node tools/voice-todo.mjs — новое задание)` : 'Озвучено всё ✓'}`);

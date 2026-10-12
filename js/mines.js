@@ -1,8 +1,8 @@
 // English Quest — Секретные регионы («Шахты»): туман со счётчиком до открытия, локации после.
 // Данные — SECRET_REGIONS в content.js, расчёт — secretRegionState() в stats.js, вопросы — runQuiz (checkpoint.js).
 import { runQuiz } from './checkpoint.js';
-import { CHARACTERS, QUEST_PASS_PCT } from './eq.js';
-import { heroPic } from './heroes.js';
+import { CHARACTERS, QUEST_PASS_PCT, heroLine } from './eq.js';
+import { heroPic, sayRow, selfRow } from './heroes.js';
 import { renderHUD, reward } from './hud.js';
 import { saveState, state } from './state.js';
 import { rarityOf, secretKey, secretRegionState } from './stats.js';
@@ -38,7 +38,8 @@ export function renderSecret(wrap, region, onChange){
         <p>Где-то здесь, под туманом, что-то спрятано… Проходи <b>редкие квесты</b> на ${QUEST_PASS_PCT}% в любых регионах.</p>
         <div class="fog-bar" aria-hidden="true"><span style="width:${Math.round(S.have * 100 / S.need)}%"></span></div>
         <p class="fog-count">Редких квестов: <b>${S.have} из ${S.need}</b></p>
-      </div>`;
+      </div>
+      ${sayRow(heroLine(region.guide, 'mines', { id: S.have ? 'closer' : 'locked' }))}`;
     pauseOffscreen(wrap.querySelector('.secret-fog'));
     return;
   }
@@ -47,7 +48,7 @@ export function renderSecret(wrap, region, onChange){
     <div class="region-head secret-head" style="--region-color:${region.color}">
       <span class="secret-guide" style="--hero-color:${guide.color}">${heroPic(guide, 'happy')}</span>
       <div class="secret-text"><span><b>${region.emoji} ${escapeHtml(region.name)}</b> <span class="t-muted">· секретный регион</span></span>
-      <span><b>${escapeHtml(guide.name)}:</b> ${escapeHtml(region.intro)}</span>
+      <span><b>${escapeHtml(guide.name)}:</b> ${escapeHtml(S.locations.some(x => x.passed) ? region.intro : heroLine(guide.id, 'mines', { id: 'open' })?.text || region.intro)}</span>
       <span class="region-rank">💠 Кристаллы: <b>${state.crystals || 0}</b> — пригодятся для твоей клиники</span></div>
     </div>
     ${caveScene(region, S)}
@@ -55,7 +56,7 @@ export function renderSecret(wrap, region, onChange){
   // метка места → карточка под сценой: редкость, место, вопросы, приз и «Играть» или замок (эскиз 40)
   const card = i => {
     const { loc, res, passed, lock } = S.locations[i], r = rarityOf(loc.rarity);
-    return `<div class="scene-card" style="--rarity:${r.color}; --rarity-pill:${r.pill}" aria-live="polite">
+    return `${sayRow(heroLine(guide.id, 'mines', { id: loc.id }))}<div class="scene-card" style="--rarity:${r.color}; --rarity-pill:${r.pill}" aria-live="polite">
       <div class="scene-card-top"><span class="quest-pill">${r.title.toUpperCase()}${loc.boss ? ' · БОСС' : ''}</span><span class="scene-card-place">${escapeHtml(region.name)}</span></div>
       <b class="scene-card-title">${escapeHtml(loc.title)}</b>
       <span class="scene-card-what">${loc.size} вопросов по всем пройденным темам: слова, на слух${loc.mix.grammar ? ' и грамматика' : ''}.</span>
@@ -108,7 +109,7 @@ export function startSecretLocation(region, loc){
   const header = `
     <h2>${loc.emoji} ${escapeHtml(loc.title)}</h2>
     <div class="lead">${escapeHtml(region.name)} · ${r.title.toLowerCase()} квест${loc.boss ? ', босс' : ''}. Вопросы по пройденным темам, нужно ${need} из ${loc.size}.</div>`;
-  runQuiz({ header, lessons: S.pool, size: loc.size, mix: loc.mix, onFinish(right, total){
+  runQuiz({ header: header + (loc.boss ? selfRow('boss') : ''), lessons: S.pool, size: loc.size, mix: loc.mix, onFinish(right, total){
     const key = secretKey(region, loc), pct = Math.round(right * 100 / total);
     const q = state.quests[key] || { best: 0, runs: 0 };
     q.best = Math.max(q.best || 0, pct); q.last = pct; q.at = Date.now(); q.runs = (q.runs || 0) + 1;
@@ -129,6 +130,8 @@ export function startSecretLocation(region, loc){
         ${first ? `<p>Награда: <b>💠 ${loc.crystals}</b> кристаллов для клиники, +${r.xp || 100} XP, +${r.coins || 50} 🪙.</p>` : ''}
         ${pct < QUEST_PASS_PCT ? '<p>Ошибки попали в «Мои ошибки» — повтори их и возвращайся.</p>' : ''}
       </div>
+      ${pct >= QUEST_PASS_PCT && loc.boss ? sayRow(heroLine(region.guide, 'mines', { id: 'deepwin' })) : ''}
+      ${selfRow(pct < QUEST_PASS_PCT ? 'oops' : loc.boss ? 'bosswin' : 'win')}
       <div class="controls">
         ${pct < QUEST_PASS_PCT ? '<button class="btn" id="sl-retry">🔁 Попробовать снова</button>' : ''}
         <button class="btn ${pct < QUEST_PASS_PCT ? 'secondary' : ''}" id="sl-close">К Шахтам</button>

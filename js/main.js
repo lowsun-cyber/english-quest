@@ -21,7 +21,8 @@ import './profiles.js';
 import './cloud.js';
 import './nav.js';
 import { applyFreezes, openFreezeInfo, renderGoal } from './activity.js';
-import { CHARACTERS, HARLOW_LINES } from './eq.js';
+import { HARLOW_LINES, narratorLines } from './eq.js';
+import { narratorHero } from './heroes.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';
 import { renderAchievements } from './achievements.js';
 import { renderHUD, renderInventory, renderTeam } from './hud.js';
@@ -32,7 +33,7 @@ import { loadProfiles, loadState, saveState, setProfiles, setState, state, takeD
 import { multi, openProfileChooser, renderProfileChip } from './profiles.js';
 import { initCloud, linkFromHash, syncNow, viewFromHash } from './cloud.js';
 import { initDictionary } from './dictionary.js';
-import { showGuide, toast } from './ui.js';
+import { showNarrator, toast } from './ui.js';
 import { pick } from './util.js';
 
 // ---------- THEME ----------
@@ -88,8 +89,9 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
   try { document.getElementById('howto-new').hidden = !!localStorage.getItem('eq_howto_seen'); } catch (e) {}
   renderHomework();
   renderGoal(true);
-  // welcome from Harlow
+  // приветствие ведущего
   setTimeout(() => {
-    showGuide('Dr. Harlow', pick(HARLOW_LINES.welcome), CHARACTERS.harlow);
+    // у Nurse Luna (ведущая, если ребёнок играет за Dr. Harlow) нет приветствия «Я Dr. Harlow»
+    showNarrator(pick(HARLOW_LINES.welcome.filter(t => narratorLines(narratorHero().id).includes(t))));
   }, 900);
 })();

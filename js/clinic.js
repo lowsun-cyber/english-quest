@@ -2,8 +2,8 @@
 // Дом с комнатами: построенные, строящиеся (материалы по рецепту), закрытые (рецепт — за эпические квесты)
 // и секретная (открывается в «Шахтах»). Ниже — пациенты региона, альбом слов и помощники.
 // Всё заработанное считает clinicState() в stats.js; здесь только показ и кнопка «Строить».
-import { MATERIALS, regionOfGrade } from './eq.js';
-import { heroPic } from './heroes.js';
+import { MATERIALS, heroLine, regionOfGrade } from './eq.js';
+import { heroPic, sayRow } from './heroes.js';
 import { activeProfile, saveState, state } from './state.js';
 import { buildRoom, clinicState, playerGrade } from './stats.js';
 import { confetti, toast } from './ui.js';
@@ -53,6 +53,17 @@ function roomHtml(r, cs){
       <button type="button" class="btn clinic-build" data-room="${room.id}"${r.canBuild ? '' : ' aria-disabled="true"'}>Строить</button></li>`;
 }
 
+// Реплика над клиникой: событие стройки (один раз) → новый вылеченный пациент → можно строить → ждёт пациент
+let clinicEvent = null, seenCured = null;   // seenCured — { profile, n }: сколько было вылечено при прошлом показе
+function clinicLine(cs, pat, cured){
+  const profile = activeProfile().id, before = seenCured?.profile === profile ? seenCured.n : null;
+  seenCured = { profile, n: cured };
+  if (clinicEvent){ const e = clinicEvent; clinicEvent = null; return heroLine(e.hero, e.kind, { id: e.id }); }
+  if (before != null && cured > before) return heroLine('luna', 'clinic', { id: 'cured' });
+  if (cs.rooms.some(r => r.state === 'building' && r.canBuild)) return heroLine('max', 'build', { id: 'ready' });
+  return pat.list.some(x => !x.cured) ? heroLine('luna', 'clinic', { id: 'patient' }) : null;
+}
+
 export function renderClinic(){
   const wrap = document.getElementById('clinic');
   if (!wrap || !state) return;
@@ -70,6 +81,7 @@ export function renderClinic(){
   const helpNote = nextHelper ? (nextHelper.minesBoss ? 'ещё один — за босса Шахт' : `следующий — за ${nextHelper.bosses}-го босса (побеждено ${cs.counts.bosses})`) : 'все помощники в сборе!';
   document.getElementById('clinic-mats').innerHTML = mats;
   wrap.innerHTML = `
+    ${sayRow(clinicLine(cs, pat, cured.length))}
     <div class="clinic-house">
       <svg class="clinic-roof" viewBox="0 0 358 54" aria-hidden="true"><path d="M8 52 L179 6 L350 52 Z" fill="#e5483b" stroke="${K}" stroke-width="3"/><rect x="104" y="26" width="150" height="22" rx="3" fill="#fffdf6" stroke="${K}" stroke-width="2.5"/><text x="179" y="42" text-anchor="middle" font-family="'Baloo 2', system-ui, sans-serif" font-weight="800" font-size="13" fill="${K}">${escapeHtml(sign)}</text></svg>
       <ul class="clinic-rooms" role="list">${cs.rooms.map(r => roomHtml(r, cs)).join('')}</ul>
@@ -102,12 +114,16 @@ function onBuild(id){
   if (!r.canBuild){
     const miss = r.need.filter(x => x.have < x.need).map(x => `${matTitle(x.id)}: ещё ${x.need - x.have}`).join(', ');
     toast(`🧱 Не хватает материалов — ${miss}. Проходи квесты на карте!`);
+    const short = id => r.need.some(x => x.id === id && x.have < x.need);
+    clinicEvent = short('boards') ? { hero: 'max', kind: 'build', id: 'boards' } : short('blocks') ? { hero: 'luna', kind: 'clinic', id: 'blocks' } : null;
+    if (clinicEvent) renderClinic();
     return;
   }
   const next = buildRoom(state, id);
   if (!next) return;
   state.clinic = next;
   saveState();
+  clinicEvent = { hero: 'luna', kind: 'clinic', id: 'built' };
   renderClinic();
   confetti();
   toast(`🏗️ Построено: ${r.room.title}!`);
