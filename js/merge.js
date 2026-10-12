@@ -129,6 +129,11 @@ const RULES = {
     const first = (a, c) => (a && c) ? Math.min(a, c) : (a || c || null);
     return { pack: clone(x.pack ?? y.pack ?? null), sent: first(x.sent, y.sent), opened: first(x.opened, y.opened), withdrawn: first(x.withdrawn, y.withdrawn) };
   }),
+  // вступительное испытание: действует последнее (пройдено или пропущено)
+  placement: (b, l, r) => {
+    const t = x => isObj(x) ? n(x.at || x.skipped) : -1;
+    return clone(t(r) > t(l) ? r : (l ?? r ?? null));
+  },
   // «Мои ошибки»: у кого попытка позже, тот и прав
   mistakes: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => clone(n(rr?.last) > n(ll?.last) ? rr : ll)),
   // домашка: новее та, что назначена позже; для того же задания — «сделано», если сделано где-нибудь

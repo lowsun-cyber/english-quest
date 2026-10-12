@@ -1226,6 +1226,48 @@ try {
     const back = JSON.parse(saved); if (back) state.parcels = back; else delete state.parcels; await saveState();
     return 'задание для AI с кодом ученика, проверка, добавление и «Убрать»';`)));
 
+  await test('вступительное испытание: страж ворот, старт с части, «Не сейчас»', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), map = await import('./js/map.js'), S = await import('./js/stats.js');
+    const saved = JSON.stringify({ p: state.placement || null, lp: state.lessonProgress, sk: state.skills, g: state.settings.mapGrade, v: state.settings.mapView, u: !!state.settings.unlockAll, mi: state.mistakes });
+    delete state.placement; state.settings.unlockAll = false; state.settings.mapView = null;
+    const G3 = S.lessonsOf(3); for (const l of G3) delete state.lessonProgress[l.id];
+    await saveState(); map.renderMap();
+    if (!document.querySelector('.placement-card [data-placement="go"]')) throw new Error('нет карточки стража ворот');
+    document.querySelector('[data-placement="go"]').click(); await __sleep(200);
+    if (document.querySelectorAll('[data-pg]').length !== S.GRADES.length) throw new Error('нет выбора класса');
+    document.querySelector('[data-pg="3"]').click(); await __sleep(400);
+    const mist0 = JSON.stringify(state.mistakes);
+    const words = G3.flatMap(l => l.words), gram = G3.flatMap(l => l.grammar), n = S.placementPlan(3).length;
+    for (let i = 0; i < n; i++){
+      const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.o); let ans;
+      const em = document.querySelector('.q-emoji'), sn = document.querySelector('.q-sentence');
+      if (em) ans = words.filter(w => w.emoji === em.textContent).map(w => w.en).find(e => opts.includes(e));
+      else if (sn) ans = gram.filter(g => g.q === sn.textContent).map(g => g.a).find(a => opts.includes(a));
+      else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o === String(__said)); }
+      if (!ans) throw new Error('вопрос ' + (i + 1) + ': нет ответа среди ' + opts.join('/'));
+      const pick = i < 6 ? ans : opts.find(o => o !== ans);   // две первые части — верно, дальше — неверно
+      window.__said = null; [...document.querySelectorAll('.opt')].find(o => o.dataset.o === pick).click(); await __sleep(i < 6 ? 1100 : 3100);
+    }
+    const res = f('modal').innerText;
+    if (!/Итог испытания/.test(res) || !res.includes(G3[8].title)) throw new Error('итог: ' + res.slice(0, 200));
+    if (state.placement?.startIdx !== 8 || state.placement.passed !== 2) throw new Error('результат: ' + JSON.stringify(state.placement));
+    if (JSON.stringify(state.mistakes) !== mist0) throw new Error('ошибки испытания попали в «Мои ошибки»');
+    document.querySelector('[data-pgo="3"]').click(); await __sleep(300);
+    const node = i => map.mapNodes(3).find(n => n.lesson?.id === G3[i].id);
+    if (map.lockReason(node(8)) || map.lockReason(node(3)) || !map.lockReason(node(9))) throw new Error('замки: 9-я ' + map.lockReason(node(8)) + ', 10-я ' + map.lockReason(node(9)));
+    if (map.currentNode(3)?.lesson?.id !== G3[8].id) throw new Error('текущая тема не стартовая: ' + map.currentNode(3)?.lesson?.id);
+    if (!document.querySelector('.placement-again') || document.querySelector('.placement-card')) throw new Error('после испытания — только «пройти заново»');
+    // «Не сейчас»
+    delete state.placement; await saveState(); map.renderMap();
+    document.querySelector('[data-placement="skip"]').click(); await __sleep(200);
+    if (!state.placement?.skipped || document.querySelector('.placement-card')) throw new Error('«Не сейчас» не скрыл карточку');
+    const back = JSON.parse(saved);
+    if (back.p) state.placement = back.p; else delete state.placement;
+    state.lessonProgress = back.lp; state.skills = back.sk; state.mistakes = back.mi; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null; state.settings.unlockAll = back.u;
+    await saveState(); map.renderMap();
+    return 'выбор класса → ' + n + ' вопросов → 2 части сданы → старт с темы 9, ошибки не в «Моих ошибках»; «Не сейчас»';`)));
+
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {
   results.push({ ok: false, name: 'запуск', info: e.message });

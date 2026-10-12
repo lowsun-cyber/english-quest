@@ -264,5 +264,30 @@ check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g
   check('шаблон: задание + выгрузка', A.promptWithExport(exp).startsWith(A.AI_PROMPT) && A.promptWithExport(exp).includes('"student": "s123"') && A.AI_PROMPT.includes(A.PARCEL_FORMAT));
 }
 
+// вступительное испытание (страж ворот)
+{
+  const { LESSONS, PLACEMENT } = ctx.window.EQ;
+  for (const g of S.GRADES){
+    const plan = S.placementPlan(g), parts = S.placementParts(g);
+    check(`испытание ${g} кл.: 10–15 вопросов, по 3 на часть`, plan.length >= 10 && plan.length <= 15 && plan.length === parts.length * PLACEMENT.perPart, plan.length);
+    check(`испытание ${g} кл.: вопросы из тем своей части`, plan.every(x => parts[x.part].includes(x.l) && (x.w || x.q)));
+    check(`испытание ${g} кл.: в каждой части слово и «послушай»`, parts.every((_, i) => plan.some(x => x.part === i && x.type === 'word') && plan.some(x => x.part === i && x.type === 'listen')));
+  }
+  const g = 3, n = S.placementParts(g).length, ls = S.lessonsOf(g);
+  const ans = scores => scores.flatMap((r, part) => [0, 1, 2].map(i => ({ part, ok: i < r, skill: i === 2 ? 'G3-01' : null })));
+  let r = S.placementResult(g, ans([3, 2, 1, 3]));
+  check('испытание: две первые части сданы — старт с 9-й темы', r.passed === 2 && r.startIdx === 8 && r.start === ls[8].id && r.prev === null, r);
+  check('испытание: сданная позже часть не перескакивает несданную', S.placementResult(g, ans([1, 3, 3, 3])).passed === 0);
+  r = S.placementResult(g, ans(Array(n).fill(3)));
+  check('испытание: всё сдано — открыт весь класс', r.passed === n && r.startIdx === ls.length - 1);
+  check('испытание: 3 класс, первая часть не сдана — совет начать со 2-го', S.placementResult(3, ans([0, 0, 0, 0])).prev === 2 && S.placementResult(2, ans([0, 0, 0, 0, 0])).prev === null);
+  check('испытание: навыки — верный ответ отмечает, неверный нет', S.placementResult(g, ans([3, 3])).skills['G3-01'] === true && S.placementResult(g, ans([3, 0])).skills['G3-01'] === false);
+  const st = fresh({ placement: S.placementResult(g, ans([3, 2, 0, 0])) });
+  check('испытание: темы до стартовой открыты, дальше — нет', S.placementOpens(st, ls[0]) && S.placementOpens(st, ls[8]) && !S.placementOpens(st, ls[9]));
+  check('испытание: другой класс и пропуск не открывают', !S.placementOpens(st, S.lessonsOf(2)[3]) && !S.placementOpens(fresh({ placement: { skipped: 1 } }), ls[1]));
+  check('испытание: строка для родителя', /Вступительное испытание: 3 класс, верно 5 из \d+/.test(S.placementLine(st)) && S.reportText(st).includes('Вступительное испытание'), S.placementLine(st));
+  check('испытание: пропуск — в строке', S.placementLine(fresh({ placement: { skipped: 1 } })) === 'Вступительное испытание: пропущено');
+}
+
 console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);
 process.exit(fail ? 1 : 0);

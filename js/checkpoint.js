@@ -13,8 +13,9 @@ import { classifyError, errorCodeOf, skillItems, skillWeak } from './stats.js';
 
 // === Смешанная викторина по темам: проверки-боссы и «Шахты» ===
 // mix — сколько вопросов каждого вида: { word, listen, grammar }; недостающие добираются словами.
-// onFinish(right, total) рисует итог.
-export function runQuiz({ header, lessons, size, mix, onFinish, record = true }){
+// onFinish(right, total) рисует итог. queue — готовый список вопросов вместо mix (вступительное испытание),
+// onAnswer(item, ok) — после каждого ответа; log: false — ответы не идут в мастерство, ошибки и «Мои ошибки».
+export function runQuiz({ header, lessons, size, mix = {}, onFinish, record = true, queue: given = null, onAnswer = null, log = true }){
   const words = lessons.flatMap(l => l.words.map(w => ({ w, l })));
   const grammar = lessons.flatMap(l => l.grammar.map(q => ({ q, l })));
   const picked = shuffle(words);
@@ -26,7 +27,7 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
     ...shuffle(grammar).slice(0, mix.grammar || 0).map(x => ({ type: 'grammar', ...x })),
   ];
   qs = qs.concat(take(size - qs.length).map(x => ({ type: 'word', ...x })));
-  const queue = shuffle(qs).slice(0, size);
+  const queue = given || shuffle(qs).slice(0, size);
   let idx = 0, right = 0;
   render();
 
@@ -70,14 +71,17 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
         document.querySelectorAll('.opt').forEach(b => b.disabled = true);
         const ok = btn.dataset.o === answer;
         logAnswer(ok);
-        if (item.type === 'grammar') logSkill(item.q, ok, btn.dataset.o);
-        if (ok){ btn.classList.add('correct'); right++; if (item.w) logWord(item.w.en, true); }
+        if (log && item.type === 'grammar') logSkill(item.q, ok, btn.dataset.o);
+        onAnswer?.(item, ok);
+        if (ok){ btn.classList.add('correct'); right++; if (log && item.w) logWord(item.w.en, true); }
         else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(answer)}"]`)?.classList.add('correct');
           // record: false — темы нет в учебнике (особые квесты): в «Мои ошибки» не пишем, но тип и код ошибки считаем
           const info = { exercise: item.type === 'listen' ? 'listen' : 'checkpoint', chosen: btn.dataset.o, skill: item.q?.skill };
-          const error = !record
+          const error = !log
+            ? classifyError({ type: item.type === 'grammar' ? 'grammar' : 'word', ...info, answer })
+            : !record
             ? (() => { const e = classifyError({ type: item.type === 'grammar' ? 'grammar' : 'word', ...info, answer }); countError(e, errorCodeOf({ ...info, error: e })); return e; })()
             : item.type === 'grammar'
             ? recordMistake('grammar', item.l, item.q.q, { exercise: 'checkpoint', chosen: btn.dataset.o, skill: item.q.skill })

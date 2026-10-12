@@ -6,6 +6,7 @@ import { renderSecret } from './mines.js';
 import { hideCard, renderPath, showCard } from './path.js';
 import { OBJECTS, renderScene } from './scene.js';
 import { parcelBanner } from './parcels.js';
+import { placementBanner } from './placement.js';
 import { playerHero } from './heroes.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
@@ -13,7 +14,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, prizeLine, questIsNew, questKey, questLock, questPassed, questTitle, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillGate, skillStats } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, prizeLine, questIsNew, questKey, questLock, questPassed, questTitle, rarityOf, regionRanks, revengeItems, revengeReady, placementOpens, secretRegionState, skillGate, skillStats } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -40,12 +41,15 @@ export function lockReason(node){
   if (state.settings.unlockAll) return null;
   if (node.kind === 'checkpoint'){
     if (checkpointPassed(node.cp)) return null;
+    // испытание стража ворот открыло все темы части — босс открыт, но не обязателен
+    if (node.cp.lessons.every(l => placementOpens(state, l))) return null;
     const left = node.cp.lessons.filter(l => !isLessonComplete(l));
     if (left.length) return `Сначала пройди: ${left.map(l => `«${l.title}»`).join(', ')}`;
     return gateText(skillGate(node.cp.lessons, state, { own: true }));
   }
   const ls = lessonsOf(node.lesson.grade), i = ls.indexOf(node.lesson);
   if (i === 0) return null;
+  if (placementOpens(state, node.lesson)) return null;   // открыта вступительным испытанием
   // начатое остаётся открытым — даже если перед темой потом добавили новую
   if (Object.keys(state.lessonProgress[node.lesson.id] || {}).length) return null;
   if (i % BLOCK === 0){
@@ -65,7 +69,13 @@ export function nodeGate(node){
 }
 const gateText = g => g ? `Сначала подтяни навык «${g.skill.title}» — он здесь нужен` : null;
 export function nodeDone(n){ return n.kind === 'lesson' ? isLessonComplete(n.lesson) : checkpointPassed(n.cp); }
-export function currentNode(grade){ return mapNodes(grade).find(n => !lockReason(n) && !nodeDone(n)) || null; }
+// Текущая — первая открытая непройденная; после вступительного испытания — начиная со стартовой темы
+export function currentNode(grade){
+  const free = mapNodes(grade).filter(n => !lockReason(n) && !nodeDone(n)), p = state.placement;
+  const startIdx = p && !p.skipped && p.grade === grade ? p.startIdx : -1;
+  const idx = n => lessonsOf(grade).indexOf(n.kind === 'lesson' ? n.lesson : n.cp.lessons[n.cp.lessons.length - 1]);
+  return free.find(n => idx(n) >= startIdx) || free[0] || null;
+}
 
 export function mapGrade(){
   if (state.settings.mapGrade) return state.settings.mapGrade;
@@ -122,7 +132,7 @@ export function renderMap(){
     ? `<button type="button" class="path-next" data-grade="${next.grade}"><span aria-hidden="true">🔒</span><span><b>${escapeHtml(next.name)}</b><small>Дорога дальше — ${next.grade} класс. Нажми, чтобы посмотреть</small></span></button>`
     : `<button type="button" class="path-next" data-secret="${mines?.id}"><span aria-hidden="true">❔</span><span><b>Тайное место</b><small>Кто-то стучит под землёй… Пройди 10 редких квестов</small></span></button>`;
   const revenge = revengeReady(state) ? `<button class="revenge-banner" data-revenge>⚔️ <b>Квест-реванш!</b> ${revengeItems(state).length} самых трудных слов и вопросов — одолей их</button>` : '';
-  const { pts, H } = renderPath(wrap, { grade, nodes, st, label, hero: playerHero(state), head: parcelBanner() + revenge + head, tail });
+  const { pts, H } = renderPath(wrap, { grade, nodes, st, label, hero: playerHero(state), head: placementBanner() + parcelBanner() + revenge + head, tail });
   // метка → карточка рядом: «Войти в локацию», «Повторить» или замок с условием
   let open = -1;
   wrap.querySelectorAll('.path-mark').forEach(b => b.onclick = () => {

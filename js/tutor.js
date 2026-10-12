@@ -181,6 +181,7 @@ export function openTutorPanel(){
       </ul>` : '<p class="t-muted">Пока нет — ошибок не было или все уже выучены.</p>'}
     ${state.mastered ? `<p class="t-muted">Выучено после ошибок: <b>${state.mastered}</b></p>` : ''}
     <p class="t-muted">🏥 ${escapeHtml(s.clinic)}</p>
+    ${s.placement ? `<p class="t-muted">🛡️ ${escapeHtml(s.placement)}</p>` : ''}
 
     <h3 class="t-h">Лист для печати</h3>
     ${worksheetSectionHtml()}

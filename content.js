@@ -2525,6 +2525,12 @@ function taskTypeFor(kind, grade){
   return CURRICULUM.taskTypes.find(t => t.grade === grade && t.kinds.includes(kind))?.code || null;
 }
 
+// ---------- ВСТУПИТЕЛЬНОЕ ИСПЫТАНИЕ (страж ворот) ----------
+// Игрок выбирает класс; по каждой части класса (4 темы, как у испытаний на карте) — слово, «послушай» и
+// грамматика. Часть сдана при pass верных из 3. Темы до первой несданной части открываются (не проходятся).
+// Логика — placementPlan / placementResult в js/stats.js, экран — js/placement.js.
+const PLACEMENT = { guard: 'owl', perPart: 3, pass: 2 };
+
 // ---------- СВОЯ КЛИНИКА (итерация 4, эскиз docs/design-v2/boards/33-screen-clinic) ----------
 // Материалы — за первое прохождение квеста на 80% (по редкости) и за испытания; кристаллы — в «Шахтах».
 // Всё заработанное считается из прогресса (clinicState в js/stats.js), в прогрессе хранится только, что построено.
@@ -2754,7 +2760,7 @@ window.EQ = {
   REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES, ERROR_GROUPS, ERROR_CODES,
   QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, SECRET_REGIONS,
   PACKS, addPacks, EXTRA_KINDS, extraQuestOf, questLesson, isNewItem, LOCATION_ART,
-  MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,
+  PLACEMENT, MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

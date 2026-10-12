@@ -1,7 +1,7 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { ACHIEVEMENTS, ERROR_CODES, ERROR_GROUPS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS, CLINIC_PRIZE, CLINIC_ROOMS, CHARACTERS, CURRICULUM, MATERIALS, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
-import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
+import { ACHIEVEMENTS, PLACEMENT, ERROR_CODES, ERROR_GROUPS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS, CLINIC_PRIZE, CLINIC_ROOMS, CHARACTERS, CURRICULUM, MATERIALS, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { dayKey, fmtDay, parseDay, shiftDay, shuffle } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
 export const PARTS = ['vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak'];
@@ -133,6 +133,47 @@ export function secretRegionState(region, st){
     return { loc, res, passed: passed(loc), lock };
   });
   return { region, open, have: Math.min(have, need), need, pool, locations };
+}
+
+// ---------- вступительное испытание (страж ворот) ----------
+// Части класса — по BLOCK тем (последняя может быть короче). На часть — слово, «послушай» и вопрос грамматики
+// с кодом навыка (если в части такого нет — ещё одно слово).
+export const placementParts = grade => { const ls = lessonsOf(grade), out = []; for (let i = 0; i < ls.length; i += BLOCK) out.push(ls.slice(i, i + BLOCK)); return out; };
+export function placementPlan(grade){
+  return placementParts(grade).flatMap((ls, part) => {
+    const words = shuffle(ls.flatMap(l => l.words.map(w => ({ w, l }))));
+    const gram = shuffle(ls.flatMap(l => (l.grammar || []).filter(q => q.skill).map(q => ({ q, l }))));
+    const items = [{ type: 'word', ...words[0] }, { type: 'listen', ...words[1] }, gram[0] ? { type: 'grammar', ...gram[0] } : { type: 'word', ...words[2] }];
+    return items.slice(0, PLACEMENT.perPart).map(x => ({ ...x, part }));
+  });
+}
+// answers — [{ part, ok, skill }] по порядку вопросов. Старт — первая тема первой несданной части;
+// если не сдана даже первая часть 3-го или 4-го класса — совет начать с региона классом ниже.
+export function placementResult(grade, answers, now = Date.now()){
+  const ls = lessonsOf(grade), parts = placementParts(grade).map((p, i) => {
+    const a = answers.filter(x => x.part === i);
+    return { part: i, right: a.filter(x => x.ok).length, total: a.length, from: p[0].id, to: p[p.length - 1].id };
+  });
+  let passed = 0;
+  while (passed < parts.length && parts[passed].right >= PLACEMENT.pass) passed++;
+  const startIdx = Math.min(passed * BLOCK, ls.length - 1);
+  const skills = {};
+  for (const x of answers) if (x.skill) skills[x.skill] = skills[x.skill] === false ? false : !!x.ok;
+  return { grade, at: now, right: answers.filter(x => x.ok).length, total: answers.length, parts, passed,
+    startIdx, start: ls[startIdx].id, skills, prev: grade > Math.min(...GRADES) && passed === 0 ? grade - 1 : null };
+}
+// Открыта ли тема по итогу испытания (темы класса до стартовой включительно)
+export function placementOpens(st, lesson){
+  const p = st.placement;
+  if (!p || p.skipped || p.grade !== lesson.grade) return false;
+  return lessonsOf(lesson.grade).indexOf(lesson) <= p.startIdx;
+}
+export function placementLine(st){
+  const p = st.placement;
+  if (!p) return '';
+  if (p.skipped && !p.grade) return 'Вступительное испытание: пропущено';
+  const l = LESSONS.find(x => x.id === p.start), ok = Object.entries(p.skills || {}).filter(([, v]) => v).map(([k]) => SKILLS[k]?.title).filter(Boolean);
+  return `Вступительное испытание: ${p.grade} класс, верно ${p.right} из ${p.total} (${new Date(p.at).toLocaleDateString('ru-RU')}), старт — «${l?.title || p.start}» (тема ${p.startIdx + 1})${ok.length ? `; уже знает: ${ok.join(', ')}` : ''}`;
 }
 
 // ---------- своя клиника (итерация 4) ----------
@@ -518,7 +559,7 @@ export function studentStats(st, n = 7){
     lessonsDone: lessons.filter(x => x.done).length,
     xp, level, maxLevel: MAX_LEVEL, rank: topRank(st), regions: regionRanks(st), gold: st.gold || 0, mastered: st.mastered || 0,
     collected: Object.keys(st.inventory || {}).length,
-    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st), clinic: clinicLine(st), gaps: errorGaps(st),
+    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st), clinic: clinicLine(st), gaps: errorGaps(st), placement: placementLine(st),
     allTime: { days: all, sec: allSec, min: minutes(allSec), ok: allOk, bad: allBad, pct: pctOf(allOk, allBad),
       activeDays: all.filter(d => d.sec > 0 || (d.ok || 0) + (d.bad || 0) > 0).length, first: allKeys[0] || null, last: allKeys[allKeys.length - 1] || null },
   };
@@ -544,6 +585,7 @@ export function reportText(st, who = '', s = studentStats(st), extra = []){
     lines.push(`Слова: освоено ${s.mastery.levels.mastered} из ${s.mastery.seen} встреченных${hardW.length ? `; трудные: ${hardW.join(', ')}` : ''}`);
   }
   if (st.mastered) lines.push(`Выучено после ошибок: ${st.mastered}`);
+  if (placementLine(st)) lines.push(placementLine(st));
   lines.push(gapsLine(s.gaps || errorGaps(st)));
   lines.push(s.clinic || clinicLine(st));
   lines.push(...extra);
