@@ -13,6 +13,7 @@ import { speak, speakWordOrPhrase, stopSpeech } from './tts.js';
 import { afterFeedback, back, closeModal, modal, openModal, showGuide, toast } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle, uniqueByEmoji } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
+import { errorCodeOf } from './stats.js';
 
 // === Карточки: слово за словом, потом все слова сеткой ===
 export function exCards(lesson, guide){
@@ -542,7 +543,7 @@ export function exBuild(lesson, guide){
       const ok = picked.map(x => x.t).join(' ') === it.text;
       logSkill(it, ok, ok ? null : picked.map(x => x.t).join(' '));
       if (ok){ right++; reward(15, 3); markProgress(lesson.id, lesson.questKind || 'build'); toast(`✅ +${lastXp} XP`); }
-      else { countError('form'); penalty(); }
+      else { countError('form', 'O1'); penalty(); }
       openModal(`
         ${lessonHeader(lesson, guide, '', ok ? 'happy' : 'hint')}
         <div class="question">
@@ -650,7 +651,7 @@ export function exPicture(lesson, guide){
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(it.right)}"]`)?.classList.add('correct');
           if (it.word && lesson.words.some(w => w.en === it.word)) recordMistake('word', lesson, it.word, { exercise: 'picture', chosen: btn.dataset.o, skill: it.skill });
-          else countError(it.skill ? 'form' : 'unknown');
+          else countError(it.skill ? 'form' : 'unknown', errorCodeOf({ error: it.skill ? 'form' : 'unknown', skill: it.skill }));
           penalty();
         }
         speak(it.right);

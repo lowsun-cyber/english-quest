@@ -12,7 +12,8 @@ export const DEFAULT_STATE = {
   lessonWrong: {}, // { lessonId: число ошибок за всё время }
   skills: {},      // { 'G2-01': { ok, bad, last, wrong: { 'неверный вариант': n } } } — грамматические навыки (CURRICULUM.skills)
   words: {},       // { en: { ok, bad, last, err: { тип: n }, with: { с чем спутал: n } } } — ответы по словам (мастерство)
-  errorTypes: {},  // { тип ошибки: n } — ERROR_TYPES в content.js, считает logError() в mistakes.js
+  errorTypes: {},  // { тип ошибки: n } — ERROR_TYPES в content.js, считает countError() в mistakes.js
+  errorCodes: {},  // { код ошибки: n } — ERROR_CODES в content.js (карта пробелов), там же
   quests: {},      // { 'урок:упражнение': { best, last, at, runs, passedAt } } — результаты квестов в %, см. js/quests.js
   achievements: {}, // { id: когда получено } — ACHIEVEMENTS в content.js
   homework: null,  // текущее домашнее задание, см. makeHomework()

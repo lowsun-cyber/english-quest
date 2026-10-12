@@ -8,6 +8,8 @@ import { speak } from './tts.js';
 import { afterFeedback, closeModal, confetti, openModal } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
+import { SKILLS } from './eq.js';
+import { skillItems, skillWeak } from './stats.js';
 
 // === Смешанная викторина по темам: проверки-боссы и «Шахты» ===
 // mix — сколько вопросов каждого вида: { word, listen, grammar }; недостающие добираются словами.
@@ -124,4 +126,40 @@ export function startCheckpoint(cp){
     renderHUD();
     renderInventory();
   }
+}
+
+// === «Подтянуть навык»: тренировка на вопросах одного навыка (граф навыков, см. skillGate в stats.js) ===
+export const SKILL_PRACTICE_SIZE = 6;
+export function startSkillPractice(code, grade = 4){
+  const skill = SKILLS[code], items = skillItems(code, grade);
+  if (!skill || !items.length) return;
+  // мало вопросов у навыка — повторяем их, чтобы набралось на тренировку
+  let pool = shuffle(items);
+  while (pool.length < SKILL_PRACTICE_SIZE) pool = pool.concat(shuffle(items));
+  pool = pool.slice(0, SKILL_PRACTICE_SIZE);
+  const lessons = [...new Set(pool.map(x => x.l))].map(l => ({ ...l, grammar: pool.filter(x => x.l === l).map(x => x.q) }));
+  const header = `
+    <h2>💪 Подтянуть навык</h2>
+    <div class="lead">${escapeHtml(skill.title)}. Ответь на ${pool.length} вопросов — и дорога дальше откроется.</div>`;
+  runQuiz({ header, lessons, size: pool.length, mix: { grammar: pool.length }, onFinish: (right, total) => {
+    saveState();
+    const ok = !skillWeak(code, state);
+    if (ok) confetti();
+    openModal(`
+      ${header}
+      <div class="question checkpoint-result ${ok ? 'pass' : 'fail'}">
+        <span class="cp-big" aria-hidden="true">${ok ? '🔓' : '💪'}</span>
+        <h3>${ok ? 'Навык подтянут — путь открыт!' : 'Ещё чуть-чуть'}</h3>
+        <p>Верно: <b>${right}</b> из ${total}.${ok ? '' : ' Потренируйся ещё раз — каждый верный ответ укрепляет навык.'}</p>
+      </div>
+      <div class="controls">
+        ${ok ? '' : '<button class="btn" id="sk-retry">🔁 Ещё раз</button>'}
+        <button class="btn ${ok ? '' : 'secondary'}" id="sk-close">К карте</button>
+      </div>`);
+    const retry = document.getElementById('sk-retry');
+    if (retry) retry.onclick = () => startSkillPractice(code, grade);
+    document.getElementById('sk-close').onclick = () => { closeModal(); document.getElementById('lessons-sec').scrollIntoView({ behavior: 'smooth' }); };
+    renderMap();
+    renderHUD();
+  } });
 }

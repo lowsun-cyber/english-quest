@@ -139,6 +139,7 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('слова: ответы с обоих устройств складываются', m.words.cat.ok === 5 && m.words.cat.bad === 2 && m.words.cat.last === 300, m.words.cat);
   check('слова: тип ошибки и с чем спутал складываются', m.words.cat.err.similar === 2 && m.words.cat.with.cap === 2, m.words.cat);
   check('слова: новое слово с другого устройства', m.words.dog?.ok === 1);
+  check('коды ошибок складываются', same(M(S({ errorCodes: { W1: 1 } }), S({ errorCodes: { W1: 2, L1: 1 } }), S({ errorCodes: { W1: 3 } })).errorCodes, { W1: 4, L1: 1 }));
   check('типы ошибок складываются', same(m.errorTypes, { similar: 2, unknown: 3 }), m.errorTypes);
   const old = { ...S({ xp: 5 }) }; delete old.words; delete old.errorTypes;   // прогресс до обновления
   check('старый прогресс на сервере не стирает новые ответы', M(old, S({ words: { cat: { ok: 1, bad: 0, last: 5 } } }), old).words.cat?.ok === 1);

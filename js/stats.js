@@ -1,6 +1,6 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { ACHIEVEMENTS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS, CLINIC_PRIZE, CLINIC_ROOMS, CHARACTERS, CURRICULUM, MATERIALS, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { ACHIEVEMENTS, ERROR_CODES, ERROR_GROUPS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS, CLINIC_PRIZE, CLINIC_ROOMS, CHARACTERS, CURRICULUM, MATERIALS, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
 import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
@@ -325,6 +325,77 @@ export function skillStats(st){
 }
 // ---------- типы ошибок ----------
 const ERR_IDS = new Set(ERROR_TYPES.map(t => t.id));
+// ---------- коды ошибок и карта пробелов (дополнение итерации 2) ----------
+// Код ошибки (ERROR_CODES в content.js): навык вопроса важнее всего, затем упражнение, затем тип ошибки.
+const SKILL_CODE = Object.fromEntries(ERROR_CODES.flatMap(c => (c.when.skills || []).map(k => [k, c.code])));
+export const errorCodeInfo = code => ERROR_CODES.find(c => c.code === code) || null;
+export function errorCodeOf({ exercise, error, skill } = {}){
+  if (exercise === 'listen') return 'L1';
+  if (skill && SKILL_CODE[skill]) return SKILL_CODE[skill];
+  if (exercise === 'build') return 'O1';
+  return ERROR_CODES.find(c => c.when.error === error)?.code || 'W1';
+}
+// Код ошибки из «Моих ошибок»: сохранённый при записи или по старым полям карточки
+export function mistakeCode(m){
+  if (m.code) return m.code;
+  const r = m.type === 'grammar' ? resolveMistake(m) : null;
+  return errorCodeOf({ exercise: m.ex, error: m.lastErr || (m.type === 'reading' ? 'meaning' : m.type === 'grammar' ? 'form' : 'unknown'), skill: r?.q?.skill });
+}
+// Карта пробелов: по каждому коду — сколько ошибок было (всего) и сколько карточек сейчас в «Моих ошибках».
+// Всего — бо́льшее из записанного по кодам (st.errorCodes, с этого обновления) и оценки по старым данным
+// (ответы по навыкам и словам), поэтому старый прогресс тоже виден и ничего не задваивается.
+// Состояние: gap — пробел (3+ карточки в «Моих ошибках» или слабый навык), watch — 1–2 карточки,
+// fixed — ошибки были, но исправлены, none — ошибок не было.
+export const GAP_STATES = { gap: 'пробел', watch: 'следим', fixed: 'исправлено', none: 'ошибок нет' };
+export function errorGaps(st){
+  const legacy = {};
+  const add = (code, n) => { if (n) legacy[code] = (legacy[code] || 0) + n; };
+  for (const [k, v] of Object.entries(st.skills || {})) if (SKILL_CODE[k]) add(SKILL_CODE[k], v.bad || 0);
+  for (const v of Object.values(st.words || {})) for (const [t, n] of Object.entries(v.err || {})) if (t !== 'form') add(errorCodeOf({ error: t }), n);
+  add('R2', st.errorTypes?.meaning || 0);
+  const active = {};
+  for (const { m } of mistakeList(st)) { const c = mistakeCode(m); active[c] = (active[c] || 0) + 1; }
+  const weakSkills = new Set(skillStats(st).filter(x => x.level === 'weak' && x.ok + x.bad >= SKILL_GATE_MIN).map(x => x.code));
+  const codes = ERROR_CODES.map(c => {
+    const total = Math.max(st.errorCodes?.[c.code] || 0, legacy[c.code] || 0), now = active[c.code] || 0;
+    const weak = (c.when.skills || []).filter(k => weakSkills.has(k)).map(k => SKILLS[k]);
+    const state = now >= 3 || weak.length ? 'gap' : now ? 'watch' : total ? 'fixed' : 'none';
+    return { ...c, total: Math.max(total, now), active: now, weak, state };
+  });
+  const groups = ERROR_GROUPS.map(g => {
+    const list = codes.filter(c => c.group === g.id);
+    const state = ['gap', 'watch', 'fixed'].find(s => list.some(c => c.state === s)) || 'none';
+    return { ...g, codes: list, state, total: list.reduce((n, c) => n + c.total, 0), active: list.reduce((n, c) => n + c.active, 0) };
+  });
+  return { codes, groups, gaps: codes.filter(c => c.state === 'gap').sort((a, b) => b.active - a.active || b.total - a.total) };
+}
+// Строка для отчёта: «Пробелы: am / is / are (B1), Не узнаёт слово на слух (L1)»
+export function gapsLine(g){
+  return g.gaps.length ? `Пробелы: ${g.gaps.slice(0, 5).map(c => `${c.title} (${c.code})`).join(', ')}` : 'Пробелов сейчас нет';
+}
+
+// ---------- граф навыков как условие открытия (дополнение итерации 2) ----------
+// Тема закрыта, пока слабая её опора: навык из needs навыков темы, на который уже было не меньше
+// SKILL_GATE_MIN ответов и который на уровне «трудно» (masteryOf). Непройденная опора не мешает —
+// её ещё не учили. Испытание (босс) закрыто, пока слаб навык из тем его части.
+// Открыть — «Подтянуть навык» (тренировка на вопросах этого навыка, js/checkpoint.js).
+export const SKILL_GATE_MIN = 3;
+export const lessonSkills = l => [...new Set([...(l.grammar || []), ...(l.pics || [])].map(q => q.skill).filter(c => SKILLS[c]))];
+export function skillWeak(code, st, now = Date.now()){
+  const v = st.skills?.[code];
+  if (!v || (v.ok || 0) + (v.bad || 0) < SKILL_GATE_MIN) return false;
+  return masteryOf({ ok: v.ok || 0, bad: v.bad || 0, last: v.last || 0 }, now).level === 'weak';
+}
+// lessons — тема (опоры её навыков) или темы части (own: сами навыки, для босса); null — открыто
+export function skillGate(lessons, st, { own = false } = {}){
+  const ls = [].concat(lessons), mine = new Set(ls.flatMap(lessonSkills));
+  const list = own ? [...mine] : [...new Set([...mine].flatMap(c => SKILLS[c].needs || []))].filter(c => SKILLS[c] && !mine.has(c));
+  const code = list.sort().find(c => skillWeak(c, st));
+  return code ? { code, skill: SKILLS[code] } : null;
+}
+// вопросы навыка для тренировки: из тем того же класса и младше
+export const skillItems = (code, grade = 4) => LESSONS.filter(l => l.grade <= grade).flatMap(l => (l.grammar || []).filter(q => q.skill === code).map(q => ({ q, l })));
+
 export const errorType = id => ERROR_TYPES.find(t => t.id === id) || null;
 // Расстояние Левенштейна (сколько букв поменять, вставить или убрать)
 export function editDistance(a, b){
@@ -447,7 +518,7 @@ export function studentStats(st, n = 7){
     lessonsDone: lessons.filter(x => x.done).length,
     xp, level, maxLevel: MAX_LEVEL, rank: topRank(st), regions: regionRanks(st), gold: st.gold || 0, mastered: st.mastered || 0,
     collected: Object.keys(st.inventory || {}).length,
-    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st), clinic: clinicLine(st),
+    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st), clinic: clinicLine(st), gaps: errorGaps(st),
     allTime: { days: all, sec: allSec, min: minutes(allSec), ok: allOk, bad: allBad, pct: pctOf(allOk, allBad),
       activeDays: all.filter(d => d.sec > 0 || (d.ok || 0) + (d.bad || 0) > 0).length, first: allKeys[0] || null, last: allKeys[allKeys.length - 1] || null },
   };
@@ -473,6 +544,7 @@ export function reportText(st, who = '', s = studentStats(st), extra = []){
     lines.push(`Слова: освоено ${s.mastery.levels.mastered} из ${s.mastery.seen} встреченных${hardW.length ? `; трудные: ${hardW.join(', ')}` : ''}`);
   }
   if (st.mastered) lines.push(`Выучено после ошибок: ${st.mastered}`);
+  lines.push(gapsLine(s.gaps || errorGaps(st)));
   lines.push(s.clinic || clinicLine(st));
   lines.push(...extra);
   const cpsDone = CHECKPOINTS.filter(cp => st.checkpoints?.[cp.id]?.passedAt);

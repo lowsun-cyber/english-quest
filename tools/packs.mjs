@@ -61,6 +61,10 @@ export function validatePack(p, EQ, { strict = false, file = '' } = {}){
     for (const g of gs || []){
       need(g.q?.includes('___') && g.a && g.hint && Array.isArray(g.options) && g.options.includes(g.a), `${where}: вопрос «${g.q}» — нужны ___ в q, a, hint и a среди options`);
       need(!g.skill || SKILLS[g.skill], `${where}: нет навыка ${g.skill} (коды — CURRICULUM.skills)`);
+      // объяснение к каждому неверному варианту (концепция: «пишутся вместе с заданиями»), см. js/why.js
+      const wrong = (g.options || []).filter(o => o !== g.a);
+      need(g.why && typeof g.why === 'object' && wrong.every(o => typeof g.why[o] === 'string' && g.why[o].trim()), `${where}: вопрос «${g.q}» — нужно why: объяснение к каждому неверному варианту (${wrong.join(', ')})`);
+      need(!g.why || Object.keys(g.why).every(k => wrong.includes(k)), `${where}: вопрос «${g.q}» — в why есть вариант, которого нет среди неверных`);
     }
   };
   const reading = (r, where) => { if (!r) return;

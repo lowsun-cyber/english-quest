@@ -4,6 +4,7 @@
 import { api, ApiError, deviceLabel } from './api.js';
 import { API_BASE, TEACHER_KEY } from './config.js';
 import { LESSONS, levelFromXp } from './eq.js';
+import { gapMapHtml } from './gapmap.js';
 import { CHECKPOINT_SIZE, EX_NAMES, EX_ORDER, GRADES, PARTS, errorsLine, homeworkDone, levelTitle, makeHomeworkFor, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { WEEKDAYS, fmtDay } from './util.js';
 
@@ -471,6 +472,11 @@ async function renderStudent(id){
           <td>${x.wrong.length ? x.wrong.slice(0, 3).map(([o, n]) => `${esc(o)} ×${n}`).join(', ') : '<span class="t-muted">—</span>'}</td>
           <td>${x.needs.length ? esc(needsLine(x)) : '<span class="t-muted">—</span>'}</td></tr>`).join('')}</tbody>
       </table></div>` : '<p class="t-muted">Пока нет — навыки появятся после упражнений «Грамматика».</p>'}
+    </section>
+
+    <section class="adm-card">
+      <h2 class="adm-h2">Карта пробелов</h2>
+      ${gapMapHtml(S.gaps)}
     </section>
 
     <section class="adm-card">

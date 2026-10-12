@@ -171,8 +171,8 @@ const LESSONS = [
       'D is for dog.',
     ],
     grammar:[
-      {q:'___ is for apple.', a:'A', hint:'Первая буква алфавита.', options:['A','B','C','D']},
-      {q:'C is for ___.', a:'cat', hint:'Мяу-мяу.', options:['dog','cat','fish','bag']},
+      {q:'___ is for apple.', a:'A', hint:'Первая буква алфавита.', why:{'B':'B — это буква для bag (сумка).', 'C':'C — это буква для cat (кот).', 'D':'D — это буква для dog (собака).'}, options:['A','B','C','D']},
+      {q:'C is for ___.', a:'cat', hint:'Мяу-мяу.', why:{'dog':'dog — собака, оно начинается с D.', 'fish':'fish — рыба, оно начинается с F.', 'bag':'bag — сумка, оно начинается с B.'}, options:['dog','cat','fish','bag']},
     ],
     pics:[
       {emoji:'🍎', right:'A is for apple.', wrong:'B is for bag.', word:'apple'},
@@ -209,8 +209,8 @@ const LESSONS = [
       'Goodbye! See you later.',
     ],
     grammar:[
-      {q:'Hello! My ___ is Kostya.', a:'name', hint:'Как тебя зовут?', options:['name','boy','friend','hello']},
-      {q:'___ to meet you.', a:'Nice', hint:'Приятно.', options:['Nice','Name','Good','Bye']},
+      {q:'Hello! My ___ is Kostya.', a:'name', hint:'Как тебя зовут?', why:{'boy':'boy — «мальчик». «Мой мальчик Костя» — не о том.', 'friend':'friend — «друг». Здесь говорят, как тебя зовут.', 'hello':'hello — «привет», а здесь нужно «имя».'}, options:['name','boy','friend','hello']},
+      {q:'___ to meet you.', a:'Nice', hint:'Приятно.', why:{'Name':'Name — «имя». Приятно познакомиться — Nice to meet you.', 'Good':'Good — «хороший», но так не говорят. Правильно: Nice to meet you.', 'Bye':'Bye — «пока», так прощаются, а не знакомятся.'}, options:['Nice','Name','Good','Bye']},
     ],
     pics:[
       {emoji:'👦', right:'He is a boy.', wrong:'She is a girl.', word:'boy', skill:'G2-01'},
@@ -248,8 +248,8 @@ const LESSONS = [
       'My brother is funny.',
     ],
     grammar:[
-      {skill:'G2-01', q:'This ___ my mum.', a:'is', hint:'Единственное число, третье лицо.', options:['is','am','are','be']},
-      {q:'I ___ my family.', a:'love', hint:'Люблю.', options:['love','like','have','see']},
+      {skill:'G2-01', q:'This ___ my mum.', a:'is', hint:'Единственное число, третье лицо.', why:{'am':'am говорят только после I (я).', 'are':'are — для you, we, they и многих, а здесь один.', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','am','are','be']},
+      {q:'I ___ my family.', a:'love', hint:'Люблю.', why:{'like':'like — «нравится». Про семью говорят сильнее — love.', 'have':'have — «имею», а здесь «люблю».', 'see':'see — «вижу», а здесь «люблю».'}, options:['love','like','have','see']},
     ],
     pics:[
       {emoji:'👵', right:'This is my grandma.', wrong:'This is my grandpa.', word:'grandma', skill:'G2-06'},
@@ -290,8 +290,8 @@ const LESSONS = [
       'Open the door, please.',
     ],
     grammar:[
-      {skill:'G2-01', q:'The lamp ___ on the table.', a:'is', hint:'Единственное число.', options:['is','are','am','be']},
-      {skill:'G2-07', q:'I sleep ___ my bed.', a:'in', hint:'Предлог места «в».', options:['in','on','under','next']},
+      {skill:'G2-01', q:'The lamp ___ on the table.', a:'is', hint:'Единственное число.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
+      {skill:'G2-07', q:'I sleep ___ my bed.', a:'in', hint:'Предлог места «в».', why:{'on':'on — «на» кровати. Спят «в» кровати — in.', 'under':'under — «под». Под кроватью не спят!', 'next':'next — «рядом», и то только вместе с to: next to.'}, options:['in','on','under','next']},
     ],
     pics:[
       {emoji:'🛏️', right:'It’s a bed.', wrong:'It’s a chair.', word:'bed', skill:'G2-01'},
@@ -333,8 +333,8 @@ const LESSONS = [
       'Here is your present.',
     ],
     grammar:[
-      {skill:'G2-01', q:'How old ___ you?', a:'are', hint:'Ты — are.', options:['are','is','am','be']},
-      {skill:'G2-01', q:'I ___ nine years old.', a:'am', hint:'Я — am.', options:['am','is','are','be']},
+      {skill:'G2-01', q:'How old ___ you?', a:'are', hint:'Ты — are.', why:{'is':'is — для he, she, it, а с you всегда are.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['are','is','am','be']},
+      {skill:'G2-01', q:'I ___ nine years old.', a:'am', hint:'Я — am.', why:{'is':'is — для he, she, it, а с I — am.', 'are':'are — для you, we, they, а с I — am.', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['am','is','are','be']},
     ],
     pics:[
       {emoji:'🎂🕯️🕯️🕯️🕯️🕯️🕯️🕯️', right:'I am seven.', wrong:'I am six.', word:'seven', skill:'G2-01'},
@@ -373,8 +373,8 @@ const LESSONS = [
       'The cat is on the sofa.',
     ],
     grammar:[
-      {q:'I can jump ___ a frog.', a:'like', hint:'«Как» кто-то.', options:['like','and','with','of']},
-      {skill:'G2-01', q:'The cat ___ on the sofa.', a:'is', hint:'Одна кошка.', options:['is','are','am','be']},
+      {q:'I can jump ___ a frog.', a:'like', hint:'«Как» кто-то.', why:{'and':'and — «и». «Прыгаю и лягушка» — не то.', 'with':'with — «с». Прыгаю «как» лягушка — like.', 'of':'of здесь не подходит. «Как» — like.'}, options:['like','and','with','of']},
+      {skill:'G2-01', q:'The cat ___ on the sofa.', a:'is', hint:'Одна кошка.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
     ],
     pics:[
       {emoji:'🐸', right:'A frog can jump.', wrong:'A frog can fly.', word:'frog', skill:'G2-03'},
@@ -414,8 +414,8 @@ const LESSONS = [
       'My train is red and blue.',
     ],
     grammar:[
-      {skill:'G2-01', q:'This ___ my toy car.', a:'is', hint:'Единственное число.', options:['is','are','am','be']},
-      {skill:'G2-07', q:'The doll is ___ the bed.', a:'under', hint:'Под кроватью.', options:['on','in','under','next to']},
+      {skill:'G2-01', q:'This ___ my toy car.', a:'is', hint:'Единственное число.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
+      {skill:'G2-07', q:'The doll is ___ the bed.', a:'under', hint:'Под кроватью.', why:{'on':'on — «на» кровати, а кукла «под» — under.', 'in':'in — «в», а кукла «под» кроватью.', 'next to':'next to — «рядом», а кукла «под».'}, options:['on','in','under','next to']},
     ],
     pics:[
       {emoji:'🩰', right:'She’s a ballerina.', wrong:'He’s a toy soldier.', word:'ballerina', skill:'G2-01'},
@@ -456,8 +456,8 @@ const LESSONS = [
       'Let\u2019s go to the beach.',
     ],
     grammar:[
-      {skill:'G2-01', q:'It ___ sunny today.', a:'is', hint:'It — is.', options:['is','are','am','be']},
-      {q:'I ___ my hat.', a:'wear', hint:'Надеваю.', options:['wear','see','have','play']},
+      {skill:'G2-01', q:'It ___ sunny today.', a:'is', hint:'It — is.', why:{'are':'are — для you, we, they. С it — is.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
+      {q:'I ___ my hat.', a:'wear', hint:'Надеваю.', why:{'see':'see — «вижу», а шапку «надевают» — wear.', 'have':'have — «у меня есть», а здесь «ношу».', 'play':'play — «играю». В шапку не играют!'}, options:['wear','see','have','play']},
     ],
     pics:[
       {emoji:'🎩', right:'I’m wearing a hat.', wrong:'I’m wearing socks.', word:'hat'},
@@ -498,9 +498,9 @@ const LESSONS = [
       'Ch, ch, cheese!',
     ],
     grammar:[
-      {q:'___ is for snake.', a:'S', hint:'Шипит: ссс…', options:['S','Z','C','T']},
-      {q:'Sh, sh, ___!', a:'ship', hint:'Буквы s и h вместе читаются как «ш».', options:['ship','chip','sip','hip']},
-      {q:'This ___ a tree.', a:'is', hint:'Одно дерево — is.', options:['is','are','am','be'], skill:'G2-01'},
+      {q:'___ is for snake.', a:'S', hint:'Шипит: ссс…', why:{'Z':'Z звучит как «з». Snake начинается с «с».', 'C':'C пишется в cat. Snake начинается с S.', 'T':'T звучит как «т», а snake — с «с».'}, options:['S','Z','C','T']},
+      {q:'Sh, sh, ___!', a:'ship', hint:'Буквы s и h вместе читаются как «ш».', why:{'chip':'chip начинается с ch — это «ч».', 'sip':'sip — просто s, без h. Это «с».', 'hip':'hip начинается с h — это «х».'}, options:['ship','chip','sip','hip']},
+      {q:'This ___ a tree.', a:'is', hint:'Одно дерево — is.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-01'},
     ],
     reading:{title:'The Queen and the Snake', text:'The queen has got a big ship. On the ship there is a box. In the box there is a little snake! "Sh, sh," says the snake. The queen laughs.', questions:[
       {q:'What has the queen got?', a:'a ship', options:['a ship','a tree','a jug']},
@@ -541,9 +541,9 @@ const LESSONS = [
       'I like green.',
     ],
     grammar:[
-      {q:'What colour ___ it?', a:'is', hint:'Спрашиваем про один предмет.', options:['is','are','am','be'], skill:'G2-01'},
-      {q:'The apples ___ red.', a:'are', hint:'Яблок много — are.', options:['is','are','am','be'], skill:'G2-01'},
-      {q:'This is ___ crayon.', a:'my', hint:'Мой — my.', options:['my','me','I','am'], skill:'G2-06'},
+      {q:'What colour ___ it?', a:'is', hint:'Спрашиваем про один предмет.', why:{'are':'are — для you, we, they. С it — is.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-01'},
+      {q:'The apples ___ red.', a:'are', hint:'Яблок много — are.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-01'},
+      {q:'This is ___ crayon.', a:'my', hint:'Мой — my.', why:{'me':'me — «меня, мне». «Мой» — my.', 'I':'I — «я». «Мой» — my.', 'am':'am — «есть», а нужно «мой» — my.'}, options:['my','me','I','am'], skill:'G2-06'},
     ],
     reading:{title:'A Rainbow', text:'Look! A rainbow! It is red, orange, yellow, green, blue and purple. My sister has got a box of crayons. She draws the rainbow. Her picture is very nice.', questions:[
       {q:'What does the sister draw?', a:'a rainbow', options:['a rainbow','a tree','a cat']},
@@ -583,9 +583,9 @@ const LESSONS = [
       'I have got a pencil case.',
     ],
     grammar:[
-      {q:'___ your book, please.', a:'Open', hint:'Просьба: откройте!', options:['Open','Opens','Opening','To open'], skill:'G2-05'},
-      {q:'___ talk in class!', a:'Don’t', hint:'Запрет: не…', options:['Don’t','Not','No','Isn’t'], skill:'G2-05'},
-      {q:'I have got two ___.', a:'pens', hint:'Две ручки — добавь -s.', options:['pens','pen','a pen','penes'], skill:'G2-04'},
+      {q:'___ your book, please.', a:'Open', hint:'Просьба: откройте!', why:{'Opens':'Opens — так говорят про него или про неё, а просьба или приказ начинается просто с Open.', 'Opening':'Opening — «…ющий», так просьбу не начинают.', 'To open':'To open — так глагол записан в словаре, а просьбу начинают сразу с Open.'}, options:['Open','Opens','Opening','To open'], skill:'G2-05'},
+      {q:'___ talk in class!', a:'Don’t', hint:'Запрет: не…', why:{'Not':'Not одно в начале не ставят. Запрет начинают с Don’t.', 'No':'No — «нет». Запрет: Don’t talk!', 'Isn’t':'Isn’t — «не является». Запрет начинают с Don’t.'}, options:['Don’t','Not','No','Isn’t'], skill:'G2-05'},
+      {q:'I have got two ___.', a:'pens', hint:'Две ручки — добавь -s.', why:{'pen':'pen — одна ручка, а их две. Добавь -s.', 'a pen':'a pen — одна ручка, а их две.', 'penes':'После n добавляют просто -s: pens.'}, options:['pens','pen','a pen','penes'], skill:'G2-04'},
     ],
     reading:{title:'In the Classroom', text:'This is my classroom. My desk is near the window. On my desk there is a book, a pen and a ruler. My teacher says, "Stand up! Sit down! Open your books!" I like my school.', questions:[
       {q:'Where is the desk?', a:'near the window', options:['near the door','near the window','in the garden']},
@@ -624,9 +624,9 @@ const LESSONS = [
       'Big Ben is in London.',
     ],
     grammar:[
-      {q:'Moscow ___ in Russia.', a:'is', hint:'Один город — is.', options:['is','are','am','be'], skill:'G2-01'},
-      {q:'I ___ from Russia.', a:'am', hint:'После I — am.', options:['am','is','are','be'], skill:'G2-01'},
-      {q:'This is ___ flag.', a:'our', hint:'Наш — our.', options:['our','we','us','I'], skill:'G2-06'},
+      {q:'Moscow ___ in Russia.', a:'is', hint:'Один город — is.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-01'},
+      {q:'I ___ from Russia.', a:'am', hint:'После I — am.', why:{'is':'is — для he, she, it, а с I — am.', 'are':'are — для you, we, they, а с I — am.', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['am','is','are','be'], skill:'G2-01'},
+      {q:'This is ___ flag.', a:'our', hint:'Наш — our.', why:{'we':'we — «мы». «Наш» — our.', 'us':'us — «нас, нам». «Наш» — our.', 'I':'I — «я». «Наш» — our.'}, options:['our','we','us','I'], skill:'G2-06'},
     ],
     reading:{title:'Two Capitals', text:'Moscow is the capital of Russia. There is the Kremlin in Moscow. London is the capital of Great Britain. There is Big Ben in London. The buses in London are red.', questions:[
       {q:'What is the capital of Russia?', a:'Moscow', options:['London','Moscow','Paris']},
@@ -666,9 +666,9 @@ const LESSONS = [
       'Yummy! Chocolate!',
     ],
     grammar:[
-      {q:'I ___ bananas.', a:'like', hint:'Я люблю — I like.', options:['like','likes','liking','am like'], skill:'G2-09'},
-      {q:'She ___ milk.', a:'likes', hint:'Она — добавь -s.', options:['like','likes','is like','liking'], skill:'G2-09'},
-      {q:'I ___ like meat.', a:'don’t', hint:'Не люблю — don’t like.', options:['don’t','not','no','isn’t'], skill:'G2-09'},
+      {q:'I ___ bananas.', a:'like', hint:'Я люблю — I like.', why:{'likes':'likes с -s — только для he, she, it. С I — like.', 'liking':'liking — «нравящийся». Говорят просто I like.', 'am like':'am здесь лишнее: I like — «я люблю».'}, options:['like','likes','liking','am like'], skill:'G2-09'},
+      {q:'She ___ milk.', a:'likes', hint:'Она — добавь -s.', why:{'like':'С she к глаголу добавляют -s: likes.', 'is like':'is здесь лишнее. She likes — «она любит».', 'liking':'liking — форма с -ing. Нужно likes.'}, options:['like','likes','is like','liking'], skill:'G2-09'},
+      {q:'I ___ like meat.', a:'don’t', hint:'Не люблю — don’t like.', why:{'not':'Одного not мало, нужен помощник: don’t like.', 'no':'no — «нет», но перед глаголом ставят don’t.', 'isn’t':'isn’t — для he, she, it и не с like. Нужно don’t.'}, options:['don’t','not','no','isn’t'], skill:'G2-09'},
     ],
     reading:{title:'Lunch Time', text:'It is lunch time. Tom likes pizza and chips. His sister Ann doesn’t like chips. She likes sandwiches and orange juice. Their favourite food is ice cream!', questions:[
       {q:'What does Tom like?', a:'pizza and chips', options:['pizza and chips','meat and bread','honey']},
@@ -708,9 +708,9 @@ const LESSONS = [
       'I’ve got two eyes.',
     ],
     grammar:[
-      {q:'A bird can ___.', a:'fly', hint:'После can — глагол без -s.', options:['fly','flies','flying','to fly'], skill:'G2-03'},
-      {q:'A fish ___ run.', a:'can’t', hint:'Рыба не умеет бегать.', options:['can’t','can','is','doesn’t can'], skill:'G2-03'},
-      {q:'I’ve ___ two hands.', a:'got', hint:'I’ve got — у меня есть.', options:['got','get','have','has'], skill:'G2-02'},
+      {q:'A bird can ___.', a:'fly', hint:'После can — глагол без -s.', why:{'flies':'После can глагол без -s: can fly.', 'flying':'После can глагол без -ing: can fly.', 'to fly':'После can не ставят to: can fly.'}, options:['fly','flies','flying','to fly'], skill:'G2-03'},
+      {q:'A fish ___ run.', a:'can’t', hint:'Рыба не умеет бегать.', why:{'can':'can — «может». А рыба бегать не умеет!', 'is':'is не значит «умеет». «Не умеет» — can’t.', 'doesn’t can':'Так не говорят. «Не умеет» — can’t.'}, options:['can’t','can','is','doesn’t can'], skill:'G2-03'},
+      {q:'I’ve ___ two hands.', a:'got', hint:'I’ve got — у меня есть.', why:{'get':'get — «получаю». «У меня есть» — I’ve got.', 'have':'have уже есть в I’ve. Дальше нужно got.', 'has':'has уже не нужно: I’ve = I have. Дальше got.'}, options:['got','get','have','has'], skill:'G2-02'},
     ],
     reading:{title:'Chuckles the Monkey', text:'This is Chuckles. He is a funny monkey. Chuckles can climb trees and jump. He can dance and sing too! But Chuckles can’t swim. He has got big ears and a small nose.', questions:[
       {q:'What can’t Chuckles do?', a:'swim', options:['climb','swim','dance']},
@@ -749,9 +749,9 @@ const LESSONS = [
       'There is a shop in my street.',
     ],
     grammar:[
-      {q:'There ___ a zoo in my town.', a:'is', hint:'Один зоопарк — there is.', options:['is','are','am','be'], skill:'G2-08'},
-      {q:'There ___ two cafes in my street.', a:'are', hint:'Два кафе — there are.', options:['is','are','am','be'], skill:'G2-08'},
-      {q:'___! A clown!', a:'Look', hint:'Посмотри!', options:['Look','Looks','Looking','To look'], skill:'G2-05'},
+      {q:'There ___ a zoo in my town.', a:'is', hint:'Один зоопарк — there is.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-08'},
+      {q:'There ___ two cafes in my street.', a:'are', hint:'Два кафе — there are.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-08'},
+      {q:'___! A clown!', a:'Look', hint:'Посмотри!', why:{'Looks':'Looks — так говорят про него или про неё, а просьба или приказ начинается просто с Look.', 'Looking':'Looking — «…ющий», так просьбу не начинают.', 'To look':'To look — так глагол записан в словаре, а просьбу начинают сразу с Look.'}, options:['Look','Looks','Looking','To look'], skill:'G2-05'},
     ],
     reading:{title:'A Day at the Circus', text:'It is Sunday. Dad and I go to the circus. There is a funny clown and a magician. The clown can jump and dance. The magician has got a white rabbit in his hat!', questions:[
       {q:'Where do they go?', a:'to the circus', options:['to the zoo','to the circus','to the cinema']},
@@ -789,9 +789,9 @@ const LESSONS = [
       'The town mouse and the country mouse.',
     ],
     grammar:[
-      {q:'The king ___ in a castle.', a:'is', hint:'Один король — is.', options:['is','are','am','be'], skill:'G2-01'},
-      {q:'One mouse, two ___.', a:'mice', hint:'Особое слово: не mouses!', options:['mice','mouses','mouse','mices'], skill:'G2-04'},
-      {q:'The princess ___ got a crown.', a:'has', hint:'Она — has got.', options:['has','have','is','am'], skill:'G2-02'},
+      {q:'The king ___ in a castle.', a:'is', hint:'Один король — is.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-01'},
+      {q:'One mouse, two ___.', a:'mice', hint:'Особое слово: не mouses!', why:{'mouses':'Mouse — особое слово, -s к нему не добавляют. Много мышей — mice.', 'mouse':'mouse — одна мышь, а их две.', 'mices':'mice — уже «мыши», ещё одна -s не нужна.'}, options:['mice','mouses','mouse','mices'], skill:'G2-04'},
+      {q:'The princess ___ got a crown.', a:'has', hint:'Она — has got.', why:{'have':'have — для I, you, we, they. С he, she, it нужно has.', 'is':'is не значит «есть, имеется». «У неё есть» — has.', 'am':'am не значит «имеется».'}, options:['has','have','is','am'], skill:'G2-02'},
     ],
     reading:{title:'Masha and the Bear', text:'A little girl, Masha, goes to the forest. She finds a small house. It is the house of a big brown bear! Masha is clever. She hides in a basket and the bear takes her home to her grandma and grandpa.', questions:[
       {q:'Whose house is it?', a:'the bear’s', options:['the fox’s','the bear’s','the wolf’s']},
@@ -830,9 +830,9 @@ const LESSONS = [
       'I like summer.',
     ],
     grammar:[
-      {q:'It ___ windy today.', a:'is', hint:'It’s = it is.', options:['is','are','am','be'], skill:'G2-01'},
-      {q:'It’s ___ — take an umbrella!', a:'raining', hint:'Идёт дождь — it’s raining.', options:['raining','rain','rains','rained'], skill:'G2-01'},
-      {q:'___ on your coat! It’s cold.', a:'Put', hint:'Надень!', options:['Put','Puts','Putting','To put'], skill:'G2-05'},
+      {q:'It ___ windy today.', a:'is', hint:'It’s = it is.', why:{'are':'are — для you, we, they. С it — is.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-01'},
+      {q:'It’s ___ — take an umbrella!', a:'raining', hint:'Идёт дождь — it’s raining.', why:{'rain':'После it’s нужен глагол с -ing: raining — «идёт сейчас».', 'rains':'rains — «бывает дождь», а сейчас — it’s raining.', 'rained':'rained — дождь был раньше, а он идёт сейчас.'}, options:['raining','rain','rains','rained'], skill:'G2-01'},
+      {q:'___ on your coat! It’s cold.', a:'Put', hint:'Надень!', why:{'Puts':'Puts — так говорят про него или про неё, а просьба или приказ начинается просто с Put.', 'Putting':'Putting — «надевающий», так просьбу не начинают. Надень! — Put on.', 'To put':'To put — так глагол записан в словаре, а просьбу начинают сразу с Put.'}, options:['Put','Puts','Putting','To put'], skill:'G2-05'},
     ],
     reading:{title:'My Favourite Season', text:'I like summer. In summer it is hot and sunny. I swim in the river and play in the park. In winter it is cold. There is snow and I can make a snowman. What is your favourite season?', questions:[
       {q:'What is the weather like in summer?', a:'hot and sunny', options:['hot and sunny','cold','windy']},
@@ -870,9 +870,9 @@ const LESSONS = [
       'Thank you very much!',
     ],
     grammar:[
-      {q:'Here ___ your present.', a:'is', hint:'Один подарок — is.', options:['is','are','am','be'], skill:'G2-01'},
-      {q:'There ___ three presents under the tree.', a:'are', hint:'Подарков много — there are.', options:['is','are','am','be'], skill:'G2-08'},
-      {q:'This is ___ present. Thank you!', a:'my', hint:'Мой — my.', options:['my','me','I','mine'], skill:'G2-06'},
+      {q:'Here ___ your present.', a:'is', hint:'Один подарок — is.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-01'},
+      {q:'There ___ three presents under the tree.', a:'are', hint:'Подарков много — there are.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G2-08'},
+      {q:'This is ___ present. Thank you!', a:'my', hint:'Мой — my.', why:{'me':'me — «меня, мне». «Мой» — my.', 'I':'I — «я». «Мой» — my.', 'mine':'mine ставят без предмета: It’s mine. Перед словом — my.'}, options:['my','me','I','mine'], skill:'G2-06'},
     ],
     reading:{title:'New Year’s Eve', text:'It is New Year’s Eve. There is a big tree in the living room. There are bells and stars on the tree. Father Frost brings presents. I get a sledge! "Happy New Year!" says my family.', questions:[
       {q:'What is on the tree?', a:'bells and stars', options:['bells and stars','apples','flowers']},
@@ -914,8 +914,8 @@ const LESSONS = [
       'Look at the blackboard.',
     ],
     grammar:[
-      {skill:'G2-02', q:'I ___ a red pen.', a:'have', hint:'У меня есть.', options:['have','has','am','is']},
-      {skill:'G2-02', q:'She ___ a big bag.', a:'has', hint:'She — has.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'I ___ a red pen.', a:'have', hint:'У меня есть.', why:{'has':'has — только для he, she, it. Для I, you, we, they — have.', 'am':'am не значит «имеется».', 'is':'is не значит «имеется». Здесь нужно have.'}, options:['have','has','am','is']},
+      {skill:'G2-02', q:'She ___ a big bag.', a:'has', hint:'She — has.', why:{'have':'have — для I, you, we, they. С he, she, it нужно has.', 'is':'is не значит «есть, имеется». «У неё есть» — has.', 'are':'are не значит «имеется». Здесь нужно has.'}, options:['have','has','is','are']},
     ],
     reading:{title:'At School', text:'I go to school every day. I have many friends there. My teacher is kind. In my bag I have a book, a pen and a ruler. I wear a school uniform. At the break we play in the playground, and after lessons I often go to the library. My favourite lesson is English because we sing songs and play games.', questions:[
       {q:'How is the teacher?', a:'kind', options:['funny','sad','kind']},
@@ -948,8 +948,8 @@ const LESSONS = [
       'My baby brother is small.',
     ],
     grammar:[
-      {skill:'G3-11', q:'This is my mother. ___ name is Anna.', a:'Her', hint:'Мама — she — her.', options:['His','Her','My','Your']},
-      {skill:'G3-11', q:'This is my father. ___ name is Peter.', a:'His', hint:'Папа — he — his.', options:['Her','His','Its','Their']},
+      {skill:'G3-11', q:'This is my mother. ___ name is Anna.', a:'Her', hint:'Мама — she — her.', why:{'His':'his — «его», про мальчика или мужчину. Мама — her.', 'My':'my — «моё». Но это имя мамы — her.', 'Your':'your — «твоё». Это имя мамы — her.'}, options:['His','Her','My','Your']},
+      {skill:'G3-11', q:'This is my father. ___ name is Peter.', a:'His', hint:'Папа — he — his.', why:{'Her':'her — «её», про девочку или женщину. Папа — his.', 'Its':'its — «его», но про предмет или животное. Папа — his.', 'Their':'their — «их», когда их много.'}, options:['Her','His','Its','Their']},
     ],
     reading:{title:'A Big Family', text:'My family is big. I have a mother, a father, one brother and two sisters. My grandma lives with us. She is very kind and she cooks tasty food. My grandpa is funny. He tells us stories about his family tree. On Sunday my uncle, my aunt and my cousin come to visit us, and we all have dinner together.', questions:[
       {q:'How many sisters?', a:'two', options:['one','two','three']},
@@ -986,8 +986,8 @@ const LESSONS = [
       'Yes, I do. It is tasty!',
     ],
     grammar:[
-      {skill:'G3-01', q:'I ___ like milk.', a:'don\u2019t', hint:'Отрицание в 1-м лице.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
-      {skill:'G3-01', q:'She ___ like fish.', a:'doesn\u2019t', hint:'She — doesn\u2019t.', options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
+      {skill:'G3-01', q:'I ___ like milk.', a:'don\u2019t', hint:'Отрицание в 1-м лице.', why:{'doesn’t':'doesn’t — только для he, she, it. С I — don’t.', 'isn’t':'isn’t с глаголом like не ставят. Нужно don’t.', 'not':'Одного not мало, нужен помощник: don’t like.'}, options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
+      {skill:'G3-01', q:'She ___ like fish.', a:'doesn\u2019t', hint:'She — doesn\u2019t.', why:{'don’t':'don’t — для I, you, we, they. С she — doesn’t.', 'isn’t':'isn’t с глаголом like не ставят. Нужно doesn’t.', 'not':'Одного not мало: she doesn’t like.'}, options:['don\u2019t','doesn\u2019t','isn\u2019t','not']},
     ],
     reading:{title:'My Favourite Food', text:'I like pizza and chicken very much. For breakfast I eat an egg and drink milk. My sister does not like eggs, but she loves ice cream. On Saturday we go to a café. Dad likes chips and sausages, and Mum likes vegetables. I always have chocolate ice cream and a glass of lemonade. Yummy! What is your favourite food?', questions:[
       {q:'What does the boy eat for breakfast?', a:'an egg', options:['a pizza','an egg','a burger']},
@@ -1022,8 +1022,8 @@ const LESSONS = [
       'Where is my plane? It is next to the bag.',
     ],
     grammar:[
-      {skill:'G3-07', q:'The ball is ___ the bed.', a:'under', hint:'Под.', options:['on','under','in','next to']},
-      {skill:'G3-07', q:'The robot is ___ the table.', a:'on', hint:'На.', options:['under','on','in','behind']},
+      {skill:'G3-07', q:'The ball is ___ the bed.', a:'under', hint:'Под.', why:{'on':'on — «на», а мяч «под» кроватью.', 'in':'in — «в», а мяч «под» кроватью.', 'next to':'next to — «рядом», а мяч «под».'}, options:['on','under','in','next to']},
+      {skill:'G3-07', q:'The robot is ___ the table.', a:'on', hint:'На.', why:{'under':'under — «под», а робот «на» столе.', 'in':'in — «в», а робот «на» столе.', 'behind':'behind — «за, позади», а робот «на» столе.'}, options:['under','on','in','behind']},
     ],
     reading:{title:'My Toys', text:'My toys are everywhere! The ball is under the bed. The robot is on the desk. The doll is in the box. My cat is next to my toys — she plays too! On the shelf there is a musical box and a tea set. My favourite toy is my old rocking horse. Grandpa made it for me, and it is very beautiful.', questions:[
       {q:'Where is the doll?', a:'in the box', options:['on the bed','in the box','under the desk']},
@@ -1060,8 +1060,8 @@ const LESSONS = [
       'A giraffe has got a long neck.',
     ],
     grammar:[
-      {skill:'G2-02', q:'The cat ___ a long tail.', a:'has', hint:'It — has.', options:['have','has','is','are']},
-      {skill:'G2-02', q:'Rabbits ___ big ears.', a:'have', hint:'Множ. число — have.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'The cat ___ a long tail.', a:'has', hint:'It — has.', why:{'have':'have — для I, you, we, they. С he, she, it нужно has.', 'is':'is не значит «есть, имеется». «У неё есть» — has.', 'are':'are не значит «имеется». Здесь нужно has.'}, options:['have','has','is','are']},
+      {skill:'G2-02', q:'Rabbits ___ big ears.', a:'have', hint:'Множ. число — have.', why:{'has':'has — для одного (he, she, it). Кроликов много — have.', 'is':'is не значит «имеется». Здесь нужно have.', 'are':'are не значит «имеется». Здесь нужно have.'}, options:['have','has','is','are']},
     ],
     reading:{title:'Funny Animals', text:'A dog has four legs and a tail. A bird has two wings and a small beak. A rabbit has big ears and can jump very high. Animals are funny! A giraffe has got a very long neck and can eat leaves from tall trees. A crocodile has got a long tail and a lot of teeth. My little brother likes giraffes best.', questions:[
       {q:'How many legs has a dog?', a:'four', options:['two','four','six']},
@@ -1096,8 +1096,8 @@ const LESSONS = [
       'My cat is under the sofa.',
     ],
     grammar:[
-      {skill:'G2-08', q:'There ___ a sofa in the room.', a:'is', hint:'Единственное число — is.', options:['is','are','am','be']},
-      {skill:'G2-08', q:'There ___ two windows.', a:'are', hint:'Множественное — are.', options:['is','are','am','be']},
+      {skill:'G2-08', q:'There ___ a sofa in the room.', a:'is', hint:'Единственное число — is.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
+      {skill:'G2-08', q:'There ___ two windows.', a:'are', hint:'Множественное — are.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
     ],
     reading:{title:'My House', text:'My house has four rooms. In the kitchen there is a big fridge. In the bedroom there are two beds — one for me and one for my sister. My cat sleeps on the sofa. The living room is big. There is an armchair, a TV and a computer there. In the evening my family watches cartoons together. I love my home!', questions:[
       {q:'How many rooms?', a:'four', options:['two','three','four']},
@@ -1137,8 +1137,8 @@ const LESSONS = [
       'My brother likes to fly a kite.',
     ],
     grammar:[
-      {skill:'G3-08', q:'She ___ singing now.', a:'is', hint:'Present Continuous: is + -ing.', options:['is','are','am','be']},
-      {skill:'G3-08', q:'They ___ playing football.', a:'are', hint:'They — are.', options:['is','are','am','be']},
+      {skill:'G3-08', q:'She ___ singing now.', a:'is', hint:'Present Continuous: is + -ing.', why:{'are':'are — для you, we, they. С she — is.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
+      {skill:'G3-08', q:'They ___ playing football.', a:'are', hint:'They — are.', why:{'is':'is — для одного. С they — are.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be']},
     ],
     reading:{title:'In the Park', text:'It is Sunday. We are in the park. Tom is running with his dog. Kate is riding a bike. Mum is reading a book on the bench. It is a nice day off! Dad is flying a kite with my little sister. I am making a sandcastle near the lake. At one o’clock we have a picnic with sandwiches and hot dogs.', questions:[
       {q:'What is Kate doing?', a:'riding a bike', options:['running','riding a bike','reading']},
@@ -1175,8 +1175,8 @@ const LESSONS = [
       'On Sunday I play with my friends.',
     ],
     grammar:[
-      {skill:'G3-09', q:'I get up ___ seven o\u2019clock.', a:'at', hint:'Точное время — at.', options:['on','in','at','of']},
-      {skill:'G3-09', q:'I go to school ___ Monday.', a:'on', hint:'Дни недели — on.', options:['at','in','on','of']},
+      {skill:'G3-09', q:'I get up ___ seven o’clock.', a:'at', hint:'Точное время — at.', why:{'on':'on — для дней недели. С часами — at.', 'in':'in — для месяцев и частей дня. С часами — at.', 'of':'of здесь не подходит. Ровно во сколько — at.'}, options:['on','in','at','of']},
+      {skill:'G3-09', q:'I go to school ___ Monday.', a:'on', hint:'Дни недели — on.', why:{'at':'at — для времени по часам. С днями недели — on.', 'in':'in — для месяцев. С днями недели — on.', 'of':'of здесь не подходит. С днями — on.'}, options:['at','in','on','of']},
     ],
     reading:{title:'My Day', text:'I get up at seven o\u2019clock. I have breakfast and go to school at eight. After school I do my homework and play with my friends. In the evening I read a book. I go to bed at nine. On Tuesday and Thursday I go to the swimming pool in the afternoon. On Saturday I visit my grandma. On Sunday I have a shower, have breakfast and sleep a lot!', questions:[
       {q:'When does the boy go to school?', a:'at eight', options:['at seven','at eight','at nine']},
@@ -1211,9 +1211,9 @@ const LESSONS = [
       'I live in Green Street.',
     ],
     grammar:[
-      {q:'This is Kate. ___ is my best friend.', a:'She', hint:'Кейт — девочка.', options:['She','He','It','They'], skill:'G2-01'},
-      {q:'We ___ friends.', a:'are', hint:'Мы — are.', options:['are','is','am','be'], skill:'G2-01'},
-      {q:'Kate ___ in Green Street.', a:'lives', hint:'Она — добавь -s.', options:['lives','live','living','is live'], skill:'G3-01'},
+      {q:'This is Kate. ___ is my best friend.', a:'She', hint:'Кейт — девочка.', why:{'He':'he — «он», а Кейт — девочка: she.', 'It':'it — про предмет или животное, а Кейт — she.', 'They':'they — «они», а Кейт одна.'}, options:['She','He','It','They'], skill:'G2-01'},
+      {q:'We ___ friends.', a:'are', hint:'Мы — are.', why:{'is':'is — для одного, а с we — are.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['are','is','am','be'], skill:'G2-01'},
+      {q:'Kate ___ in Green Street.', a:'lives', hint:'Она — добавь -s.', why:{'live':'Кейт — она, к глаголу добавляют -s: lives.', 'living':'living — форма с -ing. Где живёт всегда — lives.', 'is live':'is здесь лишнее: Kate lives.'}, options:['lives','live','living','is live'], skill:'G3-01'},
     ],
     reading:{title:'My Best Friend', text:'My name is Sasha. My best friend is Kate. She is my neighbour, and we live in Green Street. Kate is kind and funny. In summer we were at camp together. We swam in the sea and took a lot of photos. Now we are back at school. Kate has got a new phone number, and I write it in my notebook.', questions:[
       {q:'Who is Sasha’s best friend?', a:'Kate', options:['Kate','Anna','Lulu']},
@@ -1247,9 +1247,9 @@ const LESSONS = [
       'I like Music and PE.',
     ],
     grammar:[
-      {q:'What ___ your favourite subject?', a:'is', hint:'Один предмет — is.', options:['is','are','am','do'], skill:'G2-01'},
-      {q:'We ___ got English today.', a:'have', hint:'Мы — have got.', options:['have','has','are','is'], skill:'G2-02'},
-      {q:'Draw ___ triangle, please.', a:'a', hint:'Треугольник начинается с согласной t.', options:['a','an','the','—'], skill:'G3-03'},
+      {q:'What ___ your favourite subject?', a:'is', hint:'Один предмет — is.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'do':'do — помощник для других глаголов. «Какой предмет?» — what is.'}, options:['is','are','am','do'], skill:'G2-01'},
+      {q:'We ___ got English today.', a:'have', hint:'Мы — have got.', why:{'has':'has — только для he, she, it. С we — have got.', 'are':'are не значит «имеется». Здесь нужно have.', 'is':'is не значит «имеется». Здесь нужно have.'}, options:['have','has','are','is'], skill:'G2-02'},
+      {q:'Draw ___ triangle, please.', a:'a', hint:'Треугольник начинается с согласной t.', why:{'an':'an — перед гласным звуком (an apple). Triangle начинается с t — a.', 'the':'the — про уже известный предмет. Нарисуй «какой-нибудь» — a.', '—':'Перед одним предметом нужно a.'}, options:['a','an','the','—'], skill:'G3-03'},
     ],
     reading:{title:'A Busy Monday', text:'On Monday Tom has got four lessons. First he has got English. Then he has got Maths, and he counts to one hundred. After the break Tom has got Art. He draws a circle, a square and a triangle. The last lesson is PE. Tom runs and jumps. His favourite subject is PE, but his sister likes the library and History.', questions:[
       {q:'What is Tom’s first lesson?', a:'English', options:['English','Art','PE']},
@@ -1282,9 +1282,9 @@ const LESSONS = [
       'How old are you today?',
     ],
     grammar:[
-      {q:'She ___ ten today.', a:'is', hint:'Ей — is.', options:['is','are','am','has'], skill:'G2-01'},
-      {q:'Look at the ___! There are nine on the cake.', a:'candles', hint:'Свечей много — candles.', options:['candles','candle','candlees','a candle'], skill:'G2-04'},
-      {q:'This is ___ gift. — It is Ann’s.', a:'Ann’s', hint:'Чей? Аннин — Ann’s.', options:['Ann’s','Ann','of Ann','Anns'], skill:'G3-05'},
+      {q:'She ___ ten today.', a:'is', hint:'Ей — is.', why:{'are':'are — для you, we, they. С she — is.', 'am':'am говорят только после I (я).', 'has':'has — «имеет». Про возраст говорят: she is ten.'}, options:['is','are','am','has'], skill:'G2-01'},
+      {q:'Look at the ___! There are nine on the cake.', a:'candles', hint:'Свечей много — candles.', why:{'candle':'candle — одна свеча, а их девять. Добавь -s.', 'candlees':'После e добавляют только -s: candles.', 'a candle':'a candle — одна свеча, а их много.'}, options:['candles','candle','candlees','a candle'], skill:'G2-04'},
+      {q:'This is ___ gift. — It is Ann’s.', a:'Ann’s', hint:'Чей? Аннин — Ann’s.', why:{'Ann':'Просто Ann — «Анна». Чей? — Ann’s, с апострофом и s.', 'of Ann':'По-английски «чей» говорят через ’s: Ann’s.', 'Anns':'Нужен апостроф: Ann’s.'}, options:['Ann’s','Ann','of Ann','Anns'], skill:'G3-05'},
     ],
     reading:{title:'Lulu’s Party', text:'Today is Lulu’s birthday. She is nine. Lulu sends invitations to her friends. At four o’clock the guests come. They have got gifts and balloons. Lulu’s mum brings a big birthday cake with nine candles. "Make a wish!" says Mum. Lulu closes her eyes and blows out the candles. Then the children play games and drink lemonade. It is a great party!', questions:[
       {q:'How old is Lulu?', a:'nine', options:['seven','nine','ten']},
@@ -1318,9 +1318,9 @@ const LESSONS = [
       'I need some water.',
     ],
     grammar:[
-      {q:'I’ve got ___ biscuits.', a:'some', hint:'В утвердительном предложении — some.', options:['some','any','a','an'], skill:'G3-02'},
-      {q:'Have you got ___ juice?', a:'any', hint:'В вопросе — any.', options:['any','some','a','many'], skill:'G3-02'},
-      {q:'He ___ like rice.', a:'doesn’t', hint:'Он не любит — doesn’t.', options:['doesn’t','don’t','isn’t','not'], skill:'G3-01'},
+      {q:'I’ve got ___ biscuits.', a:'some', hint:'В утвердительном предложении — some.', why:{'any':'any — в вопросах и с not. В утверждении — some.', 'a':'a — для одного. Печенья много — some.', 'an':'an — для одного и перед гласной. Печенья много — some.'}, options:['some','any','a','an'], skill:'G3-02'},
+      {q:'Have you got ___ juice?', a:'any', hint:'В вопросе — any.', why:{'some':'some — в утверждении. В вопросе — any.', 'a':'a не ставят перед juice: сок не считают штуками.', 'many':'many — для того, что считают. Сок не считают.'}, options:['any','some','a','many'], skill:'G3-02'},
+      {q:'He ___ like rice.', a:'doesn’t', hint:'Он не любит — doesn’t.', why:{'don’t':'don’t — для I, you, we, they. С he — doesn’t.', 'isn’t':'isn’t с глаголом like не ставят. Нужно doesn’t.', 'not':'Одного not мало: he doesn’t like.'}, options:['doesn’t','don’t','isn’t','not'], skill:'G3-01'},
     ],
     reading:{title:'What’s in the Lunch Box?', text:'Every morning Mum makes a lunch box for Ben. Today there is some pasta and some carrots in it. There are three biscuits too. Ben looks in his lunch box. "Have we got any juice?" he asks. "No, we haven’t got any juice," says Mum, "but here is some water." Mum writes juice on the shopping list. Ben puts his lunch box in his bag and goes to school.', questions:[
       {q:'Who makes the lunch box?', a:'Mum', options:['Mum','Dad','Ben']},
@@ -1356,9 +1356,9 @@ const LESSONS = [
       'One sheep, two sheep!',
     ],
     grammar:[
-      {q:'One sheep, five ___.', a:'sheep', hint:'Это слово не меняется!', options:['sheep','sheeps','sheepes','a sheep'], skill:'G3-06'},
-      {q:'A parrot ___ talk.', a:'can', hint:'Попугай умеет говорить.', options:['can','cans','is','has'], skill:'G2-03'},
-      {q:'There ___ fifty goats on the farm.', a:'are', hint:'Коз много — there are.', options:['are','is','am','has'], skill:'G2-08'},
+      {q:'One sheep, five ___.', a:'sheep', hint:'Это слово не меняется!', why:{'sheeps':'Sheep не меняется: one sheep, five sheep.', 'sheepes':'Sheep не меняется: five sheep.', 'a sheep':'a sheep — одна овца, а их пять.'}, options:['sheep','sheeps','sheepes','a sheep'], skill:'G3-06'},
+      {q:'A parrot ___ talk.', a:'can', hint:'Попугай умеет говорить.', why:{'cans':'К can никогда не добавляют -s.', 'is':'is не значит «умеет». Умеет — can.', 'has':'has — «имеет». Умеет — can.'}, options:['can','cans','is','has'], skill:'G2-03'},
+      {q:'There ___ fifty goats on the farm.', a:'are', hint:'Коз много — there are.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'has':'has — «имеет». «Есть, находятся» — there are.'}, options:['are','is','am','has'], skill:'G2-08'},
     ],
     reading:{title:'Uncle Bob’s Farm', text:'Uncle Bob has got a big farm. There are thirty cows, twenty sheep and five pigs on his farm. There is a goat too. Its name is Billy, and it eats everything! On Sunday Uncle Bob takes us to the zoo. We see a lion, two tigers and a giraffe with a very long neck. A green parrot says "Hello!" to us. It is a funny day.', questions:[
       {q:'How many cows are on the farm?', a:'thirty', options:['twenty','thirty','five']},
@@ -1392,9 +1392,9 @@ const LESSONS = [
       'They were very happy.',
     ],
     grammar:[
-      {q:'Yesterday he ___ to the park. (go)', a:'went', hint:'go в прошлом — went.', options:['went','goed','go','goes'], skill:'G3-10'},
-      {q:'Once upon a time there ___ a king.', a:'was', hint:'is в прошлом — was.', options:['was','is','were','be'], skill:'G3-10'},
-      {q:'She ___ a big dog. (see)', a:'saw', hint:'see в прошлом — saw.', options:['saw','seed','see','sees'], skill:'G3-10'},
+      {q:'Yesterday he ___ to the park. (go)', a:'went', hint:'go в прошлом — went.', why:{'goed':'go — неправильный глагол, -ed к нему не добавляют. Прошлое — went.', 'go':'go — сейчас. Вчера — went.', 'goes':'goes — обычно, каждый день. Вчера — went.'}, options:['went','goed','go','goes'], skill:'G3-10'},
+      {q:'Once upon a time there ___ a king.', a:'was', hint:'is в прошлом — was.', why:{'is':'is — сейчас, а в сказке «жил-был» — давно: was.', 'were':'were — для многих. Король один — was.', 'be':'be — начальная форма. В прошлом — was.'}, options:['was','is','were','be'], skill:'G3-10'},
+      {q:'She ___ a big dog. (see)', a:'saw', hint:'see в прошлом — saw.', why:{'seed':'see — неправильный глагол. Прошлое — saw.', 'see':'see — сейчас, а здесь прошлое — saw.', 'sees':'sees — обычно. В прошлом — saw.'}, options:['saw','seed','see','sees'], skill:'G3-10'},
     ],
     reading:{title:'The Brave Toy Soldier', text:'Once upon a time there was a little toy soldier. He lived on a shelf in a playroom. One day he saw a beautiful ballerina in a toy castle. "She is lovely," he said. Then a big wind came and the soldier fell out of the window! He was in the street. A boy found him and brought him home. The toy soldier went back to his shelf, and he and the ballerina were happy.', questions:[
       {q:'Where did the toy soldier live?', a:'on a shelf', options:['on a shelf','in a box','in a castle']},
@@ -1430,9 +1430,9 @@ const LESSONS = [
       'School starts in September.',
     ],
     grammar:[
-      {q:'My birthday is ___ June.', a:'in', hint:'С месяцами — in.', options:['in','on','at','of'], skill:'G3-09'},
-      {q:'It ___ raining now.', a:'is', hint:'Сейчас идёт дождь — it is raining.', options:['is','are','am','be'], skill:'G3-08'},
-      {q:'It ___ snows in December.', a:'often', hint:'Часто — often.', options:['often','now','yesterday','tomorrow'], skill:'G3-01'},
+      {q:'My birthday is ___ June.', a:'in', hint:'С месяцами — in.', why:{'on':'on — для дней. С месяцами — in.', 'at':'at — для времени по часам. С месяцами — in.', 'of':'of здесь не подходит. С месяцами — in.'}, options:['in','on','at','of'], skill:'G3-09'},
+      {q:'It ___ raining now.', a:'is', hint:'Сейчас идёт дождь — it is raining.', why:{'are':'are — для you, we, they. С it — is.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['is','are','am','be'], skill:'G3-08'},
+      {q:'It ___ snows in December.', a:'often', hint:'Часто — often.', why:{'now':'now — «сейчас». А снег идёт в декабре «часто» — often.', 'yesterday':'yesterday — «вчера», а здесь говорят, как бывает обычно.', 'tomorrow':'tomorrow — «завтра», а здесь — как часто.'}, options:['often','now','yesterday','tomorrow'], skill:'G3-01'},
     ],
     reading:{title:'A Year with Max', text:'Max likes all the seasons. In January it is cold and snowy, and he skis in the park. In April it is often rainy, so he wears his boots. In June, July and August it is hot and sunny. Max goes to the seaside with his family. In September he goes back to school. In October it is cloudy and windy, and Max flies his kite. His favourite month is December because of the New Year!', questions:[
       {q:'What does Max do in January?', a:'he skis', options:['he skis','he swims','he flies a kite']},
@@ -1466,9 +1466,9 @@ const LESSONS = [
       'There is a famous museum in Saint Petersburg.',
     ],
     grammar:[
-      {q:'There ___ many famous museums in Moscow.', a:'are', hint:'Музеев много — there are.', options:['are','is','am','be'], skill:'G2-08'},
-      {q:'The Volga is ___ long river.', a:'a', hint:'Перед согласной — a.', options:['a','an','the','—'], skill:'G3-03'},
-      {q:'___ is Big Ben? — In London.', a:'Where', hint:'Где? — Where.', options:['Where','What','Who','How'], skill:'G2-01'},
+      {q:'There ___ many famous museums in Moscow.', a:'are', hint:'Музеев много — there are.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['are','is','am','be'], skill:'G2-08'},
+      {q:'The Volga is ___ long river.', a:'a', hint:'Перед согласной — a.', why:{'an':'an — перед гласным звуком. Long начинается с l — a.', 'the':'the — «та самая». «Одна из длинных рек» — a.', '—':'Перед одной рекой с описанием нужно a.'}, options:['a','an','the','—'], skill:'G3-03'},
+      {q:'___ is Big Ben? — In London.', a:'Where', hint:'Где? — Where.', why:{'What':'What — «что». Ответ «в Лондоне» — значит спрашивали «где»: Where.', 'Who':'Who — «кто». Спрашивают «где» — Where.', 'How':'How — «как». Спрашивают «где» — Where.'}, options:['Where','What','Who','How'], skill:'G2-01'},
     ],
     reading:{title:'Two Famous Cities', text:'Moscow is the capital of Russia. In the centre of Moscow there is Red Square and the Kremlin. Many tourists come to see them. London is the capital of Great Britain. The river Thames is in London. Tourists like Tower Bridge and Big Ben. They ride on red double-decker buses. Saint Petersburg is a famous city in Russia too. There are beautiful palaces and museums there.', questions:[
       {q:'What is the capital of Russia?', a:'Moscow', options:['Moscow','London','Saint Petersburg']},
@@ -1501,9 +1501,9 @@ const LESSONS = [
       'I make a card for my mum.',
     ],
     grammar:[
-      {q:'In Britain people ___ Christmas pudding.', a:'eat', hint:'Они — без -s.', options:['eat','eats','eating','is eat'], skill:'G3-01'},
-      {q:'Look! The children ___ painting eggs.', a:'are', hint:'Сейчас, они — are …ing.', options:['are','is','am','do'], skill:'G3-08'},
-      {q:'This is ___ card for my mum.', a:'a', hint:'Одна открытка — a.', options:['a','an','some','any'], skill:'G3-03'},
+      {q:'In Britain people ___ Christmas pudding.', a:'eat', hint:'Они — без -s.', why:{'eats':'People — «люди», их много. -s не нужно.', 'eating':'eating — форма с -ing. Обычно едят — eat.', 'is eat':'is здесь лишнее: people eat.'}, options:['eat','eats','eating','is eat'], skill:'G3-01'},
+      {q:'Look! The children ___ painting eggs.', a:'are', hint:'Сейчас, они — are …ing.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'do':'do не ставят перед -ing. Сейчас делают — are painting.'}, options:['are','is','am','do'], skill:'G3-08'},
+      {q:'This is ___ card for my mum.', a:'a', hint:'Одна открытка — a.', why:{'an':'an — перед гласным звуком. Card начинается с c — a.', 'some':'some — для многих. Открытка одна — a.', 'any':'any — в вопросах и с not. Здесь — a.'}, options:['a','an','some','any'], skill:'G3-03'},
     ],
     reading:{title:'Special Days', text:'Every country has got its traditions. In Britain children sing carols at Christmas, and families eat Christmas pudding. At Easter children paint Easter eggs and look for chocolate eggs in the garden. On Halloween they wear funny costumes, and some children are ghosts! In Russia we have Mother’s Day too. I always make a special card and give flowers to my mum.', questions:[
       {q:'What do British families eat at Christmas?', a:'Christmas pudding', options:['Christmas pudding','pizza','soup']},
@@ -1541,8 +1541,8 @@ const LESSONS = [
       'What is he like? He is friendly.',
     ],
     grammar:[
-      {skill:'G2-02', q:'He ___ got fair hair.', a:'has', hint:'He/she — has got.', options:['have','has','is','are']},
-      {skill:'G2-02', q:'They ___ got a big house.', a:'have', hint:'They — have got.', options:['have','has','is','are']},
+      {skill:'G2-02', q:'He ___ got fair hair.', a:'has', hint:'He/she — has got.', why:{'have':'have — для I, you, we, they. С he, she, it нужно has.', 'is':'is не значит «есть, имеется». «У неё есть» — has.', 'are':'are не значит «имеется». Здесь нужно has.'}, options:['have','has','is','are']},
+      {skill:'G2-02', q:'They ___ got a big house.', a:'have', hint:'They — have got.', why:{'has':'has — для he, she, it. С they — have got.', 'is':'is не значит «имеется». Здесь нужно have.', 'are':'are не значит «имеется». Здесь нужно have.'}, options:['have','has','is','are']},
     ],
     reading:{title:'My Cousin Mia', text:'Mia is my cousin. She is ten. She is tall and slim. She has got long dark hair and green eyes. Mia is very funny — she can tell great jokes! Her dad is my uncle Harry. He is tall and he has got curly hair and glasses. Uncle Harry is very kind and friendly. Mia’s grandpa is old, but he is very strong. Every Sunday the whole family has dinner together at Grandpa’s house.', questions:[
       {q:'How old is Mia?', a:'ten', options:['nine','ten','eleven']},
@@ -1577,8 +1577,8 @@ const LESSONS = [
       'What does your dad do?',
     ],
     grammar:[
-      {skill:'G4-01', q:'She ___ in a hospital.', a:'works', hint:'She — глагол + s.', options:['work','works','working','are']},
-      {skill:'G4-11', q:'I ___ help my mum.', a:'always', hint:'Наречие частоты.', options:['always','tomorrow','now','yesterday']},
+      {skill:'G4-01', q:'She ___ in a hospital.', a:'works', hint:'She — глагол + s.', why:{'work':'С she к глаголу добавляют -s: works.', 'working':'Без is форма с -ing не работает. Обычно — works.', 'are':'are — для you, we, they, и без глагола непонятно. Нужно works.'}, options:['work','works','working','are']},
+      {skill:'G4-11', q:'I ___ help my mum.', a:'always', hint:'Наречие частоты.', why:{'tomorrow':'tomorrow — «завтра», а здесь нужно слово «как часто».', 'now':'now — «сейчас», а здесь нужно слово «как часто».', 'yesterday':'yesterday — «вчера», это про прошлое, а здесь говорят о том, как бывает обычно.'}, options:['always','tomorrow','now','yesterday']},
     ],
     reading:{title:'My Mum the Doctor', text:'My mum is a doctor. She works in a big hospital. Every day she helps sick people. She usually gets up at six and comes home at seven. I am proud of her! My dad is a vet. He always wears a white uniform and helps sick animals. On Saturdays I sometimes go to work with him. I usually feed the cats and dogs. I never feel bored there! When I grow up, I want to be a vet too.', questions:[
       {q:'What is mum?', a:'a doctor', options:['a nurse','a doctor','a teacher']},
@@ -1614,8 +1614,8 @@ const LESSONS = [
       'There is some milk in the fridge.',
     ],
     grammar:[
-      {skill:'G4-02', q:'How ___ sugar? (нельзя посчитать)', a:'much', hint:'Неисчисляемое — much.', options:['much','many','a','some']},
-      {skill:'G4-02', q:'How ___ lemons? (можно посчитать)', a:'many', hint:'Исчисляемое — many.', options:['much','many','a','some']},
+      {skill:'G4-02', q:'How ___ sugar? (нельзя посчитать)', a:'much', hint:'Неисчисляемое — much.', why:{'many':'many — для того, что считают. Сахар не считают — much.', 'a':'После How ставят much или many.', 'some':'После How ставят much или many.'}, options:['much','many','a','some']},
+      {skill:'G4-02', q:'How ___ lemons? (можно посчитать)', a:'many', hint:'Исчисляемое — many.', why:{'much':'much — для того, что не считают. Лимоны считают — many.', 'a':'После How ставят much или many.', 'some':'После How ставят much или many.'}, options:['much','many','a','some']},
     ],
     reading:{title:'Grandma\u2019s Cake', text:'My grandma makes the best cake. She needs a lot of flour, some sugar and three eggs. She also puts one lemon in the cake. It is very tasty! On Sundays we make pizza together. We need tomatoes, cheese, a little olive oil and some salt and pepper. My little brother puts too many beans on his pizza! How much cheese do we need? A lot! Pizza day is my favourite day of the week.', questions:[
       {q:'How many eggs?', a:'three', options:['two','three','four']},
@@ -1651,8 +1651,8 @@ const LESSONS = [
       'Look! Monkeys are jumping.',
     ],
     grammar:[
-      {skill:'G4-04', q:'The lion is ___ than the cat.', a:'bigger', hint:'Сравнительная степень.', options:['big','bigger','biggest','more big']},
-      {skill:'G4-04', q:'The giraffe is the ___ animal.', a:'tallest', hint:'Превосходная степень.', options:['tall','taller','tallest','more tall']},
+      {skill:'G4-04', q:'The lion is ___ than the cat.', a:'bigger', hint:'Сравнительная степень.', why:{'big':'Есть than — сравниваем. Нужно bigger.', 'biggest':'biggest — «самый большой». Тут сравнивают двоих — bigger.', 'more big':'Короткое слово сравнивают через -er: bigger.'}, options:['big','bigger','biggest','more big']},
+      {skill:'G4-04', q:'The giraffe is the ___ animal.', a:'tallest', hint:'Превосходная степень.', why:{'tall':'the … animal — «самое». Нужно tallest.', 'taller':'taller — «выше кого-то». «Самый высокий» — tallest.', 'more tall':'Короткое слово: tall — taller — tallest.'}, options:['tall','taller','tallest','more tall']},
     ],
     reading:{title:'A Day at the Zoo', text:'On Sunday we went to the zoo. We saw a big lion, two funny monkeys and a huge elephant. The giraffe was the tallest animal there. It was a great day! The monkeys were jumping from tree to tree, and the lazy hippo was sleeping in the water. In the sea world we saw a whale and some dolphins. A whale is bigger than a dolphin. My favourite animal was the koala — it is smaller than a kangaroo, but it is so cute!', questions:[
       {q:'Which animal was the tallest?', a:'giraffe', options:['lion','elephant','giraffe']},
@@ -1687,8 +1687,8 @@ const LESSONS = [
       'Where were you?',
     ],
     grammar:[
-      {skill:'G4-05', q:'I ___ at home yesterday.', a:'was', hint:'I / he / she / it — was.', options:['was','were','is','are']},
-      {skill:'G4-05', q:'They ___ happy.', a:'were', hint:'They / we / you — were.', options:['was','were','is','are']},
+      {skill:'G4-05', q:'I ___ at home yesterday.', a:'was', hint:'I / he / she / it — was.', why:{'were':'were — для you, we, they. С I — was.', 'is':'is — сейчас. Вчера — was.', 'are':'are — сейчас и для многих. Вчера с I — was.'}, options:['was','were','is','are']},
+      {skill:'G4-05', q:'They ___ happy.', a:'were', hint:'They / we / you — were.', why:{'was':'was — для I, he, she, it. С they — were.', 'is':'is — для одного. С they — are или were.', 'are':'are — сейчас. В этом задании про прошлое — were.'}, options:['was','were','is','are']},
     ],
     reading:{title:'Yesterday', text:'Yesterday I was at my grandma\u2019s house. My cousins were there too. We played all day. In the evening I was very tired but very happy! Last Saturday was different. I was at home and I was bored and a little angry because it was raining. My best friend was ill. But on Sunday the sun was out, and we were in the park all day. I was the first in our running race!', questions:[
       {q:'Where was the boy?', a:'at grandma\u2019s', options:['at school','at grandma\u2019s','at the zoo']},
@@ -1722,8 +1722,8 @@ const LESSONS = [
       'They lived happily ever after.',
     ],
     grammar:[
-      {skill:'G4-06', q:'He ___ (jump) yesterday.', a:'jumped', hint:'Правильный глагол + -ed.', options:['jumped','jump','jumps','jumping']},
-      {skill:'G4-06', q:'She ___ (play) football.', a:'played', hint:'play → played.', options:['played','play','plays','playing']},
+      {skill:'G4-06', q:'He ___ (jump) yesterday.', a:'jumped', hint:'Правильный глагол + -ed.', why:{'jump':'Вчера — прошлое. Добавь -ed: jumped.', 'jumps':'jumps — обычно. Вчера — jumped.', 'jumping':'jumping — форма с -ing. Вчера — jumped.'}, options:['jumped','jump','jumps','jumping']},
+      {skill:'G4-06', q:'She ___ (play) football.', a:'played', hint:'play → played.', why:{'play':'В этом задании прошлое: played.', 'plays':'plays — обычно. Здесь прошлое — played.', 'playing':'playing — форма с -ing. Нужно played.'}, options:['played','play','plays','playing']},
     ],
     reading:{title:'The Brave Prince', text:'Long ago there was a brave prince. He lived in a big castle. One day a dragon came to the village. The prince fought the dragon and saved the people. Everyone was very happy! In the same village there lived a poor girl and her little lamb. Every morning she cooked porridge for her old grandpa. The prince saw the girl and loved her kindness. A wizard gave them a golden crown, and the prince and the girl lived happily ever after.', questions:[
       {q:'Where did the prince live?', a:'in a big castle', options:['in a forest','in a big castle','in a shop']},
@@ -1758,8 +1758,8 @@ const LESSONS = [
       'It was a day to remember.',
     ],
     grammar:[
-      {skill:'G4-07', q:'Yesterday I ___ to school.', a:'went', hint:'go → went.', options:['go','goed','went','gone']},
-      {skill:'G4-07', q:'I ___ a big cat.', a:'saw', hint:'see → saw.', options:['see','sawed','saw','seen']},
+      {skill:'G4-07', q:'Yesterday I ___ to school.', a:'went', hint:'go → went.', why:{'go':'go — сейчас. Вчера — went.', 'goed':'go — неправильный глагол. Прошлое — went.', 'gone':'gone ставят после have. Просто «пошёл» — went.'}, options:['go','goed','went','gone']},
+      {skill:'G4-07', q:'I ___ a big cat.', a:'saw', hint:'see → saw.', why:{'see':'В этом задании прошлое: saw.', 'sawed':'see — неправильный глагол. Прошлое — saw.', 'seen':'seen ставят после have. Просто «увидел» — saw.'}, options:['see','sawed','saw','seen']},
     ],
     reading:{title:'My Best Birthday', text:'Last year on my birthday my parents took me to the zoo. I saw lions, giraffes and a big elephant. In the evening we had a big cake. It was a day to remember! My friends came to the party too. We played games and had a dancing competition. My best friend won it! I got a lot of presents and cards. My favourite present was a new bike from my grandparents. We celebrated until nine o’clock.', questions:[
       {q:'Where did they go?', a:'to the zoo', options:['to the park','to the zoo','to a shop']},
@@ -1793,8 +1793,8 @@ const LESSONS = [
       'What are you going to do?',
     ],
     grammar:[
-      {skill:'G4-08', q:'I ___ going to visit London.', a:'am', hint:'I — am.', options:['am','is','are','be']},
-      {skill:'G4-08', q:'They ___ going to travel.', a:'are', hint:'They — are.', options:['am','is','are','be']},
+      {skill:'G4-08', q:'I ___ going to visit London.', a:'am', hint:'I — am.', why:{'is':'is — для he, she, it. С I — am.', 'are':'are — для you, we, they. С I — am.', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['am','is','are','be']},
+      {skill:'G4-08', q:'They ___ going to travel.', a:'are', hint:'They — are.', why:{'am':'am — только с I. С they — are.', 'is':'is — для одного. С they — are.', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['am','is','are','be']},
     ],
     reading:{title:'Summer Plans', text:'This summer we are going to visit London. We are going to fly by plane. We are going to see Big Ben and go to a big park. I can\u2019t wait! Then we are going to take a train to the seaside. I am going to swim, relax on the beach and write in my holiday diary every day. Dad is going to buy a map of the city, and Mum is going to rest and read books. It is going to be a great holiday!', questions:[
       {q:'How are they going to travel?', a:'by plane', options:['by train','by plane','by ship']},
@@ -1828,9 +1828,9 @@ const LESSONS = [
       'What year are you in?',
     ],
     grammar:[
-      {q:'___ is your surname? — Petrov.', a:'What', hint:'Что? Какая? — What.', options:['What','Who','Where','When'], skill:'G4-12'},
-      {q:'I ___ in Year Four now.', a:'am', hint:'После I — am.', options:['am','is','are','be'], skill:'G2-01'},
-      {q:'We ___ Science on Tuesdays.', a:'have', hint:'Мы — have.', options:['have','has','are','having'], skill:'G3-01'},
+      {q:'___ is your surname? — Petrov.', a:'What', hint:'Что? Какая? — What.', why:{'Who':'Who — «кто». Фамилия — «какая?»: What.', 'Where':'Where — «где». Спрашивают «какая фамилия» — What.', 'When':'When — «когда». Здесь — What.'}, options:['What','Who','Where','When'], skill:'G4-12'},
+      {q:'I ___ in Year Four now.', a:'am', hint:'После I — am.', why:{'is':'is — для he, she, it, а с I — am.', 'are':'are — для you, we, they, а с I — am.', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['am','is','are','be'], skill:'G2-01'},
+      {q:'We ___ Science on Tuesdays.', a:'have', hint:'Мы — have.', why:{'has':'has — для he, she, it. С we — have.', 'are':'are не значит «у нас есть урок». Нужно have.', 'having':'having — форма с -ing. По вторникам обычно — have.'}, options:['have','has','are','having'], skill:'G3-01'},
     ],
     reading:{title:'A New Pupil', text:'It is the first day of school. There is a new pupil in our class. His name is Steve and his surname is Brown. He is ten years old. Steve is from Manchester, but now he lives in our town. On Monday we have English, Maths and Science. Steve’s favourite subject is Science because he likes experiments. After lessons we go to the library together, and Steve gets his first library card. "I hope we can be friends," he says. "I feel happy here!"', questions:[
       {q:'What is the new pupil’s surname?', a:'Brown', options:['Brown','Petrov','Smith']},
@@ -1863,9 +1863,9 @@ const LESSONS = [
       'Put your helmet on, please.',
     ],
     grammar:[
-      {q:'The gloves are ___ the table. (под)', a:'under', hint:'Под — under.', options:['under','on','behind','next to'], skill:'G3-07'},
-      {q:'My camera is ___ front of the TV.', a:'in', hint:'Перед — in front of.', options:['in','on','at','under'], skill:'G3-07'},
-      {q:'Look! Tom ___ playing the guitar.', a:'is', hint:'Сейчас, он — is …ing.', options:['is','are','am','do'], skill:'G4-01'},
+      {q:'The gloves are ___ the table. (под)', a:'under', hint:'Под — under.', why:{'on':'on — «на». В задании «под» — under.', 'behind':'behind — «за». «Под» — under.', 'next to':'next to — «рядом». «Под» — under.'}, options:['under','on','behind','next to'], skill:'G3-07'},
+      {q:'My camera is ___ front of the TV.', a:'in', hint:'Перед — in front of.', why:{'on':'Перед — всегда in front of.', 'at':'Перед — всегда in front of.', 'under':'under — «под». Перед — in front of.'}, options:['in','on','at','under'], skill:'G3-07'},
+      {q:'Look! Tom ___ playing the guitar.', a:'is', hint:'Сейчас, он — is …ing.', why:{'are':'are — для you, we, they и многих, а здесь один.', 'am':'am говорят только после I (я).', 'do':'do не ставят перед -ing. Сейчас — is playing.'}, options:['is','are','am','do'], skill:'G4-01'},
     ],
     reading:{title:'Where Is Everything?', text:'Every morning Kate loses something. Today she can’t find her keys and her mobile phone. "Mum, where are my keys?" she asks. "They are on the shelf, next to your camera," says Mum. Kate finds her keys, but where is her phone? She looks under the bed and behind the sofa. Then her little brother laughs. He is playing a video game on her phone in the kitchen! Kate takes her phone, her helmet and her roller blades and goes to the park.', questions:[
       {q:'Where are Kate’s keys?', a:'on the shelf', options:['on the shelf','under the bed','in the kitchen']},
@@ -1898,9 +1898,9 @@ const LESSONS = [
       'My hamster is small and plump.',
     ],
     grammar:[
-      {q:'What ___ you doing? — I’m painting.', a:'are', hint:'You — are …ing.', options:['are','is','do','does'], skill:'G4-01'},
-      {q:'She likes ___ the violin.', a:'playing', hint:'Like + глагол с -ing.', options:['playing','play','plays','played'], skill:'G4-01'},
-      {q:'My brother ___ surfing every summer.', a:'goes', hint:'Каждое лето — Present Simple, он — goes.', options:['goes','is going','go','going'], skill:'G4-01'},
+      {q:'What ___ you doing? — I’m painting.', a:'are', hint:'You — are …ing.', why:{'is':'is — для he, she, it. С you — are.', 'do':'Перед doing (-ing) ставят are: What are you doing?', 'does':'does — для he, she, it и не с -ing. Нужно are.'}, options:['are','is','do','does'], skill:'G4-01'},
+      {q:'She likes ___ the violin.', a:'playing', hint:'Like + глагол с -ing.', why:{'play':'После likes глагол обычно с -ing: playing.', 'plays':'Два глагола с -s подряд не ставят. Нужно playing.', 'played':'played — прошлое. После likes — playing.'}, options:['playing','play','plays','played'], skill:'G4-01'},
+      {q:'My brother ___ surfing every summer.', a:'goes', hint:'Каждое лето — Present Simple, он — goes.', why:{'is going':'is going — «идёт сейчас». Каждое лето — goes.', 'go':'Брат — он, добавь -es: goes.', 'going':'Без is форма с -ing не работает. Каждое лето — goes.'}, options:['goes','is going','go','going'], skill:'G4-01'},
     ],
     reading:{title:'Friends and Hobbies', text:'My best friend is William. He is tall and he loves sport. In winter he goes skiing and skating, and in summer he goes sailing with his dad. Right now he is diving in the sea in Greece! I am different. My hobbies are painting and playing the violin. I also collect stamps from different countries. My little sister has got a plump hamster called Biscuit. Her hobby is playing with him. What is your hobby?', questions:[
       {q:'Where is William now?', a:'in Greece', options:['at school','in Greece','at home']},
@@ -1933,9 +1933,9 @@ const LESSONS = [
       'I sometimes go to the theatre.',
     ],
     grammar:[
-      {q:'A baker ___ bread every morning.', a:'bakes', hint:'Он — добавь -s.', options:['bakes','bake','is bake','baking'], skill:'G3-01'},
-      {q:'I ___ go to the theatre. (иногда)', a:'sometimes', hint:'Иногда — sometimes.', options:['sometimes','never','yesterday','now'], skill:'G4-11'},
-      {q:'___ does your mum work? — In a café.', a:'Where', hint:'Где? — Where.', options:['Where','What','Who','When'], skill:'G4-12'},
+      {q:'A baker ___ bread every morning.', a:'bakes', hint:'Он — добавь -s.', why:{'bake':'Пекарь — он, добавь -s: bakes.', 'is bake':'is здесь лишнее: a baker bakes.', 'baking':'Без is форма с -ing не работает. Каждое утро — bakes.'}, options:['bakes','bake','is bake','baking'], skill:'G3-01'},
+      {q:'I ___ go to the theatre. (иногда)', a:'sometimes', hint:'Иногда — sometimes.', why:{'never':'never — «никогда». В задании «иногда» — sometimes.', 'yesterday':'yesterday — «вчера». «Иногда» — sometimes.', 'now':'now — «сейчас». «Иногда» — sometimes.'}, options:['sometimes','never','yesterday','now'], skill:'G4-11'},
+      {q:'___ does your mum work? — In a café.', a:'Where', hint:'Где? — Where.', why:{'What':'What — «что». Ответ «в кафе» — спрашивали «где»: Where.', 'Who':'Who — «кто». Спрашивают «где» — Where.', 'When':'When — «когда». Ответ про место — Where.'}, options:['Where','What','Who','When'], skill:'G4-12'},
     ],
     reading:{title:'A Walk in Bridge Street', text:'Bridge Street is a busy street in my town. There is a baker’s at the corner. Mr Jones is a baker. He always gets up at five o’clock and bakes fresh bread. Next to the baker’s there is a greengrocer’s with fruit and vegetables. My uncle is a mechanic. He works in the garage near the station. On Saturdays my family sometimes goes to the theatre, and after the show we eat in a café. The waiter there is very polite.', questions:[
       {q:'When does Mr Jones get up?', a:'at five o’clock', options:['at five o’clock','at nine o’clock','at noon']},
@@ -1969,9 +1969,9 @@ const LESSONS = [
       'I have to go to the sports centre.',
     ],
     grammar:[
-      {q:'He ___ to train every day.', a:'has', hint:'Он должен — he has to.', options:['has','have','must','is'], skill:'G4-09'},
-      {q:'We ___ play hockey in summer.', a:'never', hint:'Никогда — never.', options:['never','always','now','often to'], skill:'G4-11'},
-      {q:'It’s quarter ___ five. (без четверти пять)', a:'to', hint:'Без четверти — quarter to.', options:['to','past','at','in'], skill:'G3-09'},
+      {q:'He ___ to train every day.', a:'has', hint:'Он должен — he has to.', why:{'have':'have to — для I, you, we, they. С he — has to.', 'must':'После must не ставят to. Здесь — has to.', 'is':'is to так не говорят. «Он должен» — has to.'}, options:['has','have','must','is'], skill:'G4-09'},
+      {q:'We ___ play hockey in summer.', a:'never', hint:'Никогда — never.', why:{'always':'always — «всегда». Летом хоккея нет — never.', 'now':'now — «сейчас». Нужно «никогда» — never.', 'often to':'После often не ставят to. И летом хоккея нет — never.'}, options:['never','always','now','often to'], skill:'G4-11'},
+      {q:'It’s quarter ___ five. (без четверти пять)', a:'to', hint:'Без четверти — quarter to.', why:{'past':'past — «после»: quarter past five — четверть шестого. «Без четверти» — to.', 'at':'at ставят перед временем, а не внутри. «Без четверти» — to.', 'in':'in здесь не подходит. «Без четверти» — to.'}, options:['to','past','at','in'], skill:'G3-09'},
     ],
     reading:{title:'A Busy Sports Week', text:'Nick loves sport. He goes to the sports centre three times a week. On Mondays he plays volleyball with his team. On Wednesdays he has tennis, and on Fridays he plays badminton with his sister. His coach is strict: "You have to come at quarter past four, not at half past four!" Nick never plays hockey because he can’t skate, but he often watches hockey on TV with his dad. Last Sunday Nick’s volleyball team won a big match.', questions:[
       {q:'How often does Nick go to the sports centre?', a:'three times a week', options:['once a week','three times a week','every day']},
@@ -2005,9 +2005,9 @@ const LESSONS = [
       'We need a kilo of apples.',
     ],
     grammar:[
-      {q:'How ___ milk do we need?', a:'much', hint:'Молоко не считают — much.', options:['much','many','a','lot'], skill:'G4-02'},
-      {q:'How ___ bottles are there?', a:'many', hint:'Бутылки считают — many.', options:['many','much','a lot','any'], skill:'G4-02'},
-      {q:'___ I have some sweets, please?', a:'May', hint:'Можно мне…? — May I…?', options:['May','Must','Am','Do'], skill:'G4-10'},
+      {q:'How ___ milk do we need?', a:'much', hint:'Молоко не считают — much.', why:{'many':'many — для того, что считают. Молоко — much.', 'a':'После How ставят much или many.', 'lot':'a lot — «много», но не после How. Нужно much.'}, options:['much','many','a','lot'], skill:'G4-02'},
+      {q:'How ___ bottles are there?', a:'many', hint:'Бутылки считают — many.', why:{'much':'much — для того, что не считают. Бутылки считают — many.', 'a lot':'a lot не ставят после How. Нужно many.', 'any':'После How ставят much или many.'}, options:['many','much','a lot','any'], skill:'G4-02'},
+      {q:'___ I have some sweets, please?', a:'May', hint:'Можно мне…? — May I…?', why:{'Must':'Must — «должен». Вежливо спросить «можно?» — May.', 'Am':'Am I have — так не говорят. «Можно мне?» — May I.', 'Do':'Do I have — «у меня есть?». «Можно?» — May.'}, options:['May','Must','Am','Do'], skill:'G4-10'},
     ],
     reading:{title:'At the Supermarket', text:'On Saturday Ben and his mum go to the supermarket with a shopping list. They need a loaf of bread, a carton of milk, two tins of beans and a jar of honey. Ben puts everything in the basket. "May I have a bar of chocolate?" he asks. "Yes, you may, but only one," says Mum. They don’t buy fast food because Mum says it isn’t healthy. At the checkout the shop assistant smiles. "That’s twelve pounds, please." Mum pays the money, and they go home.', questions:[
       {q:'How many tins of beans do they need?', a:'two', options:['one','two','three']},
@@ -2040,9 +2040,9 @@ const LESSONS = [
       'My books are in the bookcase.',
     ],
     grammar:[
-      {q:'You ___ tidy your room every day.', a:'must', hint:'Надо, обязан — must.', options:['must','mustn’t','may','are'], skill:'G4-03'},
-      {q:'You ___ draw on the walls!', a:'mustn’t', hint:'Нельзя — mustn’t.', options:['mustn’t','must','can','have'], skill:'G4-03'},
-      {q:'There ___ two plants on the shelf.', a:'are', hint:'Два растения — there are.', options:['are','is','am','be'], skill:'G2-08'},
+      {q:'You ___ tidy your room every day.', a:'must', hint:'Надо, обязан — must.', why:{'mustn’t':'mustn’t — «нельзя». А убирать комнату надо — must.', 'may':'may — «можно». А здесь «надо» — must.', 'are':'are tidy — так не говорят. «Надо» — must.'}, options:['must','mustn’t','may','are'], skill:'G4-03'},
+      {q:'You ___ draw on the walls!', a:'mustn’t', hint:'Нельзя — mustn’t.', why:{'must':'must — «надо». А рисовать на стенах нельзя — mustn’t.', 'can':'can — «можно, умеешь». Здесь запрет — mustn’t.', 'have':'have — «имеешь». Здесь запрет — mustn’t.'}, options:['mustn’t','must','can','have'], skill:'G4-03'},
+      {q:'There ___ two plants on the shelf.', a:'are', hint:'Два растения — there are.', why:{'is':'is — для одного, а здесь их много.', 'am':'am говорят только после I (я).', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['are','is','am','be'], skill:'G2-08'},
     ],
     reading:{title:'Lisa’s New Room', text:'Lisa has got a new room. The walls are light green and there are yellow curtains on the window. There is a wardrobe, a desk and a big bookcase full of books. On the floor there is a soft red carpet. Lisa has got a poster of her favourite band above her bed and a plant next to the mirror. Her mum has two rules: "You must tidy your room on Saturday, and you mustn’t eat sweets in bed!" Lisa thinks the rules are fair.', questions:[
       {q:'What colour are the curtains?', a:'yellow', options:['red','yellow','green']},
@@ -2076,9 +2076,9 @@ const LESSONS = [
       'Slow and steady wins the race.',
     ],
     grammar:[
-      {q:'The hare ___ under a tree. (rest)', a:'rested', hint:'Прошедшее время — добавь -ed.', options:['rested','rests','rest','resting'], skill:'G4-06'},
-      {q:'___ the tortoise win? — Yes, it did.', a:'Did', hint:'Вопрос в прошедшем — Did.', options:['Did','Does','Was','Do'], skill:'G4-06'},
-      {q:'The hare didn’t ___ the race.', a:'win', hint:'После didn’t — глагол без изменений.', options:['win','won','wins','winned'], skill:'G4-06'},
+      {q:'The hare ___ under a tree. (rest)', a:'rested', hint:'Прошедшее время — добавь -ed.', why:{'rests':'rests — обычно. В сказке это было — rested.', 'rest':'Это было в прошлом. Добавь -ed: rested.', 'resting':'Без was форма с -ing не работает. Нужно rested.'}, options:['rested','rests','rest','resting'], skill:'G4-06'},
+      {q:'___ the tortoise win? — Yes, it did.', a:'Did', hint:'Вопрос в прошедшем — Did.', why:{'Does':'Does — про «обычно». Ответ it did — значит в прошлом: Did.', 'Was':'Was не ставят перед win. Вопрос в прошлом — Did.', 'Do':'Do — для I, you, we, they и про «обычно». Здесь — Did.'}, options:['Did','Does','Was','Do'], skill:'G4-06'},
+      {q:'The hare didn’t ___ the race.', a:'win', hint:'После didn’t — глагол без изменений.', why:{'won':'После didn’t глагол не меняют: win.', 'wins':'После didn’t -s не ставят: win.', 'winned':'После didn’t глагол не меняют: win.'}, options:['win','won','wins','winned'], skill:'G4-06'},
     ],
     reading:{title:'Slow and Steady', text:'Once upon a time there was a hare. He was very fast, and he always laughed at the slow tortoise. One day the tortoise said, "Let’s have a race!" All the animals came to watch. The race started. The hare ran very fast and soon he was far away. "The tortoise is so slow," he thought. "I can rest." He lay down under a tree and closed his eyes. The tortoise didn’t stop. She walked and walked and kept on walking. When the hare opened his eyes, the tortoise crossed the finish line! She was the winner. The animals cheered: "Slow and steady wins the race!"', questions:[
       {q:'Who said "Let’s have a race!"?', a:'the tortoise', options:['the hare','the tortoise','the fox']},
@@ -2111,9 +2111,9 @@ const LESSONS = [
       'The fireworks were very loud.',
     ],
     grammar:[
-      {q:'Last weekend we ___ to the funfair. (go)', a:'went', hint:'go — went.', options:['went','goed','go','gone'], skill:'G4-07'},
-      {q:'It was the ___ ride in the park. (good)', a:'best', hint:'good — better — the best.', options:['best','goodest','better','most good'], skill:'G4-04'},
-      {q:'We ___ a big dinosaur at the museum. (see)', a:'saw', hint:'see — saw.', options:['saw','seed','see','seen'], skill:'G4-07'},
+      {q:'Last weekend we ___ to the funfair. (go)', a:'went', hint:'go — went.', why:{'goed':'go — неправильный глагол. Прошлое — went.', 'go':'Last weekend — прошлое: went.', 'gone':'gone ставят после have. Просто «пошли» — went.'}, options:['went','goed','go','gone'], skill:'G4-07'},
+      {q:'It was the ___ ride in the park. (good)', a:'best', hint:'good — better — the best.', why:{'goodest':'good — особое слово: good — better — the best.', 'better':'better — «лучше кого-то». «Самый лучший» — the best.', 'most good':'Так не говорят: самый лучший — the best.'}, options:['best','goodest','better','most good'], skill:'G4-04'},
+      {q:'We ___ a big dinosaur at the museum. (see)', a:'saw', hint:'see — saw.', why:{'seed':'see — неправильный глагол. Прошлое — saw.', 'see':'Это было в музее, в прошлом: saw.', 'seen':'seen ставят после have. Просто «видели» — saw.'}, options:['saw','seed','see','seen'], skill:'G4-07'},
     ],
     reading:{title:'The Best Weekend', text:'Last weekend was great! On Saturday morning Phil and his dad went to the museum. They saw a huge dinosaur. It was the biggest animal in the museum! In the afternoon they went to a concert in the park. The music was very loud, and Phil’s shy sister danced for the first time. On Sunday the whole family went to the funfair. Phil rode on the fastest ride, and his strong uncle won a pretty teddy bear for his sister. In the evening they watched the fireworks. It was the best weekend ever!', questions:[
       {q:'What did they see at the museum?', a:'a dinosaur', options:['a dinosaur','a car','a whale']},
@@ -2146,9 +2146,9 @@ const LESSONS = [
       'Don’t forget your passport!',
     ],
     grammar:[
-      {q:'She is ___ to visit Spain.', a:'going', hint:'Собирается — is going to.', options:['going','go','goes','gone'], skill:'G4-08'},
-      {q:'___ are you going to stay? — In a hotel.', a:'Where', hint:'Где? — Where.', options:['Where','When','Who','Why'], skill:'G4-12'},
-      {q:'We ___ going to fly to Greece.', a:'are', hint:'Мы — are going to.', options:['are','is','am','be'], skill:'G4-08'},
+      {q:'She is ___ to visit Spain.', a:'going', hint:'Собирается — is going to.', why:{'go':'Собирается — is going to.', 'goes':'Собирается — is going to.', 'gone':'gone — «ушла». Собирается — going to.'}, options:['going','go','goes','gone'], skill:'G4-08'},
+      {q:'___ are you going to stay? — In a hotel.', a:'Where', hint:'Где? — Where.', why:{'When':'When — «когда». Ответ про место — Where.', 'Who':'Who — «кто». Ответ про место — Where.', 'Why':'Why — «почему». Ответ про место — Where.'}, options:['Where','When','Who','Why'], skill:'G4-12'},
+      {q:'We ___ going to fly to Greece.', a:'are', hint:'Мы — are going to.', why:{'is':'is — для одного. С we — are.', 'am':'am — только с I. С we — are.', 'be':'be — начальная форма. В предложении она превращается в am, is или are.'}, options:['are','is','am','be'], skill:'G4-08'},
     ],
     reading:{title:'Summer Plans', text:'The school year is nearly over, and everybody is talking about the summer holidays. Wendy is going to go to Greece with her parents. They are going to stay in a small hotel at the seaside. Tom is going to visit his grandparents in Poland. It is a long journey by train. Mark’s family is going to go camping in the mountains in Spain. "Don’t forget your passport and your ticket!" says Mark’s mum. And what about you? I am going to stay at home and go to the river with my friends.', questions:[
       {q:'Where is Wendy going to go?', a:'to Greece', options:['to Greece','to Poland','to Spain']},
@@ -2181,9 +2181,9 @@ const LESSONS = [
       'I will take my tent and my torch.',
     ],
     grammar:[
-      {q:'Tomorrow it ___ be cloudy.', a:'will', hint:'Будет — will.', options:['will','is','was','going'], skill:'G4-08'},
-      {q:'It ___ rain tomorrow. Don’t take an umbrella.', a:'won’t', hint:'Не будет — won’t.', options:['won’t','will','isn’t','doesn’t'], skill:'G4-08'},
-      {q:'___ will the weather be like? — Hot!', a:'What', hint:'Какая? — What … like?', options:['What','How','Where','Who'], skill:'G4-12'},
+      {q:'Tomorrow it ___ be cloudy.', a:'will', hint:'Будет — will.', why:{'is':'После is не ставят be. Завтра — will be.', 'was':'was — прошлое, а tomorrow — завтра: will.', 'going':'going без is и to не работает. Будет — will.'}, options:['will','is','was','going'], skill:'G4-08'},
+      {q:'It ___ rain tomorrow. Don’t take an umbrella.', a:'won’t', hint:'Не будет — won’t.', why:{'will':'will — «будет». Но зонт не нужен — значит, дождя не будет: won’t.', 'isn’t':'isn’t rain так не говорят. Не будет — won’t.', 'doesn’t':'doesn’t — про «обычно». Завтра не будет — won’t.'}, options:['won’t','will','isn’t','doesn’t'], skill:'G4-08'},
+      {q:'___ will the weather be like? — Hot!', a:'What', hint:'Какая? — What … like?', why:{'How':'Про погоду спрашивают What … like? «Какой будет?»', 'Where':'Where — «где». Спрашивают «какая погода» — What … like?', 'Who':'Who — «кто». Про погоду — What … like?'}, options:['What','How','Where','Who'], skill:'G4-12'},
     ],
     reading:{title:'Ready for the Trip', text:'Tomorrow Kate and her family are going to the lake for a camping trip. Kate is packing her suitcase. "What will the weather be like?" she asks. Dad looks at the weather forecast. "It will be sunny and warm in the day, but cold at night." So Kate packs her swimsuit, flippers, sunglasses and a cap for the day. For the night she takes a warm sleeping bag and her boots. Dad packs the tent and a torch. "It won’t rain," he says. "We don’t need umbrellas!"', questions:[
       {q:'Where is the family going?', a:'to the lake', options:['to the lake','to the city','to the mountains']},
@@ -2218,6 +2218,46 @@ const ERROR_TYPES = [
   { id: 'spelling', title: 'написание', child: 'ошибка в буквах', hint: 'слово узнано, но собрано с ошибкой в буквах' },
   { id: 'form', title: 'форма', child: 'не та форма', hint: 'грамматика: неверная форма слова или конструкции (код навыка G2–G4)' },
   { id: 'meaning', title: 'смысл текста', child: 'не понял(а) текст', hint: 'чтение: ответ не по тексту' },
+];
+
+// ---------- КОДЫ ОШИБОК АНГЛИЙСКОГО (карта пробелов для родителя) ----------
+// Каждая ошибка получает код по тому, где она сделана: упражнение, тип ошибки (ERROR_TYPES), навык G2–G4.
+// Из кодов «Мои ошибки» собирают карту пробелов: что сейчас трудно, что уже исправлено (errorGaps в js/stats.js).
+const ERROR_GROUPS = [
+  { id: 'words', title: 'Слова' },
+  { id: 'reading', title: 'Буквы и чтение' },
+  { id: 'order', title: 'Порядок слов' },
+  { id: 'be', title: 'Артикли и to be' },
+  { id: 'verbs', title: 'Формы глагола' },
+  { id: 'forms', title: 'Число, предлоги, местоимения' },
+  { id: 'ear', title: 'Восприятие на слух' },
+];
+// when: error — тип ошибки, exercise — упражнение, skills — навыки из карты программы; tip — что делать дома
+const ERROR_CODES = [
+  { code: 'W1', group: 'words', title: 'Не узнаёт слово', when: { error: 'unknown' }, tip: 'Повторить карточки темы: слово — картинка — перевод.' },
+  { code: 'W2', group: 'words', title: 'Путает похожие слова', when: { error: 'similar' }, tip: 'Сравнить пары похожих слов вслух, найти, чем отличаются.' },
+  { code: 'R1', group: 'reading', title: 'Ошибки в буквах слова', when: { error: 'spelling' }, tip: 'Собрать слово из букв, проговаривая каждую.' },
+  { code: 'R2', group: 'reading', title: 'Не понимает прочитанный текст', when: { error: 'meaning' }, tip: 'Читать текст вместе и искать в нём ответ на вопрос.' },
+  { code: 'O1', group: 'order', title: 'Порядок слов в предложении', when: { exercise: 'build' }, tip: 'Собирать короткие предложения: кто — что делает — что.' },
+  { code: 'O2', group: 'order', title: 'Вопросительные слова', when: { skills: ['G4-12'] }, tip: 'Who — кто, what — что, where — где, when — когда.' },
+  { code: 'B1', group: 'be', title: 'am / is / are', when: { skills: ['G2-01'] }, tip: 'I — am, he / she / it — is, you / we / they — are.' },
+  { code: 'B2', group: 'be', title: 'there is / there are', when: { skills: ['G2-08'] }, tip: 'Один предмет — there is, много — there are.' },
+  { code: 'B3', group: 'be', title: 'was / were', when: { skills: ['G4-05'] }, tip: 'I / he / she / it — was, you / we / they — were.' },
+  { code: 'B4', group: 'be', title: 'Артикли a / an', when: { skills: ['G3-03'] }, tip: 'Перед гласным звуком — an, перед согласным — a.' },
+  { code: 'B5', group: 'be', title: 'this / that / these / those', when: { skills: ['G3-04'] }, tip: 'Рядом — this / these, далеко — that / those.' },
+  { code: 'V1', group: 'verbs', title: 'have got / has got', when: { skills: ['G2-02'] }, tip: 'He / she / it — has, остальные — have.' },
+  { code: 'V2', group: 'verbs', title: 'can, must, may, have to', when: { skills: ['G2-03', 'G4-03', 'G4-10', 'G4-09'] }, tip: 'После can, must, may глагол без to и без -s.' },
+  { code: 'V3', group: 'verbs', title: '-s в 3-м лице, do / does', when: { skills: ['G2-09', 'G3-01'] }, tip: 'He likes, she lives; вопрос и отрицание — does / doesn’t.' },
+  { code: 'V4', group: 'verbs', title: 'Present Continuous', when: { skills: ['G3-08', 'G4-01'] }, tip: 'Сейчас: am / is / are + глагол с -ing.' },
+  { code: 'V5', group: 'verbs', title: 'Прошедшее время', when: { skills: ['G3-10', 'G4-06', 'G4-07'] }, tip: 'Правильные глаголы + -ed; неправильные учить парами go — went.' },
+  { code: 'V6', group: 'verbs', title: 'Будущее: going to, will', when: { skills: ['G4-08'] }, tip: 'Собираюсь — am going to, будет — will.' },
+  { code: 'V7', group: 'verbs', title: 'Просьбы и запреты', when: { skills: ['G2-05'] }, tip: 'Просьба начинается с глагола: Open! Запрет — Don’t…' },
+  { code: 'F1', group: 'forms', title: 'Множественное число', when: { skills: ['G2-04', 'G3-06'] }, tip: 'Обычно + s; особые слова: mice, sheep, children.' },
+  { code: 'F2', group: 'forms', title: 'Предлоги места и времени', when: { skills: ['G2-07', 'G3-07', 'G3-09'] }, tip: 'in — в, on — на, under — под; at 7, on Monday, in June.' },
+  { code: 'F3', group: 'forms', title: 'Местоимения и «чей»', when: { skills: ['G2-06', 'G3-11', 'G3-05'] }, tip: 'my, your, his, her; Ann’s — «Аннин».' },
+  { code: 'F4', group: 'forms', title: 'some / any, much / many', when: { skills: ['G3-02', 'G4-02'] }, tip: 'some — в утверждении, any — в вопросе; считаем — many, нет — much.' },
+  { code: 'F5', group: 'forms', title: 'Сравнение и как часто', when: { skills: ['G4-04', 'G4-11'] }, tip: 'big — bigger — the biggest; always, sometimes, never.' },
+  { code: 'L1', group: 'ear', title: 'Не узнаёт слово на слух', when: { exercise: 'listen' }, tip: 'Слушать слово и показывать картинку, потом повторять вслух.' },
 ];
 
 // ---------- РЕГИОНЫ И РАНГИ ----------
@@ -2709,7 +2749,7 @@ window.EQ = {
   CHARACTERS, HERO_MOODS, DEFAULT_HERO: 'harlow',
   LESSONS,
   MAX_LEVEL, xpForLevel, totalXpForLevel, levelFromXp,
-  REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES,
+  REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES, ERROR_GROUPS, ERROR_CODES,
   QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, SECRET_REGIONS,
   PACKS, addPacks, EXTRA_KINDS, extraQuestOf, questLesson, isNewItem, LOCATION_ART,
   MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,

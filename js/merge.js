@@ -100,6 +100,7 @@ const RULES = {
   // { слово: { ok, bad, last, err, with } } — так же, как навыки
   words: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => fields(bb, ll, rr, { ok: add, bad: add, last: max, err: addMap, with: addMap })),
   errorTypes: addMap,
+  errorCodes: addMap,
   revengeWins: add,
   crystals: add,
   // { регион: полученный шаг звания } — максимум
