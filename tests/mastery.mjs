@@ -186,5 +186,40 @@ check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g
   check('клиника: строка для родителя', /Клиника: комнат 1 из \d+/.test(S.clinicLine(fresh())) && S.reportText(fresh()).includes('Клиника:'));
 }
 
+// дополнения итерации 2: коды ошибок, карта пробелов, граф навыков как условие открытия
+{
+  const { LESSONS, ERROR_CODES, CURRICULUM } = ctx.window.EQ;
+  check('коды: все навыки карты программы распределены по кодам', CURRICULUM.skills.every(k => ERROR_CODES.some(c => (c.when.skills || []).includes(k.code))));
+  check('коды: на слух — L1 при любом типе', S.errorCodeOf({ exercise: 'listen', error: 'similar' }) === 'L1');
+  check('коды: навык важнее типа (am/is/are → B1)', S.errorCodeOf({ exercise: 'grammar', error: 'form', skill: 'G2-01' }) === 'B1');
+  check('коды: прошедшее время → V5', S.errorCodeOf({ skill: 'G4-07' }) === 'V5');
+  check('коды: похожие слова → W2, буквы → R1, текст → R2, порядок → O1',
+    S.errorCodeOf({ error: 'similar' }) === 'W2' && S.errorCodeOf({ error: 'spelling' }) === 'R1' && S.errorCodeOf({ error: 'meaning' }) === 'R2' && S.errorCodeOf({ exercise: 'build', error: 'form' }) === 'O1');
+  const none = S.errorGaps(fresh());
+  check('пробелы: у нового игрока пробелов нет', !none.gaps.length && none.groups.every(g => g.state === 'none'));
+  const L = LESSONS.find(l => l.grammar.some(q => q.skill === 'G2-01')), gq = L.grammar.find(q => q.skill === 'G2-01');
+  const mk = n => Object.fromEntries(Array.from({ length: n }, (_, i) => [`word:${L.id}:${L.words[i].en}`, { type: 'word', lessonId: L.id, ref: L.words[i].en, wrong: 1, box: 0, due: 0, last: NOW, ex: 'listen', lastErr: 'unknown', code: 'L1' }]));
+  const g3 = S.errorGaps(fresh({ mistakes: mk(3) }));
+  check('пробелы: 3 карточки на слух — пробел L1', g3.gaps[0]?.code === 'L1' && g3.groups.find(g => g.id === 'ear').state === 'gap', g3.gaps);
+  check('пробелы: 1 карточка — «следим»', S.errorGaps(fresh({ mistakes: mk(1) })).codes.find(c => c.code === 'L1').state === 'watch');
+  check('пробелы: были ошибки, всё выучено — «исправлено»', S.errorGaps(fresh({ errorCodes: { L1: 4 } })).codes.find(c => c.code === 'L1').state === 'fixed');
+  const weak = S.errorGaps(fresh({ skills: { 'G2-01': { ok: 1, bad: 3, last: Date.now() } } }));
+  check('пробелы: слабый навык — пробел даже без карточек', weak.codes.find(c => c.code === 'B1').state === 'gap' && weak.codes.find(c => c.code === 'B1').weak.length === 1);
+  check('пробелы: старый прогресс — ошибки по словам видны', S.errorGaps(fresh({ words: { cat: { ok: 1, bad: 2, err: { similar: 2 } } } })).codes.find(c => c.code === 'W2').total === 2);
+  check('пробелы: старая карточка без кода — по навыку вопроса', S.mistakeCode({ type: 'grammar', lessonId: L.id, ref: gq.q, lastErr: 'form', ex: 'grammar' }) === 'B1');
+  check('пробелы: записанное и старое не складываются', S.errorGaps(fresh({ errorCodes: { W2: 3 }, words: { cat: { ok: 0, bad: 2, err: { similar: 2 } } } })).codes.find(c => c.code === 'W2').total === 3);
+  check('отчёт: строка о пробелах', S.reportText(fresh({ mistakes: mk(3) })).includes('Пробелы: Не узнаёт слово на слух (L1)'));
+  // граф навыков
+  const dayoff = LESSONS.find(l => l.id === 'g3-dayoff');   // Present Continuous, опора — to be (G2-01)
+  check('граф: опора не тренировалась — тема открыта', S.skillGate(dayoff, fresh()) === null);
+  check('граф: слабая опора закрывает тему', S.skillGate(dayoff, fresh({ skills: { 'G2-01': { ok: 1, bad: 3, last: Date.now() } } }))?.code === 'G2-01');
+  check('граф: мало ответов — не закрывает', S.skillGate(dayoff, fresh({ skills: { 'G2-01': { ok: 0, bad: 2, last: Date.now() } } })) === null);
+  check('граф: подтянутый навык открывает', S.skillGate(dayoff, fresh({ skills: { 'G2-01': { ok: 6, bad: 3, last: Date.now() } } })) === null);
+  check('граф: свой навык темы не закрывает её саму', S.skillGate(L, fresh({ skills: { 'G2-01': { ok: 0, bad: 5, last: Date.now() } } }))?.code !== 'G2-01');
+  const block = S.checkpointsOf(3)[0].lessons, own = S.lessonSkills(block[0])[0];
+  check('граф: босс закрыт, пока слаб навык его части', !own || S.skillGate(block, fresh({ skills: { [own]: { ok: 0, bad: 4, last: Date.now() } } }), { own: true })?.code === own);
+  check('граф: вопросы для тренировки навыка', S.skillItems('G2-01', 3).length >= 6 && S.skillItems('G2-01', 3).every(x => x.q.skill === 'G2-01'));
+}
+
 console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);
 process.exit(fail ? 1 : 0);

@@ -332,7 +332,8 @@ try {
     if (!/Слова: освоение/.test(body) || !/Типы ошибок:/.test(body) || !/трудное|учим/.test(body)) throw new Error('в панели нет мастерства слов и типов ошибок');
     document.getElementById('t-report').click(); await __sleep(300);
     const rep = document.getElementById('t-report-out').value;
-    for (const s of ['Ответов:', 'Цель дня', 'Трудные слова', 'Сданы проверки', 'Слова: освоено']) if (!rep.includes(s)) throw new Error('в отчёте нет «' + s + '»');
+    if (!/Карта пробелов/.test(body) || !document.querySelector('.modal .gap-map .gap-group')) throw new Error('в панели нет карты пробелов');
+    for (const s of ['Ответов:', 'Цель дня', 'Трудные слова', 'Сданы проверки', 'Слова: освоено', 'Пробел']) if (!rep.includes(s)) throw new Error('в отчёте нет «' + s + '»');
     __close(); return tiles + ' плиток, отчёт полный';`));
 
   await test('начатая тема не закрывается, если перед ней появилась новая', () => js(`
@@ -1104,6 +1105,48 @@ try {
     const back = JSON.parse(saved); state.quests = back.q; if (back.c) state.clinic = back.c; else delete state.clinic;
     await saveState(); C.renderClinic();
     return 'комнаты по эскизу, рецепт за эпический квест, стройка списывает материалы, приз на карточке';`)));
+
+  await test('разбор варианта, замок по навыку, карта пробелов', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), map = await import('./js/map.js');
+    const saved = JSON.stringify({ lp: state.lessonProgress, cp: state.checkpoints, sk: state.skills, g: state.settings.mapGrade, v: state.settings.mapView, u: !!state.settings.unlockAll });
+    state.settings.unlockAll = true; await saveState();   // квест «Грамматика» открыт сразу
+    // 1) своё объяснение у выбранного неверного варианта
+    const L = window.EQ.LESSONS.find(l => l.id === 'g2-family');
+    map.openLessonHub(L); await __sleep(200); await __quest('grammar', 300);
+    const qt = document.querySelector('.q-sentence')?.textContent || [...document.querySelectorAll('.q-text')][1].textContent.trim();
+    const g = L.grammar.find(x => x.q === qt), wrongOpt = g.options.find(o => o !== g.a);
+    [...document.querySelectorAll('.opt')].find(o => o.dataset.o === wrongOpt).click(); await __sleep(200);
+    const why = document.querySelector('#modal .why')?.textContent || '';
+    if (!why.includes(g.why[wrongOpt]) || !why.includes('Правильно:')) throw new Error('разбор: «' + why + '», ждали «' + g.why[wrongOpt] + '»');
+    await __sleep(3200); __close(); await __sleep(100);
+    // 2) слабая опора закрывает тему «Выходной» (Present Continuous ← to be)
+    const G3 = window.EQ.LESSONS.filter(l => l.grade === 3).sort((a, b) => a.order - b.order), i = G3.findIndex(l => l.id === 'g3-dayoff');
+    for (const l of G3.slice(0, i)) state.lessonProgress[l.id] = { vocab: 3, listen: 3, grammar: 2, reading: 1 };
+    delete state.lessonProgress['g3-dayoff'];
+    for (const cp of map.checkpointsOf(3).filter(cp => cp.part <= i / 4)) state.checkpoints[cp.id] = { best: 9, passedAt: Date.now() };
+    state.skills['G2-01'] = { ok: 1, bad: 3, last: Date.now() };
+    state.settings.unlockAll = false; state.settings.mapGrade = 3; state.settings.mapView = null; await saveState(); map.renderMap();
+    const node = map.mapNodes(3).find(n => n.lesson?.id === 'g3-dayoff');
+    if (!/подтяни навык/.test(map.lockReason(node) || '')) throw new Error('тема не закрыта навыком: ' + map.lockReason(node));
+    const mark = [...document.querySelectorAll('.path-mark')].find(m => (m.getAttribute('aria-label') || '').startsWith(G3[i].title));
+    if (!mark?.classList.contains('locked')) throw new Error('метка не закрыта');
+    mark.click(); await __sleep(80);
+    if (!f('path-skill')) throw new Error('нет «Подтянуть навык»: ' + f('path-card').innerText);
+    f('path-skill').click(); await __sleep(300);
+    for (let k = 0; k < 6; k++){
+      const qs = document.querySelector('.q-sentence')?.textContent, it = window.EQ.LESSONS.flatMap(l => l.grammar).find(x => x.q === qs && x.skill === 'G2-01');
+      if (!it) throw new Error('вопрос не по навыку: ' + qs);
+      [...document.querySelectorAll('.opt')].find(o => o.dataset.o === it.a).click(); await __sleep(1000);
+    }
+    if (!/путь открыт/.test(f('modal').innerText)) throw new Error('итог тренировки: ' + f('modal').innerText.slice(0, 200));
+    if (map.lockReason(node)) throw new Error('после тренировки тема закрыта: ' + map.lockReason(node));
+    __close(); await __sleep(100);
+    // 3) карта пробелов в панели
+    const back = JSON.parse(saved);
+    state.lessonProgress = back.lp; state.checkpoints = back.cp; state.skills = back.sk; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null; state.settings.unlockAll = back.u;
+    await saveState(); map.renderMap();
+    return 'своё объяснение «' + wrongOpt + '», замок G2-01 → тренировка 6/6 → открыто';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {

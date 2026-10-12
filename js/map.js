@@ -1,5 +1,5 @@
 // English Quest — Карта уровней и экран темы.
-import { startCheckpoint } from './checkpoint.js';
+import { startCheckpoint, startSkillPractice } from './checkpoint.js';
 import { CHARACTERS, LESSONS, LOCATION_ART, QUEST_PASS_PCT, SECRET_REGIONS, extraQuestOf, isNewItem, regionOfGrade } from './eq.js';
 import { lessonHeader, startExercise } from './exercises.js';
 import { renderSecret } from './mines.js';
@@ -12,7 +12,7 @@ import { saveState, state } from './state.js';
 import { speak } from './tts.js';
 import { openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
-import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, prizeLine, questIsNew, questKey, questLock, questPassed, questTitle, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillStats } from './stats.js';
+import { BLOCK, CHECKPOINTS, CHECKPOINT_PASS, CHECKPOINT_SIZE, GRADES, PARTS, checkpointsOf, lessonQuests, lessonsOf, mistakeList, prizeLine, questIsNew, questKey, questLock, questPassed, questTitle, rarityOf, regionRanks, revengeItems, revengeReady, secretRegionState, skillGate, skillStats } from './stats.js';
 
 // ---------- КАРТА УРОКОВ ----------
 // Каждый класс — дорожка своего региона (Зелёная долина, Город мастеров, Большая экспедиция). После каждых 4 тем — проверка (💎 / 🏆 в инвентарь).
@@ -40,7 +40,8 @@ export function lockReason(node){
   if (node.kind === 'checkpoint'){
     if (checkpointPassed(node.cp)) return null;
     const left = node.cp.lessons.filter(l => !isLessonComplete(l));
-    return left.length ? `Сначала пройди: ${left.map(l => `«${l.title}»`).join(', ')}` : null;
+    if (left.length) return `Сначала пройди: ${left.map(l => `«${l.title}»`).join(', ')}`;
+    return gateText(skillGate(node.cp.lessons, state, { own: true }));
   }
   const ls = lessonsOf(node.lesson.grade), i = ls.indexOf(node.lesson);
   if (i === 0) return null;
@@ -48,10 +49,20 @@ export function lockReason(node){
   if (Object.keys(state.lessonProgress[node.lesson.id] || {}).length) return null;
   if (i % BLOCK === 0){
     const cp = checkpointsOf(node.lesson.grade)[i / BLOCK - 1];
-    return checkpointPassed(cp) ? null : `Сначала сдай «${cp.title}»`;
+    if (!checkpointPassed(cp)) return `Сначала сдай «${cp.title}»`;
+    return gateText(skillGate(node.lesson, state));
   }
-  return isLessonComplete(ls[i - 1]) ? null : `Сначала пройди тему «${ls[i - 1].title}»`;
+  if (!isLessonComplete(ls[i - 1])) return `Сначала пройди тему «${ls[i - 1].title}»`;
+  return gateText(skillGate(node.lesson, state));
 }
+// граф навыков: какой навык мешает открыть узел (null — ничего); пройденное и начатое не закрываем
+export function nodeGate(node){
+  if (state.settings.unlockAll || nodeDone(node)) return null;
+  if (node.kind === 'checkpoint') return node.cp.lessons.every(l => isLessonComplete(l)) ? skillGate(node.cp.lessons, state, { own: true }) : null;
+  if (Object.keys(state.lessonProgress[node.lesson.id] || {}).length) return null;
+  return skillGate(node.lesson, state);
+}
+const gateText = g => g ? `Сначала подтяни навык «${g.skill.title}» — он здесь нужен` : null;
 export function nodeDone(n){ return n.kind === 'lesson' ? isLessonComplete(n.lesson) : checkpointPassed(n.cp); }
 export function currentNode(grade){ return mapNodes(grade).find(n => !lockReason(n) && !nodeDone(n)) || null; }
 
@@ -132,9 +143,10 @@ export function renderMap(){
       <b class="path-card-name">${escapeHtml(place || (n.kind === 'checkpoint' ? n.cp.title : n.lesson.title))}</b>
       <span class="path-card-en">${escapeHtml(n.kind === 'checkpoint' ? n.cp.title : n.lesson.title)}</span>
       <span class="path-card-prog">${escapeHtml(progress)}</span>
-      ${lock ? `<span class="path-card-lock"><span aria-hidden="true">🔒</span> ${escapeHtml(lock)}</span>`
+      ${lock ? `<span class="path-card-lock"><span aria-hidden="true">🔒</span> ${escapeHtml(lock)}</span>${nodeGate(n) && lock === gateText(nodeGate(n)) ? `<button type="button" class="btn gold" id="path-skill" data-skill="${nodeGate(n).code}">💪 Подтянуть навык</button>` : ''}`
         : `<button type="button" class="btn ${s === 'done' ? 'secondary' : ''}" id="path-go">${s === 'done' ? 'Повторить' : n.kind === 'checkpoint' ? 'Сразиться с боссом' : 'Войти в локацию'}</button>`}`);
     wrap.querySelector('#path-go')?.addEventListener('click', () => { hideCard(wrap); open = -1; openNode(n); });
+    wrap.querySelector('#path-skill')?.addEventListener('click', e => { hideCard(wrap); open = -1; startSkillPractice(e.currentTarget.dataset.skill, n.kind === 'checkpoint' ? n.cp.grade : n.lesson.grade); });
   });
   wrap.querySelectorAll('[data-grade].path-next, .path-passed-go').forEach(b => b.onclick = () => { state.settings.mapGrade = +b.dataset.grade; state.settings.mapView = null; saveState(); renderMap(); scrollToCurrent(); });
   wrap.querySelectorAll('[data-secret].path-next').forEach(b => b.onclick = () => { state.settings.mapView = b.dataset.secret; saveState(); renderMap(); });

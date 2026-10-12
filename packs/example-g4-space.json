@@ -25,8 +25,8 @@
     ],
     "phrases": ["The rocket is going to the Moon.", "I can see a planet in my telescope."],
     "grammar": [
-      { "skill": "G4-04", "q": "The Sun is ___ than the Moon.", "a": "bigger", "hint": "big — bigger.", "options": ["bigger", "biggest", "more big"] },
-      { "skill": "G4-08", "q": "We are ___ to fly to the Moon.", "a": "going", "hint": "be going to — собираться.", "options": ["going", "go", "went"] }
+      { "skill": "G4-04", "q": "The Sun is ___ than the Moon.", "a": "bigger", "hint": "big — bigger.", "options": ["bigger", "biggest", "more big"], "why": {"biggest": "biggest — «самый большой». Тут сравнивают двоих — bigger.", "more big": "Короткое слово сравнивают через -er: bigger."} },
+      { "skill": "G4-08", "q": "We are ___ to fly to the Moon.", "a": "going", "hint": "be going to — собираться.", "options": ["going", "go", "went"], "why": {"go": "Собираемся — are going to, нужна форма с -ing.", "went": "went — «пошли» в прошлом. Собираемся — going to."} }
     ],
     "reading": {
       "title": "A Trip to the Moon",

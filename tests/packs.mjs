@@ -24,6 +24,8 @@ const space = read('packs/example-g4-space.json'), toy = read('packs/example-g3-
 const bad = (patch, p = toy) => validatePack({ ...JSON.parse(JSON.stringify(p)), ...patch }, base);
 check('ошибка: неизвестный навык', bad({ quests: [{ ...toy.quests[0], grammar: [{ ...toy.quests[0].grammar[0], skill: 'G9-99' }] }] }).some(e => /G9-99/.test(e)));
 check('ошибка: ответ не среди вариантов', bad({ quests: [{ ...toy.quests[0], grammar: [{ ...toy.quests[0].grammar[0], a: 'Them' }] }] }).length > 0);
+check('ошибка: нет объяснения к неверному варианту', bad({ quests: [{ ...toy.quests[0], grammar: [{ ...toy.quests[0].grammar[0], why: { These: 'Для многих.' } }] }] }).some(e => /why/.test(e)));
+check('ошибка: объяснение к несуществующему варианту', bad({ quests: [{ ...toy.quests[0], grammar: [{ ...toy.quests[0].grammar[0], why: { ...toy.quests[0].grammar[0].why, Them: '?' } }] }] }).some(e => /why/.test(e)));
 check('ошибка: нет такой темы', bad({ lessonId: 'g3-nope' }).some(e => /lessonId/.test(e)));
 check('ошибка: неизвестное упражнение', bad({ quests: [{ ...toy.quests[0], kind: 'dance' }] }).some(e => /kind/.test(e)));
 check('ошибка: метка вне сцены', bad({ scene: { image: 'og-image.png', width: 100, height: 100, markers: [{ quest: 'toybox-this-these', x: 150, y: 10 }] } }).some(e => /вне сцены/.test(e)));

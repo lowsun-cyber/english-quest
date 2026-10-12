@@ -7,7 +7,7 @@ import { speak } from './tts.js';
 import { afterFeedback, closeModal, openModal, toast } from './ui.js';
 import { DAY, daysLabel, distractors, escapeHtml, shuffle, startOfDay } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
-import { REVENGE_MIN, classifyError, mistakeList, resolveMistake, revengeItems, revengeReady } from './stats.js';
+import { REVENGE_MIN, classifyError, errorCodeOf, mistakeList, resolveMistake, revengeItems, revengeReady } from './stats.js';
 
 // ---------- МОИ ОШИБКИ (интервальное повторение) ----------
 // Каждая ошибка — карточка в «коробке» 0..3. Верный ответ при повторении двигает её дальше,
@@ -40,12 +40,18 @@ export function noteError(m, type, ref, { exercise, chosen, skill } = {}){
   m.err = { ...(m.err || {}), [error]: (m.err?.[error] || 0) + 1 };
   m.lastErr = error;
   if (exercise) m.ex = exercise;   // где ошибся — реванш подаст это на ступень проще
+  // код ошибки для карты пробелов; в реванше и проверке упражнение — не место ошибки, код — по навыку и типу
+  m.code = errorCodeOf({ exercise: exercise === 'revenge' ? m.ex : exercise, error, skill });
   if (chosen && chosen !== ref) m.with = topCounts({ ...(m.with || {}), [chosen]: (m.with?.[chosen] || 0) + 1 }, 3);
-  countError(error);
+  countError(error, m.code);
   if (type === 'word') logWord(ref, false, { error, chosen });
   return error;
 }
-export function countError(error){ state.errorTypes[error] = (state.errorTypes[error] || 0) + 1; }
+export function countError(error, code = errorCodeOf({ error })){
+  state.errorTypes[error] = (state.errorTypes[error] || 0) + 1;
+  if (!state.errorCodes) state.errorCodes = {};
+  state.errorCodes[code] = (state.errorCodes[code] || 0) + 1;
+}
 const topCounts = (obj, n) => Object.fromEntries(Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n));
 
 // Ответ по слову (для мастерства): верно / неверно, тип ошибки и с чем спутал. Сохраняет вызывающий код.

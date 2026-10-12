@@ -43,6 +43,9 @@ for (const l of LESSONS){
   for (const q of l.grammar){
     if (q.skill) check(`${l.id}: навык ${q.skill} есть в карте`, !!SKILLS[q.skill] && SKILLS[q.skill].grade <= l.grade, q.q);
     check(`${l.id}: ответ «${q.a}» есть среди вариантов`, q.options.includes(q.a) && new Set(q.options).size === q.options.length, q.q);
+    // разбор неверного ответа: у каждого неверного варианта своё объяснение (js/why.js)
+    const wrong = q.options.filter(o => o !== q.a);
+    check(`${l.id}: объяснение к каждому неверному варианту`, wrong.every(o => q.why?.[o]?.trim()) && Object.keys(q.why || {}).every(k => wrong.includes(k)), q.q);
   }
   check(`${l.id}: у каждого слова есть картинка и перевод`, l.words.every(w => w.en && w.ru && w.emoji), l.words.filter(w => !w.emoji).map(w => w.en));
   const ems = l.words.map(w => w.emoji);

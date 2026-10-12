@@ -13,10 +13,10 @@
       "emoji": "🧸",
       "rarity": "rare",
       "grammar": [
-        { "skill": "G3-04", "q": "___ is my teddy bear.", "a": "This", "hint": "Один предмет рядом — this.", "options": ["This", "These", "Those"] },
-        { "skill": "G3-04", "q": "___ are my toy soldiers.", "a": "These", "hint": "Много предметов рядом — these.", "options": ["This", "These", "That"] },
-        { "skill": "G3-04", "q": "Look! ___ kite is in the sky.", "a": "That", "hint": "Один предмет далеко — that.", "options": ["That", "Those", "These"] },
-        { "skill": "G3-04", "q": "___ balls are in the box over there.", "a": "Those", "hint": "Много предметов далеко — those.", "options": ["Those", "That", "This"] }
+        { "skill": "G3-04", "q": "___ is my teddy bear.", "a": "This", "hint": "Один предмет рядом — this.", "options": ["This", "These", "Those"], "why": {"These": "These — для многих предметов, а мишка один.", "Those": "Those — для многих и далеко, а мишка один и рядом."} },
+        { "skill": "G3-04", "q": "___ are my toy soldiers.", "a": "These", "hint": "Много предметов рядом — these.", "options": ["This", "These", "That"], "why": {"This": "This — для одного, а солдатиков много.", "That": "That — для одного и далеко, а солдатиков много."} },
+        { "skill": "G3-04", "q": "Look! ___ kite is in the sky.", "a": "That", "hint": "Один предмет далеко — that.", "options": ["That", "Those", "These"], "why": {"Those": "Those — для многих, а змей один.", "These": "These — для многих и рядом, а змей один и высоко."} },
+        { "skill": "G3-04", "q": "___ balls are in the box over there.", "a": "Those", "hint": "Много предметов далеко — those.", "options": ["Those", "That", "This"], "why": {"That": "That — для одного, а мячей много.", "This": "This — для одного и рядом, а мячи там, далеко."} }
       ]
     }
   ],
