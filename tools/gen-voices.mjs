@@ -10,6 +10,7 @@
 //   пробный прогон: --only <герой> (harlow, luna, max, owl, robo), --kind <вид> (correct, grammar, location,
 //       narrator, self-win…; «self» — все реплики героя игрока), --limit N — записать не больше N новых фраз:
 //       GEMINI_API_KEY=… node tools/gen-voices.mjs --out ~/Downloads/quest-voice-gen --only owl --kind grammar --limit 3
+//   --wait — при лимите «в минуту» (бесплатный тариф) ждать и продолжать самому; суточный лимит — всё равно стоп
 //   --prune — убрать из словаря записи фраз, которых больше нет в контенте (без флага записанное не трогается)
 //
 // Фразы берутся из content.js (voiceLines), файлы — tts_cache/<sha1>.m4a, словарь «ключ → файл» —
@@ -43,7 +44,7 @@ const MANIFEST = join(ROOT, 'tts_voices.json');
 const sandbox = { window: { EQ: loadContent({ packs: 'all' }) } };
 const all = sandbox.window.EQ.voiceLines();
 const keys = new Set(all.map(x => x.key));   // ключ записи: фраза (Dr. Harlow) или «герой|фраза»
-const FORCE = process.argv.includes('--force'), PRUNE = process.argv.includes('--prune');
+const FORCE = process.argv.includes('--force'), PRUNE = process.argv.includes('--prune'), WAIT = process.argv.includes('--wait');
 const arg = name => { const i = process.argv.indexOf(name); return i > 0 ? (process.argv[i + 1] || '') : null; };
 // пробный прогон: только один герой, один вид реплик, не больше N новых фраз
 const ONLY = arg('--only'), KIND = arg('--kind'), LIMIT = arg('--limit') == null ? Infinity : Number(arg('--limit'));
@@ -115,7 +116,16 @@ const KIND_HINT = {
 const LESSON_AUDIO = existsSync(join(ROOT, 'tts_manifest.json')) ? JSON.parse(readFileSync(join(ROOT, 'tts_manifest.json'), 'utf8')) : {};
 const hasLessonAudio = text => !!(LESSON_AUDIO[text] || LESSON_AUDIO[text.replace(/(^|\s)I(?=[\s'’.,!?]|$)/g, '$1i')]);
 // исчерпан лимит запросов (HTTP 429 / RESOURCE_EXHAUSTED): дальше пробовать бессмысленно — сохраняемся и выходим
-class LimitError extends Error {}
+// retry — через сколько секунд можно снова (из ответа Gemini), perMinute — лимит в минуту, а не в сутки
+class LimitError extends Error {
+  constructor(message, body){
+    super(message);
+    const hint = body?.error?.details?.find(d => d.retryDelay)?.retryDelay || /retry in ([\d.]+)\s*s/i.exec(message)?.[1];
+    this.retry = hint ? Math.ceil(parseFloat(hint)) : null;
+    this.perMinute = /per minute/i.test(message) || (this.retry != null && this.retry <= 120);
+  }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function synth(text, speaker, kind){
   const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || [VOICES[speaker].style, KIND_HINT[kind]].filter(Boolean).join('; ');
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
@@ -129,7 +139,7 @@ async function synth(text, speaker, kind){
     }),
   });
   const body = await res.json().catch(() => ({}));
-  if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`);
+  if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`, body);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${body.error?.message || JSON.stringify(body).slice(0, 300)}`);
   const b64 = findAudio(body);
   if (!b64) throw new Error('в ответе нет аудио: ' + JSON.stringify(body).slice(0, 300));
@@ -147,7 +157,18 @@ for (const [i, { text, speaker, kind, key }] of items.entries()){
   process.stdout.write(`${i + 1}/${lines.length} ${text.slice(0, 60)}… `);
   try {
     const wav = join(tmp, 'line.wav');
-    writeFileSync(wav, await synth(text, speaker, kind));
+    // --wait: минутный лимит (бесплатный тариф — несколько запросов в минуту) — ждём и пробуем ту же фразу снова
+    let audio;
+    for (;;){
+      try { audio = await synth(text, speaker, kind); break; }
+      catch (e){
+        if (!(WAIT && e instanceof LimitError && e.perMinute)) throw e;
+        const sec = Math.max(e.retry || 20, 5) + 2;
+        process.stdout.write(`⏳ ${sec} с… `);
+        await sleep(sec * 1000);
+      }
+    }
+    writeFileSync(wav, audio);
     execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '64000', wav, out]);
     made++;
     if (OUT){
@@ -172,7 +193,8 @@ const where = OUT ? `Файлы — в ${OUT}\nПодключить: node tools/
 if (!OUT) writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
 if (limited){
   console.log(`\nЛимит запросов Gemini исчерпан — остановились. Записанное сохранено: озвучено ${made}, уже было ${kept}, осталось ${left}.\n` +
-    `Ответ Gemini: ${limited}\nЗапустите ту же команду позже (обычно лимит сбрасывается через минуту или в начале суток) — готовое пропустится.\n${where}`);
+    `Ответ Gemini: ${limited}\nЗапустите ту же команду позже (обычно лимит сбрасывается через минуту или в начале суток) — готовое пропустится.\n` +
+    `${WAIT ? '' : 'Если лимит «в минуту» — добавьте --wait: скрипт сам будет ждать и продолжать.\n'}${where}`);
   process.exit(2);
 }
 if (OUT || !PRUNE){
