@@ -1,0 +1,40 @@
+{
+  "format": "eq-parcel/1",
+  "id": "2026-10-12-cat-cap",
+  "student": "",
+  "title": "Посылка от Dr. Harlow",
+  "note": "Привет! Я заметил, что cat и cap иногда путаются — они и правда похожи. Внутри два особых квеста: поиграем со словами-близнецами и с am / is / are. Пройдёшь оба — получишь Кристальный ключ!",
+  "reward": { "title": "Кристальный ключ Распутывателя cat и cap", "emoji": "🗝️" },
+  "quests": [
+    {
+      "id": "cat-cap", "title": "cat или cap?", "emoji": "🐱", "focus": ["W2", "L1"],
+      "words": [
+        { "en": "cat", "ru": "кот", "emoji": "🐱" },
+        { "en": "cap", "ru": "кепка", "emoji": "🧢" },
+        { "en": "hat", "ru": "шляпа", "emoji": "🎩" },
+        { "en": "bat", "ru": "летучая мышь", "emoji": "🦇" },
+        { "en": "bag", "ru": "сумка", "emoji": "🎒" },
+        { "en": "dog", "ru": "собака", "emoji": "🐶" }
+      ],
+      "grammar": [
+        { "q": "My ___ is on my head.", "a": "cap", "hint": "Кепку носят на голове.", "options": ["cap", "cat", "bag"],
+          "why": { "cat": "cat — «кот». Кот на голове не сидит! На голове — cap.", "bag": "bag — «сумка». На голове носят cap." } }
+      ]
+    },
+    {
+      "id": "am-is-are", "title": "am, is или are?", "emoji": "🧩", "focus": ["B1"],
+      "grammar": [
+        { "skill": "G2-01", "q": "I ___ seven.", "a": "am", "hint": "Я — am.", "options": ["am", "is", "are"],
+          "why": { "is": "is — для he, she, it. С I — am.", "are": "are — для you, we, they. С I — am." } },
+        { "skill": "G2-01", "q": "The cat ___ black.", "a": "is", "hint": "Один кот — is.", "options": ["is", "are", "am"],
+          "why": { "are": "are — для многих, а кот один.", "am": "am — только после I." } },
+        { "skill": "G2-01", "q": "We ___ friends.", "a": "are", "hint": "Мы — are.", "options": ["are", "is", "am"],
+          "why": { "is": "is — для одного, а нас много.", "am": "am — только после I." } },
+        { "skill": "G2-01", "q": "My caps ___ red.", "a": "are", "hint": "Кепок много — are.", "options": ["are", "is", "am"],
+          "why": { "is": "is — для одной кепки, а их много.", "am": "am — только после I." } },
+        { "skill": "G2-01", "q": "She ___ my sister.", "a": "is", "hint": "Она — is.", "options": ["is", "are", "am"],
+          "why": { "are": "are — для you, we, they. С she — is.", "am": "am — только после I." } }
+      ]
+    }
+  ]
+}

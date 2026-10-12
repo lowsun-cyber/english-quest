@@ -177,6 +177,25 @@ if (import.meta.url === `file://${process.argv[1]}`){
     check('домашка ученику без прогресса', r.status === 200 && r.data.version === 1);
     await call(`/students/${sonya}/delete`, { token: owner, body: {} });
 
+    // посылка от Dr. Harlow (итерация 5): кладётся в parcels, с проверкой версии; отзыв — отметка withdrawn
+    {
+      const pk = JSON.parse(readFileSync(join(ROOT, 'docs/ai-pack/example-parcel.json'), 'utf8'));
+      let v = (await call(`/students/${masha}/progress`, { token: teacher })).data.version;
+      r = await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v, parcel: pk } });
+      check('посылка отправлена с сервера', r.status === 200 && r.data.version === v + 1, r.data);
+      r = await call('/progress', { token: devA });
+      const got = r.data.state.parcels?.[pk.id];
+      check('устройство получает посылку, остальное не тронуто', got?.pack?.reward?.title === pk.reward.title && got.sent > 0 && got.withdrawn === null && r.data.state.xp === 20, got);
+      check('посылка: старая версия — 409', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v, parcel: pk } })).status === 409);
+      check('посылка: чужой формат не принимается', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, parcel: { ...pk, format: 'x' } } })).status === 400);
+      check('посылка: кривой id не принимается', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, parcel: { ...pk, id: '../x' } } })).status === 400);
+      check('посылка: слишком большая не принимается', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, parcel: { ...pk, note: 'я'.repeat(70000) } } })).status === 400);
+      check('посылка: без входа — 401', (await call(`/students/${masha}/parcel`, { body: { base: v + 1, parcel: pk } })).status === 401);
+      r = await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, withdraw: pk.id } });
+      check('посылку можно отозвать', r.status === 200 && (await call('/progress', { token: devA })).data.state.parcels[pk.id].withdrawn > 0);
+      check('отозвать несуществующую — 404', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 2, withdraw: 'no-such' } })).status === 404);
+    }
+
     // удаление репетитора: ученики переходят
     check('владельца удалить нельзя', (await call(`/users/${(await call('/me', { token: owner })).data.user.id}/delete`, { token: admin, body: {} })).status === 403);
     r = await call(`/users/${anna.id}/delete`, { token: admin, body: {} });
@@ -338,6 +357,18 @@ if (import.meta.url === `file://${process.argv[1]}`){
         check('…и можно задать пароль', r.status === 200, r.data);
       } finally { await v2.stop(); }
     } finally { rmSync(old, { recursive: true, force: true }); }
+  }
+  // sw.js на сайте с API по тому же адресу (quest.logiqa.ru/api): запросы к API идут мимо sw.js —
+  // иначе он перезапрашивает их без заголовка входа X-EQ-Token и админ-панель «просит войти заново»
+  {
+    const { default: vm } = await import('node:vm');
+    const handlers = {};
+    const self = { location: new URL('https://quest.logiqa.ru/sw.js'), addEventListener: (t, f) => { handlers[t] = f; }, skipWaiting(){}, clients: { claim(){} } };
+    vm.runInNewContext(readFileSync(join(ROOT, 'sw.js'), 'utf8'), { self, caches: {}, fetch(){}, URL, Response: class {}, console });
+    const handled = (url, method = 'GET', mode = 'cors') => { let r = false; handlers.fetch({ request: { url, method, mode, headers: new Map() }, respondWith(){ r = true; } }); return r; };
+    check('sw.js: GET /api/… с того же адреса — мимо sw.js', !handled('https://quest.logiqa.ru/api/me') && !handled('https://quest.logiqa.ru/api/students/s1/progress'));
+    check('sw.js: файлы сайта и переходы — через sw.js', handled('https://quest.logiqa.ru/js/admin.js') && handled('https://quest.logiqa.ru/admin/', 'GET', 'navigate'));
+    check('sw.js: адрес, похожий на api, — через sw.js', handled('https://quest.logiqa.ru/apiary.html'));
   }
   console.log(`\n${total - fail} из ${total} проверок сервера прошли (база: ${process.env.EQ_TEST_MYSQL ? 'MySQL' : 'SQLite'})`);
   process.exit(fail ? 1 : 0);

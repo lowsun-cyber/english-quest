@@ -13,6 +13,7 @@ vm.runInContext(readFileSync(join(ROOT, 'content.js'), 'utf8'), ctx);
 if (existsSync(join(ROOT, 'packs.js'))) vm.runInContext(readFileSync(join(ROOT, 'packs.js'), 'utf8'), ctx);   // подключённые пакеты локаций — как на сайте
 globalThis.window = ctx.window;   // js/eq.js берёт контент из window.EQ
 const S = await import(join(ROOT, 'js/stats.js'));
+const A = await import(join(ROOT, 'js/aipack.js'));
 const { DEFAULT_STATE } = await import(join(ROOT, 'js/state.js'));
 
 let fail = 0, total = 0;
@@ -219,6 +220,85 @@ check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g
   const block = S.checkpointsOf(3)[0].lessons, own = S.lessonSkills(block[0])[0];
   check('граф: босс закрыт, пока слаб навык его части', !own || S.skillGate(block, fresh({ skills: { [own]: { ok: 0, bad: 4, last: Date.now() } } }), { own: true })?.code === own);
   check('граф: вопросы для тренировки навыка', S.skillItems('G2-01', 3).length >= 6 && S.skillItems('G2-01', 3).every(x => x.q.skill === 'G2-01'));
+}
+
+// посылки от Dr. Harlow (итерация 5): формат, состояние, выгрузка без имени
+{
+  const ex = JSON.parse(readFileSync(join(ROOT, 'docs/ai-pack/example-parcel.json'), 'utf8'));
+  const P = patch => ({ ...JSON.parse(JSON.stringify(ex)), ...patch });
+  const errs = p => A.validateParcel(p);
+  check('посылка: образец из docs проходит проверку', !errs(ex).length, errs(ex));
+  check('посылка: неверный format', errs(P({ format: 'x' })).some(e => /format/.test(e)));
+  check('посылка: id с пробелами', errs(P({ id: 'Cat cap' })).some(e => /id/.test(e)));
+  check('посылка: без приза', errs(P({ reward: null })).some(e => /reward/.test(e)));
+  check('посылка: больше 3 квестов', errs(P({ quests: [ex.quests[0], ex.quests[1], { ...ex.quests[1], id: 'b' }, { ...ex.quests[1], id: 'c' }] })).some(e => /от 1 до 3/.test(e)));
+  const q0 = ex.quests[0];
+  check('посылка: мало слов', errs(P({ quests: [{ ...q0, words: q0.words.slice(0, 3) }] })).some(e => /не меньше 4/.test(e)));
+  check('посылка: нет объяснения к неверному варианту', errs(P({ quests: [{ ...q0, grammar: [{ ...q0.grammar[0], why: { cat: 'нет' } }] }] })).some(e => /why/.test(e)));
+  check('посылка: неизвестный код ошибки', errs(P({ quests: [{ ...q0, focus: ['Z9'] }] })).some(e => /focus/.test(e)));
+  check('посылка: неизвестный навык', errs(P({ quests: [{ ...ex.quests[1], grammar: [{ ...ex.quests[1].grammar[0], skill: 'G9-99' }, ...ex.quests[1].grammar.slice(1)] }] })).some(e => /G9-99/.test(e)));
+  check('посылка: повтор id квеста', errs(P({ quests: [q0, { ...ex.quests[1], id: q0.id }] })).some(e => /не повторяется/.test(e)));
+  check('посылка: не JSON — null', A.parseParcel('{oops') === null);
+  // в прогрессе
+  const st = fresh({ parcels: A.addParcel(fresh(), ex, 1000) });
+  let list = A.parcelsOf(st);
+  check('посылка: в прогрессе, не пройдена', list.length === 1 && !list[0].done && list[0].left === 2);
+  st.quests[A.specialKey(ex, ex.quests[0])] = { best: 85, passedAt: 2000 };
+  st.quests[A.specialKey(ex, ex.quests[1])] = { best: 60 };
+  check('посылка: 80% — квест пройден, 60% — нет', A.parcelsOf(st)[0].left === 1);
+  st.quests[A.specialKey(ex, ex.quests[1])] = { best: 100, passedAt: 3000 };
+  list = A.parcelsOf(st);
+  check('посылка: все квесты — посылка пройдена, дата — последний квест', list[0].done && list[0].doneAt === 3000);
+  check('посылка: отозванная не видна', !A.parcelsOf(fresh({ parcels: { [ex.id]: { pack: ex, sent: 1, withdrawn: 5 } } })).length);
+  check('посылка: испорченная не видна', !A.parcelsOf(fresh({ parcels: { x: { pack: { ...ex, quests: [] }, sent: 1 } } })).length);
+  const again = A.addParcel({ parcels: { [ex.id]: { pack: ex, sent: 1000, opened: 1500 } } }, { ...ex, title: 'Новая' }, 9000);
+  check('посылка: тот же id заменяет содержимое, отправка и открытие сохраняются', again[ex.id].pack.title === 'Новая' && again[ex.id].sent === 1000 && again[ex.id].opened === 1500);
+  const many = {}; for (let i = 0; i < A.PARCEL_KEEP + 3; i++) many[`old-${i}`] = { pack: { ...ex, id: `old-${i}` }, sent: i, withdrawn: 1 };
+  check('посылка: старые отозванные сверх лимита уходят', Object.keys(A.addParcel({ parcels: many }, ex, 99999)).length <= A.PARCEL_KEEP + 1);
+  // выгрузка
+  const exp = A.aiExport(fresh({ skills: { 'G2-01': { ok: 1, bad: 3, last: Date.now(), wrong: { are: 2 } } }, words: { cat: { ok: 1, bad: 2, err: { similar: 2 }, with: { cap: 2 } } } }), { student: 's123' });
+  check('выгрузка: формат, код ученика, класс', exp.format === A.EXPORT_FORMAT && exp.student === 's123' && exp.grade === 2);
+  check('выгрузка: пробелы, навыки, путаница', exp.gaps.some(g => g.code === 'B1' && g.state === 'gap') && exp.skills[0].wrongChoices[0].option === 'are' && exp.hardWords.some(w => w.en === 'cat' && w.confusedWith.includes('cap')));
+  const txt = JSON.stringify(exp);
+  check('выгрузка: без имени и личных данных', !/name|avatar|activity|email/i.test(Object.keys(exp).join(',')) && !txt.includes('Лёва'));
+  check('шаблон: задание + выгрузка', A.promptWithExport(exp).startsWith(A.AI_PROMPT) && A.promptWithExport(exp).includes('"student": "s123"') && A.AI_PROMPT.includes(A.PARCEL_FORMAT));
+}
+
+// вступительное испытание (страж ворот): адаптивное, docs/concept-entry-test-and-key.md, раздел 6
+{
+  const { PLACEMENT } = ctx.window.EQ;
+  // прогон: ok(part) — сдаёт ли игрок часть; возвращает ответы и порядок частей
+  const run = (g, ok) => { const answers = [], order = [], used = new Set(); let p;
+    while ((p = S.placementNext(g, answers)) != null){ order.push(p); const items = S.placementPart(g, p, used); items.forEach(x => x.skill && used.add(x.skill));
+      items.forEach((x, i) => answers.push({ part: p, ok: ok(p) ? i < PLACEMENT.pass : i < 1, skill: x.skill || null })); }
+    return { answers, order }; };
+  for (const g of S.GRADES){
+    const n = S.placementParts(g).length;
+    for (let p = 0; p < n; p++){
+      const it = S.placementPart(g, p);
+      check(`испытание ${g} кл., часть ${p + 1}: 4 задания — слово, «послушай» и 2 на навык`, it.length === PLACEMENT.perPart && it[0].type === 'word' && it[1].type === 'listen' && it.filter(x => x.skill).length === 2 && (new Set(it.filter(x => x.skill).map(x => x.skill)).size === 1 || S.placementParts(g)[p].length < 4), it.map(x => x.type + ':' + (x.skill || '')));
+    }
+    const allOk = run(g, () => true), noneOk = run(g, () => false);
+    check(`испытание ${g} кл.: начинается с середины`, allOk.order[0] === Math.floor((n - 1) / 2));
+    check(`испытание ${g} кл.: не больше ${PLACEMENT.maxTasks} заданий`, allOk.answers.length <= PLACEMENT.maxTasks && noneOk.answers.length <= PLACEMENT.maxTasks && allOk.answers.length >= 12, [allOk.answers.length, noneOk.answers.length]);
+    check(`испытание ${g} кл.: всё верно — вверх, старт с последней темы`, allOk.order[1] > allOk.order[0] && S.placementResult(g, allOk.answers).startIdx === S.lessonsOf(g).length - 1, allOk.order);
+    check(`испытание ${g} кл.: всё неверно — вниз, старт с первой темы`, noneOk.order[1] < noneOk.order[0] && S.placementResult(g, noneOk.answers).startIdx === 0, noneOk.order);
+  }
+  const g = 3, ls = S.lessonsOf(g);
+  const mid = run(g, p => p <= 2);   // сданы части 1–3
+  const r = S.placementResult(g, mid.answers);
+  check('испытание: граница между сданной и несданной частью — старт с части 4', r.startIdx === 12 && r.start === ls[12].id, { order: mid.order, startIdx: r.startIdx });
+  const used = new Set(), skillsPerPart = mid.order.map(p => { const it = S.placementPart(g, p, used); it.forEach(x => x.skill && used.add(x.skill)); return it.find(x => x.skill)?.skill; });
+  check('испытание: навыки частей не повторяются, если есть другие', new Set(skillsPerPart).size === skillsPerPart.length, skillsPerPart);
+  const ans = (pairs) => pairs.map(([skill, ok]) => ({ part: 0, ok, skill }));
+  const sk = S.placementResult(g, [...ans([['G3-01', true], ['G3-01', true], ['G2-01', true], ['G2-01', false], ['G3-02', false], ['G3-02', false]])]).skills;
+  check('испытание: навыки — освоено / проверим в игре / учим', sk['G3-01'] === 'mastered' && sk['G2-01'] === 'check' && sk['G3-02'] === 'learn', sk);
+  const st = fresh({ placement: r });
+  check('испытание: темы до стартовой открыты, дальше — нет', S.placementOpens(st, ls[0]) && S.placementOpens(st, ls[12]) && !S.placementOpens(st, ls[13]));
+  check('испытание: другой класс и пропуск не открывают', !S.placementOpens(st, S.lessonsOf(2)[3]) && !S.placementOpens(fresh({ placement: { skipped: 1 } }), ls[1]));
+  check('испытание: строка для родителя с навыками', /Вступительное испытание: 3 класс, верно \d+ из \d+/.test(S.placementLine(st)) && S.reportText(st).includes('Вступительное испытание'), S.placementLine(st));
+  check('испытание: пропуск — в строке', S.placementLine(fresh({ placement: { skipped: 1 } })) === 'Вступительное испытание: пропущено');
+  check('испытание: «один класс» — совета на другой класс нет', !('prev' in r));
 }
 
 console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);

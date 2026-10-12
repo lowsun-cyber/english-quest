@@ -90,8 +90,11 @@ const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
 
 try {
   let list;
-  for (let t = 0; t < 60; t++){ try { list = await (await fetch('http://127.0.0.1:9335/json/list')).json(); if (list.some(p => p.type === 'page')) break; } catch (e) {} await sleep(200); }
-  ws = new WebSocket(list.find(p => p.type === 'page').webSocketDebuggerUrl);
+  // на сервере GitHub Chrome изредка стартует дольше 12 с — ждём до 30 с и говорим понятно, если не дождались
+  for (let t = 0; t < 150; t++){ try { list = await (await fetch('http://127.0.0.1:9335/json/list')).json(); if (list.some(p => p.type === 'page')) break; } catch (e) {} await sleep(200); }
+  const page = Array.isArray(list) && list.find(p => p.type === 'page');
+  if (!page) throw new Error('Chrome не запустился за 30 с');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise(r => ws.onopen = r);
   ws.onmessage = m => {
     const d = JSON.parse(m.data);
@@ -1147,6 +1150,140 @@ try {
     state.lessonProgress = back.lp; state.checkpoints = back.cp; state.skills = back.sk; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null; state.settings.unlockAll = back.u;
     await saveState(); map.renderMap();
     return 'своё объяснение «' + wrongOpt + '», замок G2-01 → тренировка 6/6 → открыто';`)));
+
+  await test('посылка от Dr. Harlow: баннер, письмо, особые квесты, уникальный приз', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState, activeId } = await import('./js/state.js'), map = await import('./js/map.js'), A = await import('./js/aipack.js');
+    const saved = JSON.stringify({ q: state.quests, p: state.parcels || null, m: state.mistakes, xp: state.xp });
+    const pk = await (await fetch('docs/ai-pack/example-parcel.json')).json();
+    pk.student = activeId();
+    state.parcels = A.addParcel(state, pk); await saveState(); map.renderMap();
+    const banner = document.querySelector('.parcel-banner');
+    if (!banner || !/Посылка от Dr. Harlow/.test(banner.textContent)) throw new Error('нет баннера посылки');
+    banner.click(); await __sleep(200);
+    const letter = f('modal').innerText;
+    if (!letter.includes('cat и cap') || !letter.includes(pk.reward.title) || document.querySelectorAll('[data-sq]').length !== 2) throw new Error('письмо: ' + letter.slice(0, 200));
+    if (!state.parcels[pk.id].opened) throw new Error('посылка не отмечена открытой');
+    const xp0 = state.xp, mist0 = Object.keys(state.mistakes).length;
+    const answer = async (q, wrongFirst) => {
+      for (let i = 0; i < A.questSize(q); i++){
+        const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.o); let ans;
+        const em = document.querySelector('.q-emoji'), s = document.querySelector('.q-sentence');
+        if (em) ans = (q.words || []).find(w => w.emoji === em.textContent)?.en;
+        else if (s) ans = (q.grammar || []).find(g => g.q === s.textContent)?.a;
+        else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o.toLowerCase() === String(__said).toLowerCase()); }
+        if (wrongFirst && i === 0 && s){
+          const g = q.grammar.find(g => g.q === s.textContent), w = g.options.find(o => o !== g.a);
+          [...document.querySelectorAll('.opt')].find(o => o.dataset.o === w).click(); await __sleep(150);
+          if (!(document.querySelector('.why')?.textContent || '').includes(g.why[w])) throw new Error('нет объяснения варианта в особом квесте');
+          await __sleep(3000); continue;
+        }
+        const btn = [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans);
+        if (!btn) throw new Error('вопрос ' + (i + 1) + ': не нашёл ответ среди ' + opts.join('/'));
+        window.__said = null; btn.click(); await __sleep(1300);
+      }
+    };
+    // квест 2 (5 вопросов): одна ошибка — 80%, всё равно пройден
+    document.querySelector('[data-sq="am-is-are"]').click(); await __sleep(300);
+    await answer(pk.quests[1], true);
+    if (!/Особый квест пройден/.test(f('modal').innerText)) throw new Error('итог квеста 2: ' + f('modal').innerText.slice(0, 160));
+    if (state.xp !== xp0 + 40) throw new Error('XP за особый квест: ' + (state.xp - xp0));
+    if (Object.keys(state.mistakes).length !== mist0) throw new Error('ошибка особого квеста попала в «Мои ошибки»');
+    if (!(state.errorCodes?.B1 > 0)) throw new Error('ошибка особого квеста не попала в карту пробелов');
+    f('sq-back').click(); await __sleep(200);
+    document.querySelector('[data-sq="cat-cap"]').click(); await __sleep(300);
+    await answer(pk.quests[0], false);
+    const fin = f('modal').innerText;
+    if (!/Посылка пройдена/.test(fin) || !fin.includes(pk.reward.title)) throw new Error('итог посылки: ' + fin.slice(0, 200));
+    __close(); await __sleep(150);
+    if (document.querySelector('.parcel-banner')) throw new Error('баннер остался после прохождения');
+    const sp = f('specials');
+    if (sp.hidden || !sp.textContent.includes(pk.reward.title)) throw new Error('уникального приза нет в сундуке');
+    const back = JSON.parse(saved); state.quests = back.q; state.mistakes = back.m; if (back.p) state.parcels = back.p; else delete state.parcels;
+    await saveState(); map.renderMap(); (await import('./js/achievements.js')).renderAchievements();
+    return 'баннер → письмо → 2 квеста (ошибка с объяснением, 80%) → приз в сундуке, «Мои ошибки» не тронуты';`)));
+
+  await test('посылка: задание для AI и загрузка в панели репетитора', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState, activeId } = await import('./js/state.js');
+    const saved = JSON.stringify(state.parcels || null);
+    await __gate('1357');   // PIN задан в сценарии «несколько учеников»
+    if (!f('t-ai-copy')) throw new Error('нет раздела посылки в панели: ' + (f('modal')?.innerText || '').slice(0, 200));
+    f('t-ai-copy').click(); await __sleep(200);
+    const out = f('t-ai-out').value;
+    if (!out.includes('посылку от Dr. Harlow') && !out.includes('посылка от Dr. Harlow') && !out.includes('«посылку от Dr. Harlow»')) throw new Error('нет шаблона: ' + out.slice(0, 80));
+    const code = (await import('./js/cloud.js')).cloudLink()?.studentId || activeId();   // подключённый к серверу — код с сервера
+    if (!out.includes('"format": "eq-ai-export/1"') || !out.includes('"student": "' + code + '"')) throw new Error('нет выгрузки: ' + out.slice(out.indexOf('Выгрузка:'), out.indexOf('Выгрузка:') + 160));
+    const pk = await (await fetch('docs/ai-pack/example-parcel.json')).json();
+    f('t-parcel-in').value = JSON.stringify({ ...pk, quests: [] }); f('t-parcel-add').click(); await __sleep(100);
+    if (!/нельзя добавить/.test(f('t-parcel-msg').innerText)) throw new Error('кривая посылка принята');
+    f('t-parcel-in').value = JSON.stringify({ ...pk, student: 'чужой' }); f('t-parcel-add').click(); await __sleep(100);
+    if (!/другого ученика/.test(f('t-parcel-msg').innerText)) throw new Error('посылка для другого ученика принята');
+    f('t-parcel-in').value = JSON.stringify(pk); f('t-parcel-add').click(); await __sleep(400);
+    if (!state.parcels?.[pk.id]) throw new Error('посылка не добавлена');
+    const off = document.querySelector('[data-parcel-off="' + pk.id + '"]'); if (!off) throw new Error('нет кнопки «Убрать»');
+    off.click(); await __sleep(300);
+    if (!state.parcels[pk.id].withdrawn) throw new Error('посылка не убрана');
+    __close(); await __sleep(100);
+    if (document.querySelector('.parcel-banner')) throw new Error('убранная посылка на карте');
+    const back = JSON.parse(saved); if (back) state.parcels = back; else delete state.parcels; await saveState();
+    return 'задание для AI с кодом ученика, проверка, добавление и «Убрать»';`)));
+
+  await test('вступительное испытание: страж ворот, адаптивно, «Ворота открыты», «Не сейчас»', () => load().then(() => js(`
+    const f = id => document.getElementById(id);
+    const { state, saveState } = await import('./js/state.js'), map = await import('./js/map.js'), S = await import('./js/stats.js');
+    const saved = JSON.stringify({ p: state.placement || null, lp: state.lessonProgress, sk: state.skills, g: state.settings.mapGrade, v: state.settings.mapView, u: !!state.settings.unlockAll, mi: state.mistakes });
+    delete state.placement; state.settings.unlockAll = false; state.settings.mapView = null;
+    const G3 = S.lessonsOf(3); for (const l of G3) delete state.lessonProgress[l.id];
+    await saveState(); map.renderMap();
+    if (!document.querySelector('.placement-card [data-placement="go"]')) throw new Error('нет карточки стража ворот');
+    document.querySelector('[data-placement="go"]').click(); await __sleep(200);
+    if (document.querySelectorAll('[data-pg]').length !== S.GRADES.length) throw new Error('нет выбора класса');
+    document.querySelector('[data-pg="3"]').click(); await __sleep(400);
+    const mist0 = JSON.stringify(state.mistakes), xp0 = state.xp;
+    // игрок знает части 1–3 (индексы 0–2): с середины (2) выше (3, не сдана), затем ниже границы (1); по 4 вопроса.
+    // Ответ ищем в темах ожидаемой части: одно слово бывает в нескольких темах, и «первая тема со словом» путала части.
+    const route = [2, 3, 1], PP = S.placementParts(3);
+    let i = 0;
+    for (; i < 15 && document.querySelector('.opt'); i++){
+      const want = route[Math.floor(i / 4)]; if (want == null) throw new Error('вопрос ' + (i + 1) + ' сверх маршрута ' + route.join('→'));
+      const G = PP[want];
+      if (!document.querySelector('.opt-skip')) throw new Error('нет кнопки «Не знаю»');
+      const opts = [...document.querySelectorAll('.opt:not(.opt-skip)')].map(o => o.dataset.o); let ans, l;
+      const em = document.querySelector('.q-emoji'), sn = document.querySelector('.q-sentence');
+      if (sn){ l = G.find(x => x.grammar.some(g => g.q === sn.textContent && opts.includes(g.a))); ans = l?.grammar.find(g => g.q === sn.textContent && opts.includes(g.a)).a; }
+      else if (em){ l = G.find(x => x.words.some(w => w.emoji === em.textContent && opts.includes(w.en))); ans = l?.words.find(w => w.emoji === em.textContent && opts.includes(w.en))?.en; }
+      else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o === String(__said)); l = G.find(x => x.words.some(w => w.en === ans)); }
+      if (!ans || !l) throw new Error('порядок частей не адаптивный: вопрос ' + (i + 1) + ' не из части ' + (want + 1) + ' (варианты ' + opts.join('/') + ', картинка ' + (em?.textContent || '—') + ', фраза ' + (sn?.textContent || '—') + ')');
+      window.__said = null;
+      if (want <= 2) [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans).click();
+      else document.querySelector('.opt-skip').click();   // «Не знаю»
+      const sig = document.querySelector('.review-progress')?.getAttribute('aria-label');
+      for (let k = 0; k < 40 && document.querySelector('.review-progress')?.getAttribute('aria-label') === sig; k++) await __sleep(100);   // ждём следующий вопрос
+      await __sleep(150);
+    }
+    if (i !== route.length * 4) throw new Error('испытание закончилось на вопросе ' + i + ', ждали ' + route.length * 4);
+    const res = f('modal').innerText;
+    if (!/Ворота открыты/.test(res) || !res.includes(G3[12].title) || /Часть \d/.test(res)) throw new Error('итог для ребёнка: ' + res.slice(0, 240));
+    if (state.placement?.startIdx !== 12) throw new Error('старт: ' + JSON.stringify(state.placement));
+    if (state.xp !== xp0 + 30) throw new Error('награда стража: ' + (state.xp - xp0));
+    if (JSON.stringify(state.mistakes) !== mist0) throw new Error('ошибки испытания попали в «Мои ошибки»');
+    document.querySelector('[data-pgo="3"]').click(); await __sleep(300);
+    const node = i => map.mapNodes(3).find(n => n.lesson?.id === G3[i].id);
+    if (map.lockReason(node(12)) || map.lockReason(node(3)) || !map.lockReason(node(13))) throw new Error('замки: 13-я ' + map.lockReason(node(12)) + ', 14-я ' + map.lockReason(node(13)));
+    if (map.currentNode(3)?.lesson?.id !== G3[12].id) throw new Error('текущая тема не стартовая: ' + map.currentNode(3)?.lesson?.id);
+    if (!document.querySelector('.placement-again') || document.querySelector('.placement-card')) throw new Error('после испытания — только «пройти заново»');
+    const adult = (await import('./js/placement.js')).placementAdultHtml(state);
+    if (!/освоено|проверим в игре|учим/.test(adult) || !/Часть 3/.test(adult)) throw new Error('разбор для взрослого: ' + adult.slice(0, 200));
+    // «Не сейчас»
+    delete state.placement; await saveState(); map.renderMap();
+    document.querySelector('[data-placement="skip"]').click(); await __sleep(200);
+    if (!state.placement?.skipped || document.querySelector('.placement-card')) throw new Error('«Не сейчас» не скрыл карточку');
+    const back = JSON.parse(saved);
+    if (back.p) state.placement = back.p; else delete state.placement;
+    state.lessonProgress = back.lp; state.skills = back.sk; state.mistakes = back.mi; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null; state.settings.unlockAll = back.u;
+    await saveState(); map.renderMap();
+    return 'класс 3 → части ' + route.map(x => x + 1).join('→') + ' (с середины, «Не знаю») → «Ворота открыты», старт с темы 13, +30 XP; разбор взрослому; «Не сейчас»';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {

@@ -6,13 +6,15 @@ import { EX_NAMES, EX_ORDER, assignHomework, dueLabel, homeworkLink, homeworkTas
 import { renderHUD } from './hud.js';
 import { CHECKPOINTS, CHECKPOINT_SIZE, PARTS, renderMap } from './map.js';
 import { offlineSectionHtml, wireOfflineSection } from './offline.js';
-import { activeProfile, realState, saveState, state } from './state.js';
+import { activeId, activeProfile, realState, saveState, state } from './state.js';
 import { closeModal, openModal, toast } from './ui.js';
 import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
 import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
-import { cloudOn, cloudPanelHtml, wireCloudPanel } from './cloud.js';
+import { cloudLink, cloudOn, cloudPanelHtml, wireCloudPanel } from './cloud.js';
 import { gapMapHtml } from './gapmap.js';
+import { placementAdultHtml } from './placement.js';
+import { addParcel, aiExport, parcelsOf, parseParcel, promptWithExport, validateParcel } from './aipack.js';
 import { errorsLine, lastDaysOf, levelTitle, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, plural } from './util.js';
 
@@ -150,6 +152,9 @@ export function openTutorPanel(){
       }).join('')}
     </ul>
 
+    <h3 class="t-h">Вступительное испытание</h3>
+    ${placementAdultHtml(state)}
+
     <h3 class="t-h">Карта пробелов</h3>
     ${gapMapHtml(s.gaps)}
 
@@ -187,6 +192,9 @@ export function openTutorPanel(){
     ${realState ? '' : `
     ${cloudOn() ? `<h3 class="t-h">Сервер учителя</h3>
     ${cloudPanelHtml()}` : ''}
+
+    <h3 class="t-h">Посылка от Dr. Harlow (AI-пакет)</h3>
+    ${parcelSectionHtml()}
 
     <h3 class="t-h">Перенос и резервная копия</h3>
     ${backupSectionHtml()}
@@ -262,6 +270,7 @@ export function openTutorPanel(){
   };
   const cancel = document.getElementById('t-hw-cancel');
   if (cancel) cancel.onclick = () => { state.homework = null; saveState(); renderHomework(); openTutorPanel(); };
+  if (!realState) wireParcelSection();
   document.getElementById('t-report').onclick = async () => {
     const out = document.getElementById('t-report-out');
     out.value = tutorReport(s);
@@ -270,3 +279,49 @@ export function openTutorPanel(){
   };
 }
 document.getElementById('btn-tutor').onclick = openTutorGate;
+
+// ---------- посылка от Dr. Harlow (итерация 5) ----------
+// Выгрузка прогресса без имени + шаблон задания для модели; посылку (ответ модели, проверенный взрослым)
+// можно добавить прямо на этом устройстве. Ученикам на сервере посылки отправляют из админ-панели.
+const studentCode = () => cloudLink()?.studentId || activeId();
+function parcelSectionHtml(){
+  const list = parcelsOf(state);
+  return `<p class="t-muted">Раз в неделю: скопируйте задание для AI (в нём прогресс без имени), вставьте в Claude или Perplexity, проверьте ответ и добавьте посылку здесь. Ребёнок увидит её на карте.${cloudLink() ? ' Этот ученик подключён к серверу — посылку можно отправить и из админ-панели.' : ''}</p>
+    <div class="controls"><button class="btn gold" id="t-ai-copy">🤖 Скопировать задание для AI</button></div>
+    <textarea class="t-report" id="t-ai-out" readonly hidden rows="6" aria-label="Задание для AI с выгрузкой прогресса"></textarea>
+    <label class="t-label" for="t-parcel-in">Ответ AI — посылка в формате JSON</label>
+    <textarea class="t-report" id="t-parcel-in" rows="5" placeholder='{"format": "eq-parcel/1", …}'></textarea>
+    <div class="controls">
+      <label class="btn secondary t-file-btn">📂 Из файла<input type="file" id="t-parcel-file" accept=".json,application/json" hidden></label>
+      <button class="btn" id="t-parcel-add">📦 Проверить и добавить</button>
+    </div>
+    <div id="t-parcel-msg" role="status"></div>
+    ${list.length ? `<ul class="t-hard" role="list">${list.map(x => `<li><span class="t-hard-main">${escapeHtml(x.pack.reward.emoji)} <b>${escapeHtml(x.pack.title)}</b> — ${escapeHtml(x.pack.reward.title)}</span>
+      <span class="t-muted">${x.done ? 'пройдена' : `квестов пройдено ${x.quests.length - x.left} из ${x.quests.length}${x.entry.opened ? '' : ', ещё не открыта'}`}</span>
+      ${x.done ? '' : `<button class="btn secondary t-parcel-off" data-parcel-off="${escapeHtml(x.pack.id)}">Убрать</button>`}</li>`).join('')}</ul>` : ''}`;
+}
+function wireParcelSection(){
+  const msg = document.getElementById('t-parcel-msg'), input = document.getElementById('t-parcel-in');
+  document.getElementById('t-ai-copy').onclick = async () => {
+    const out = document.getElementById('t-ai-out');
+    out.value = promptWithExport(aiExport(state, { student: studentCode() }));
+    out.hidden = false;
+    toast(await copyText(out.value, out) ? '🤖 Задание для AI скопировано' : 'Скопируйте текст из поля');
+  };
+  document.getElementById('t-parcel-file').onchange = async e => { const f = e.target.files[0]; if (f) input.value = await f.text(); };
+  document.getElementById('t-parcel-add').onclick = () => {
+    const p = parseParcel(input.value.trim());
+    const errs = p ? validateParcel(p) : ['Это не JSON — скопируйте ответ AI целиком, от { до }'];
+    if (!errs.length && p.student && p.student !== studentCode()) errs.push(`Посылка для другого ученика (код ${p.student}, а у этого — ${studentCode()})`);
+    if (errs.length){ msg.innerHTML = `<p class="t-err">Посылку нельзя добавить:</p><ul>${errs.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`; return; }
+    state.parcels = addParcel(state, p);
+    saveState(); renderMap();
+    toast(`📦 Посылка «${p.title}» добавлена`);
+    openTutorPanel();
+  };
+  document.querySelectorAll('[data-parcel-off]').forEach(b => b.onclick = () => {
+    const e = state.parcels?.[b.dataset.parcelOff];
+    if (!e) return;
+    e.withdrawn = Date.now(); saveState(); renderMap(); openTutorPanel();
+  });
+}

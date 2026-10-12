@@ -494,6 +494,58 @@ section { margin-top: 32px; }
 .ach-em { font-size: 30px; line-height: 1.1; }
 .ach small { color: var(--muted); font-size: 12px; }
 #ach-count { font-family: var(--font-body); font-size: 15px; }
+/* вступительное испытание — страж ворот (js/placement.js) */
+.placement-card { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 12px; padding: 12px 14px; border: 3px solid var(--line); border-left: 10px solid var(--rarity-epic); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-press); }
+.placement-hero .hero-pic { width: 64px; height: 64px; flex: none; }
+.placement-text { flex: 1; min-width: 0; }
+.placement-text b { font-size: 18px; }
+.placement-text p { margin: 4px 0 8px; font-size: 16px; }
+.placement-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.placement-actions .btn, .placement-grade { font-family: var(--font-body); font-size: 17px; font-weight: 800; min-height: 48px; }
+.placement-again { display: block; margin: 0 0 10px auto; padding: 8px 12px; min-height: 44px; font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); background: var(--surface); border: 2.5px solid var(--line); border-radius: var(--radius-pill); cursor: pointer; }
+.placement-again:focus-visible, .placement-grade:focus-visible { outline: 3px solid var(--diamond); outline-offset: 3px; }
+.placement-letter { display: flex; gap: 12px; align-items: flex-start; padding: 12px; margin: 0 0 12px; border: 3px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); }
+.placement-letter p { margin: 0; font-size: 17px; line-height: 1.4; }
+.placement-grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.placement-grade { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 10px; background: var(--region-color); box-shadow: 0 6px 0 var(--line); color: #1c2b1a; }
+.placement-grade small { font-size: 14px; font-weight: 700; }
+.placement-parts { list-style: none; margin: 8px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.placement-parts li { padding: 8px 10px; border: 2.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.placement-parts li.ok { border-color: var(--grass); }
+.placement-parts small { color: var(--muted); margin-left: 6px; }
+.opt.opt-skip { display: block; width: 100%; margin-top: 10px; font-size: 16px; background: var(--surface); border-style: dashed; color: var(--ink-2); }
+.placement-reward { font-size: 17px; }
+@media (max-width: 420px){ .placement-card { flex-direction: column; } .placement-actions .btn { width: 100%; } }
+/* посылка от Dr. Harlow (итерация 5, js/parcels.js) */
+.parcel-banner { display: block; width: 100%; margin: 0 0 12px; padding: 12px 14px; min-height: 48px; text-align: left; font: inherit; font-size: 16px; color: var(--ink); background: var(--surface); border: 3px solid var(--line); border-left: 10px solid var(--rarity-special); border-radius: 14px; box-shadow: var(--shadow-press); cursor: pointer; }
+.parcel-banner:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+.parcel-banner:focus-visible { outline: 3px solid var(--diamond); outline-offset: 3px; }
+.parcel-letter { display: flex; gap: 12px; align-items: flex-start; padding: 12px; margin: 0 0 12px; border: 3px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); }
+.parcel-letter p { margin: 0; font-size: 17px; line-height: 1.4; }
+.parcel-hero .hero-pic { width: 64px; height: 64px; flex: none; }
+.parcel-prize { display: flex; gap: 10px; align-items: center; padding: 10px 12px; margin: 0 0 12px; border: 3px solid var(--rarity); border-radius: 14px; background: var(--surface); color: var(--ink); }
+.parcel-prize-em { font-size: 34px; }
+.parcel-prize small { display: block; color: var(--muted); font-size: 13px; }
+.parcel-prize b { font-size: 17px; }
+.parcel-quests { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.parcel-quest { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 3px solid var(--line); border-left: 8px solid var(--rarity); border-radius: 12px; background: var(--surface); color: var(--ink); }
+.parcel-quest.done { opacity: .85; }
+.parcel-q-em { font-size: 30px; }
+.parcel-q-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.parcel-q-text small { color: var(--muted); font-size: 13px; }
+.parcel-quest .quest-pill { align-self: flex-start; font-size: 10px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--rarity-pill); color: #1c2b1a; font-weight: 800; }
+.parcel-quest .btn { flex: none; min-height: 44px; font-family: var(--font-body); font-size: 16px; font-weight: 800; padding: 8px 14px; }
+.parcel-won { font-size: 17px; }
+.specials { margin-top: 14px; }
+.specials h3 { margin: 0 0 8px; }
+@media (max-width: 420px){
+  .parcel-quest { flex-wrap: wrap; }
+  .parcel-quest .btn { width: 100%; }
+}
+.t-label { display: block; margin: 10px 0 4px; font-weight: 700; }
+.t-err { color: #b3261e; font-weight: 700; margin: 6px 0 2px; }
+[data-theme="dark"] .t-err { color: #ff9a8a; }
+.t-parcel-off { font-size: 12px; padding: 8px 12px; min-height: 40px; }
 /* карта пробелов для родителя (панель репетитора и админ-панель) */
 .gap-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 8px 0 12px; }
 .gap-group { padding: 10px 12px; border: 2.5px solid var(--line); border-left-width: 8px; border-radius: 12px; background: var(--surface); color: var(--ink); }

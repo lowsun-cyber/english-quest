@@ -25,6 +25,8 @@ import { HARLOW_LINES, narratorLines } from './eq.js';
 import { narratorHero } from './heroes.js';
 import { applyHomeworkFromHash, renderHomework } from './homework.js';
 import { renderAchievements } from './achievements.js';
+import { openParcel } from './parcels.js';
+import { onPlacementClick } from './placement.js';
 import { renderHUD, renderInventory, renderTeam } from './hud.js';
 import { renderMap, runNextStep } from './map.js';
 import { startRevenge } from './revenge.js';
@@ -50,6 +52,10 @@ document.getElementById('btn-theme').onclick = () => {
 document.getElementById('btn-hero-start').onclick = () => runNextStep();
 // реванш — с карты, из «Моих ошибок» и с кнопки «Продолжить»
 document.addEventListener('click', (e) => { if (e.target.closest('[data-revenge]')) startRevenge(); });
+// посылка от Dr. Harlow: баннер над картой (js/parcels.js)
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-parcel]'); if (b) openParcel(b.dataset.parcel, renderMap); });
+// вступительное испытание: карточка стража ворот над картой (js/placement.js)
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-placement]'); if (b) onPlacementClick(b, renderMap); });
 document.addEventListener('eq:revenge', () => startRevenge());
 document.addEventListener('eq:review', () => startReview());
 document.getElementById('btn-hero-team').onclick = () => document.getElementById('team-sec').scrollIntoView({behavior:'smooth'});

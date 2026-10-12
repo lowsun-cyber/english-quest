@@ -5,6 +5,7 @@ import { api, ApiError, deviceLabel } from './api.js';
 import { API_BASE, TEACHER_KEY } from './config.js';
 import { LESSONS, levelFromXp } from './eq.js';
 import { gapMapHtml } from './gapmap.js';
+import { aiExport, parcelsOf, parseParcel, promptWithExport, questSize, validateParcel } from './aipack.js';
 import { CHECKPOINT_SIZE, EX_NAMES, EX_ORDER, GRADES, PARTS, errorsLine, homeworkDone, levelTitle, makeHomeworkFor, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { WEEKDAYS, fmtDay } from './util.js';
 
@@ -42,8 +43,11 @@ function toast(msg){
 async function copy(text){ try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; } }
 
 // ---------- сервер ----------
-const getToken = () => { try { return localStorage.getItem(TEACHER_KEY); } catch (e) { return null; } };
-const setToken = t => { try { t ? localStorage.setItem(TEACHER_KEY, t) : localStorage.removeItem(TEACHER_KEY); } catch (e) {} };
+// Вход хранится в localStorage; если браузер его не даёт (приватное окно, запрет данных сайтов),
+// вход держится в памяти вкладки — иначе сразу после входа панель просит «войти заново»
+let memToken = null;
+const getToken = () => { try { return localStorage.getItem(TEACHER_KEY) || memToken; } catch (e) { return memToken; } };
+const setToken = t => { memToken = t || null; try { t ? localStorage.setItem(TEACHER_KEY, t) : localStorage.removeItem(TEACHER_KEY); } catch (e) {} };
 const call = (path, body) => api(path, { token: getToken(), body });
 
 let me = null, org = null, users = [], students = [];
@@ -57,7 +61,7 @@ function fail(e){
 
 // ---------- вход ----------
 // Основной вход — почта и пароль. Запасные: одноразовый код, «Забыли пароль?», ключ установки владельца.
-function renderLogin(message = '', { note = '' } = {}){
+function renderLogin(message = '', { note = '', where = '' } = {}){
   me = null;
   document.getElementById('adm-nav').hidden = true;
   document.getElementById('adm-me').hidden = true;
@@ -70,8 +74,8 @@ function renderLogin(message = '', { note = '' } = {}){
         <label class="adm-wide">Пароль <input id="adm-password" type="password" autocomplete="current-password" required /></label>
         <div class="adm-wide"><button class="btn" type="submit">Войти</button></div>
       </form>
-      <p class="gate-err" role="alert"${message ? '' : ' hidden'}>${esc(message)}</p>
-      <details class="adm-recover">
+      <p class="gate-err" role="alert"${message && !where ? '' : ' hidden'}>${esc(message)}</p>
+      <details class="adm-recover"${where === 'forgot' ? ' open' : ''}>
         <summary>Забыли пароль?</summary>
         <p class="t-muted">Укажите почту — придёт ссылка, чтобы задать новый пароль (действует 1 час).</p>
         <form id="adm-forgot-form" class="cl-form">
@@ -79,30 +83,32 @@ function renderLogin(message = '', { note = '' } = {}){
           <button class="btn secondary" type="submit">Прислать ссылку</button>
         </form>
       </details>
-      <details class="adm-recover">
+      <details class="adm-recover"${where === 'code' ? ' open' : ''}>
         <summary>Войти по коду</summary>
         <p class="t-muted">Одноразовый код выдаёт администратор или вы сами на другом устройстве («Войти на другом устройстве»).</p>
         <form id="adm-code-form" class="cl-form">
           <label>Код входа <input id="adm-code" autocomplete="one-time-code" autocapitalize="characters" placeholder="ABCD-EFGH" maxlength="12" required /></label>
           <button class="btn secondary" type="submit">Войти</button>
         </form>
+        ${where === 'code' && message ? `<p class="gate-err" role="alert">${esc(message)}</p>` : ''}
       </details>
-      <details class="adm-recover">
+      <details class="adm-recover"${where === 'recover' ? ' open' : ''}>
         <summary>Я владелец и потерял доступ</summary>
         <p class="t-muted">Впишите на хостинге в <b>eq-server/config.php</b> строку <code>'setup_key' =&gt; '…',</code> (не короче 12 символов) и введите этот ключ здесь. После входа строку можно удалить.</p>
         <form id="adm-recover-form" class="cl-form">
           <label>Ключ установки <input id="adm-recover-key" type="password" autocomplete="off" required /></label>
           <button class="btn secondary" type="submit">Войти как владелец</button>
         </form>
+        ${where === 'recover' && message ? `<p class="gate-err" role="alert">${esc(message)}</p>` : ''}
       </details>
     </section>`;
-  const enter = async (path, body) => {
+  const enter = async (path, body, where = '') => {
     try { const r = await api(path, { body: { ...body, label: deviceLabel() } }); setToken(r.token); await start(); }
-    catch (err) { renderLogin(err.message); }
+    catch (err) { renderLogin(err.message, { where }); }
   };
   document.getElementById('adm-login-form').onsubmit = (e) => { e.preventDefault(); enter('/login', { email: document.getElementById('adm-email').value, password: document.getElementById('adm-password').value }); };
-  document.getElementById('adm-code-form').onsubmit = (e) => { e.preventDefault(); enter('/login', { code: document.getElementById('adm-code').value }); };
-  document.getElementById('adm-recover-form').onsubmit = (e) => { e.preventDefault(); enter('/setup/recover', { key: document.getElementById('adm-recover-key').value }); };
+  document.getElementById('adm-code-form').onsubmit = (e) => { e.preventDefault(); enter('/login', { code: document.getElementById('adm-code').value }, 'code'); };
+  document.getElementById('adm-recover-form').onsubmit = (e) => { e.preventDefault(); enter('/setup/recover', { key: document.getElementById('adm-recover-key').value.trim() }, 'recover'); };
   document.getElementById('adm-forgot-form').onsubmit = async (e) => {
     e.preventDefault();
     try { const r = await api('/password/forgot', { body: { email: document.getElementById('adm-forgot-email').value } }); renderLogin('', { note: r.message }); }
@@ -404,6 +410,7 @@ async function renderStudent(id){
       </div>
       <p class="t-muted adm-alltime">За всё время: ${S.allTime.min} мин, ${S.allTime.activeDays} дн. с занятиями${S.allTime.first ? ` (с ${dayShort(S.allTime.first)})` : ''}, ответов ${S.allTime.ok + S.allTime.bad}${S.allTime.pct !== null ? `, верных ${S.allTime.pct}%` : ''}, выучено после ошибок ${S.mastered}.</p>
       <p class="t-muted">🏥 ${esc(S.clinic)}</p>
+      ${S.placement ? `<p class="t-muted">🛡️ ${esc(S.placement)}</p>` : ''}
       ${chart(S.days, S.goal)}
     </section>
 
@@ -434,6 +441,24 @@ async function renderStudent(id){
         </div>
         <p class="t-muted" id="adm-hw-hint">«Назначить» — задание придёт на подключённые устройства ученика при следующей синхронизации. Ссылка — для учеников без подключения.</p>
       </form>
+    </section>
+
+    <section class="adm-card" id="adm-parcel-card">
+      <h2 class="adm-h2">Посылка от Dr. Harlow <span class="t-muted">AI-пакет</span></h2>
+      <p class="t-muted">Скопируйте задание для AI (прогресс без имени), вставьте ответ модели после проверки — посылка придёт ученику при следующей синхронизации.</p>
+      <div class="adm-tools"><button class="btn gold" id="adm-ai-copy">🤖 Скопировать задание для AI</button></div>
+      <textarea class="t-report" id="adm-ai-out" readonly hidden rows="6" aria-label="Задание для AI"></textarea>
+      <label class="t-label" for="adm-parcel-in">Посылка (JSON)</label>
+      <textarea class="t-report" id="adm-parcel-in" rows="6" placeholder='{"format": "eq-parcel/1", …}'></textarea>
+      <div class="adm-tools">
+        <label class="btn secondary t-file-btn">📂 Из файла<input type="file" id="adm-parcel-file" accept=".json,application/json" hidden></label>
+        <button class="btn secondary" id="adm-parcel-check">Проверить</button>
+        <button class="btn" id="adm-parcel-send">📦 Отправить ученику</button>
+      </div>
+      <div id="adm-parcel-msg" role="status"></div>
+      ${parcelsOf(st).length ? `<ul class="t-hard" role="list">${parcelsOf(st).map(x => `<li><span class="t-hard-main">${esc(x.pack.reward.emoji)} <b>${esc(x.pack.title)}</b> — ${esc(x.pack.reward.title)}</span>
+        <span class="t-muted">отправлена ${fmtDateTime(x.entry.sent)} · ${x.done ? `пройдена ${fmtDateTime(x.doneAt)}` : `пройдено квестов ${x.quests.length - x.left} из ${x.quests.length}${x.entry.opened ? '' : ', ещё не открыта'}`}</span>
+        ${x.done ? '' : `<button class="icon-btn" data-parcel-off="${esc(x.pack.id)}">Отозвать</button>`}</li>`).join('')}</ul>` : ''}
     </section>
 
     <section class="adm-card">
@@ -536,6 +561,37 @@ async function renderStudent(id){
     download(blob, `english-quest-${fileSafe(s.name)}-${new Date().toISOString().slice(0, 10)}.json`);
   };
   document.getElementById('adm-report-copy').onclick = async () => toast(await copy(document.getElementById('adm-report').value) ? 'Отчёт скопирован' : 'Скопируйте из поля');
+
+  // посылка от Dr. Harlow: проверка тем же правилом, что в приложении (js/aipack.js), отправка — как домашка
+  const pmsg = document.getElementById('adm-parcel-msg'), pin = document.getElementById('adm-parcel-in');
+  const checkParcel = () => {
+    const pk = parseParcel(pin.value.trim());
+    const errs = pk ? validateParcel(pk) : ['Это не JSON — вставьте ответ AI целиком, от { до }'];
+    if (!errs.length && pk.student && pk.student !== id) errs.push(`Посылка для другого ученика (код ${pk.student}, а у этого — ${id})`);
+    pmsg.innerHTML = errs.length
+      ? `<p class="t-err">Посылку нельзя отправить:</p><ul>${errs.map(e => `<li>${esc(e)}</li>`).join('')}</ul>`
+      : `<p>✅ Посылка в порядке: <b>${esc(pk.title)}</b> — приз ${esc(pk.reward.emoji)} ${esc(pk.reward.title)}</p>
+         <ul>${pk.quests.map(q => `<li>${esc(q.emoji)} ${esc(q.title)} — ${questSize(q)} заданий${q.focus?.length ? ` (${esc(q.focus.join(', '))})` : ''}</li>`).join('')}</ul>`;
+    return errs.length ? null : pk;
+  };
+  document.getElementById('adm-ai-copy').onclick = async () => {
+    const out = document.getElementById('adm-ai-out');
+    out.value = promptWithExport(aiExport(st, { student: id }));
+    out.hidden = false;
+    toast(await copy(out.value) ? 'Задание для AI скопировано' : 'Скопируйте из поля');
+  };
+  document.getElementById('adm-parcel-file').onchange = async e => { const f = e.target.files[0]; if (f){ pin.value = await f.text(); checkParcel(); } };
+  document.getElementById('adm-parcel-check').onclick = checkParcel;
+  document.getElementById('adm-parcel-send').onclick = async () => {
+    const pk = checkParcel();
+    if (!pk) return;
+    try { await call(`/students/${id}/parcel`, { base: p.version, parcel: pk }); toast('📦 Посылка отправлена'); await renderStudent(id); }
+    catch (err) { if (err instanceof ApiError && err.status === 409){ toast('Ученик только что занимался — данные обновлены, отправьте ещё раз'); await renderStudent(id); } else fail(err); }
+  };
+  main.querySelectorAll('[data-parcel-off]').forEach(b => b.onclick = async () => {
+    try { await call(`/students/${id}/parcel`, { base: p.version, withdraw: b.dataset.parcelOff }); toast('Посылка отозвана'); await renderStudent(id); }
+    catch (err) { if (err instanceof ApiError && err.status === 409) await renderStudent(id); else fail(err); }
+  });
 
   const readSpec = () => ({
     lessonId: document.getElementById('adm-hw-lesson').value,

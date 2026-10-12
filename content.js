@@ -2846,6 +2846,14 @@ function taskTypeFor(kind, grade){
   return CURRICULUM.taskTypes.find(t => t.grade === grade && t.kinds.includes(kind))?.code || null;
 }
 
+// ---------- ВСТУПИТЕЛЬНОЕ ИСПЫТАНИЕ (страж ворот) ----------
+// docs/concept-entry-test-and-key.md, раздел 6. Игрок выбирает класс; испытание адаптивное: начинается с середины
+// класса, сданная часть ведёт выше, несданная — ниже. На часть (4 темы) — слово, «послушай» и 2 задания на главный
+// навык части (разных типов, где есть картинки). Часть сдана при pass верных из perPart. Не больше maxTasks заданий.
+// Ворота открываются при любом результате: награда (один раз) и стартовая локация; разбор по навыкам — взрослому.
+// Логика — placementPart / placementNext / placementResult в js/stats.js, экран — js/placement.js.
+const PLACEMENT = { guard: 'owl', perPart: 4, pass: 3, maxTasks: 15, reward: { xp: 30, coins: 10 } };
+
 // ---------- СВОЯ КЛИНИКА (итерация 4, эскиз docs/design-v2/boards/33-screen-clinic) ----------
 // Материалы — за первое прохождение квеста на 80% (по редкости) и за испытания; кристаллы — в «Шахтах».
 // Всё заработанное считается из прогресса (clinicState в js/stats.js), в прогрессе хранится только, что построено.
@@ -3001,6 +3009,8 @@ const QUEST_RARITY = [
   { id: 'rare', title: 'Редкий', color: 'var(--rarity-rare)', pill: 'var(--rarity-rare-bg)', coins: 15, xp: 25, prize: 'монеты и опыт' },
   { id: 'epic', title: 'Эпический', color: 'var(--rarity-epic)', pill: 'var(--rarity-epic-bg)', coins: 30, xp: 50, prize: 'большой сундук монет' },
   { id: 'legendary', title: 'Легендарный', color: 'var(--rarity-legend)', pill: 'var(--rarity-legend-bg)', coins: 0, xp: 0, prize: 'кубок' },
+  // особый — квесты из посылки Dr. Harlow (AI-пакет под слабые места ученика, js/aipack.js)
+  { id: 'special', title: 'Особый', color: 'var(--rarity-special)', pill: 'var(--rarity-special-bg)', coins: 20, xp: 40, prize: 'уникальный приз' },
 ];
 const QUEST_PASS_PCT = 80;
 const KIND_RARITY = { cards: 'common', vocab: 'common', listen: 'common', match: 'common', fill: 'common', build: 'common',
@@ -3073,7 +3083,7 @@ window.EQ = {
   REGIONS, RANKS, RANK_STEPS, regionOfGrade, rankOf, ERROR_TYPES, ERROR_GROUPS, ERROR_CODES,
   QUEST_RARITY, QUEST_PASS_PCT, questRarity, ACHIEVEMENTS, SECRET_REGIONS,
   PACKS, addPacks, EXTRA_KINDS, extraQuestOf, questLesson, isNewItem, LOCATION_ART,
-  MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,
+  PLACEMENT, MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   FALLBACK_GUIDE, NARRATOR, NARRATOR_FALLBACK, guideFor, narratorFor, voiceKey, LOCATION_INTROS, locationIntro,
   HERO_LINES, SELF_LINES, heroLine, narratorLines,
