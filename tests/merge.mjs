@@ -156,6 +156,13 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('достижения: объединение, время — самое раннее', same(m.achievements, { 'first-quest': 150, 'goal-1': 120 }), m.achievements);
   check('реванши складываются', M(S({ revengeWins: 1 }), S({ revengeWins: 2 }), S({ revengeWins: 3 })).revengeWins === 4);
   check('клиника: построенные комнаты — объединение, время самое раннее', same(M(S({}), S({ clinic: { aviary: 300 } }), S({ clinic: { aviary: 200, ward: 400 } })).clinic, { aviary: 200, ward: 400 }));
+  {
+    const pk = { id: 'p1', title: 'x' };
+    const m2 = M(S({}), S({ parcels: { p1: { pack: pk, sent: 100, opened: 300, withdrawn: null } } }), S({ parcels: { p1: { pack: pk, sent: 100, opened: 200, withdrawn: null }, p2: { pack: { id: 'p2' }, sent: 150 } } }));
+    check('посылки: объединение, открытие — самое раннее', m2.parcels.p1.opened === 200 && m2.parcels.p2?.pack.id === 'p2', m2.parcels);
+    const m3 = M(S({ parcels: { p1: { pack: pk, sent: 100 } } }), S({ parcels: { p1: { pack: pk, sent: 100, withdrawn: 500 } } }), S({ parcels: { p1: { pack: pk, sent: 100, opened: 200 } } }));
+    check('посылки: отзыв из админ-панели не теряется', m3.parcels.p1.withdrawn === 500 && m3.parcels.p1.opened === 200, m3.parcels.p1);
+  }
   check('кристаллы складываются', M(S({ crystals: 3 }), S({ crystals: 6 }), S({ crystals: 13 })).crystals === 16);
 }
 

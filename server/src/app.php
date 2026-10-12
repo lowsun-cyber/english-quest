@@ -13,6 +13,7 @@ require_once __DIR__ . '/auth.php';   // пароли, почта, восста�
 
 const SCHEMA_VERSION = 2;
 const MAX_STATE_BYTES = 512 * 1024;
+const MAX_PARCEL_BYTES = 60 * 1024;   // посылка от Dr. Harlow (AI-пакет), как PARCEL_MAX_BYTES в js/aipack.js
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // без 0/O и 1/I — легко продиктовать
 const CODE_TTL = 7 * 86400 * 1000;                          // код подключения живёт неделю
 const FAIL_WINDOW = 15 * 60 * 1000;                          // окно для подсчёта неверных кодов
@@ -261,6 +262,16 @@ function valid_homework(object $hw): bool {
     && (($hw->doneAt ?? null) === null || is_numeric($hw->doneAt));
 }
 // Учитель видит только своих учеников; владелец и администратор — всех в организации.
+const PARCEL_ID_RE = '/^[a-z0-9][a-z0-9-]{2,59}$/';
+// Посылка: формат, id, письмо, приз и 1–3 квеста — остальное проверяет админ-панель перед отправкой
+function valid_parcel(mixed $p): bool {
+  if (!is_object($p) || ($p->format ?? null) !== 'eq-parcel/1') return false;
+  if (!is_string($p->id ?? null) || !preg_match(PARCEL_ID_RE, $p->id)) return false;
+  if (!is_string($p->title ?? null) || !is_string($p->note ?? null) || !is_object($p->reward ?? null)) return false;
+  if (!is_array($p->quests ?? null) || count($p->quests) < 1 || count($p->quests) > 3) return false;
+  foreach ($p->quests as $q) if (!is_object($q) || !is_string($q->id ?? null) || !preg_match(PARCEL_ID_RE, $q->id)) return false;
+  return strlen(json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) <= MAX_PARCEL_BYTES;
+}
 function student_for(array $u, string $id): array {
   $s = one('SELECT * FROM students WHERE id = ? AND org_id = ?', [$id, $u['org_id']]);
   if (!$s || ($u['role'] === 'teacher' && $s['teacher_id'] !== $u['id'])) throw new HttpError(404, 'not_found', 'Ученик не найден.');
@@ -538,6 +549,38 @@ function base_routes(): array {
         : (function() use ($id, $json){ try { q('INSERT INTO progress (student_id, state, version, updated, device_id) VALUES (?, ?, 1, ?, NULL)', [$id, $json, now()]); return 1; } catch (\PDOException $e){ return 0; } })();
       if ($n !== 1) throw new HttpError(409, 'conflict', 'Прогресс ученика только что изменился. Обновите страницу и повторите.', ['version' => $curVersion]);
       return ['version' => $curVersion + 1, 'homework' => $hw];
+    }],
+    // Посылка от Dr. Harlow (AI-пакет) из админ-панели: кладётся в поле parcels прогресса, с проверкой версии,
+    // как домашка. Полная проверка содержимого — в админ-панели (js/aipack.js), здесь — форма и размер.
+    // withdraw — отозвать посылку (отметка withdrawn, чтобы объединение на устройствах её не вернуло).
+    ['POST', '#^/students/(s[0-9a-f]{16})/parcel$#', function($id){
+      student_for(need_user(), $id);
+      $o = json_decode(raw_body());
+      if (!is_object($o)) throw new HttpError(400, 'bad_parcel', 'Посылка в неверном формате.');
+      $parcel = $o->parcel ?? null;
+      $withdraw = $o->withdraw ?? null;
+      if ($parcel !== null && !valid_parcel($parcel)) throw new HttpError(400, 'bad_parcel', 'Посылка в неверном формате.');
+      if ($parcel === null && !(is_string($withdraw) && preg_match(PARCEL_ID_RE, $withdraw))) throw new HttpError(400, 'bad_parcel', 'Нужна посылка или её id.');
+      $base = (int)(body()['base'] ?? -1);
+      $cur = one('SELECT version, state, updated FROM progress WHERE student_id = ?', [$id]);
+      $curVersion = $cur ? (int)$cur['version'] : 0;
+      if ($base !== $curVersion) throw new HttpError(409, 'conflict', 'Прогресс ученика только что изменился. Обновите страницу и повторите.', ['version' => $curVersion]);
+      $st = $cur ? state_out($cur['state']) : new \stdClass();
+      if (!isset($st->parcels) || !is_object($st->parcels)) $st->parcels = new \stdClass();
+      if ($parcel !== null){
+        $old = $st->parcels->{$parcel->id} ?? null;
+        $st->parcels->{$parcel->id} = (object)['pack' => $parcel, 'sent' => is_object($old) && ($old->sent ?? null) ? $old->sent : now(), 'opened' => is_object($old) ? ($old->opened ?? null) : null, 'withdrawn' => null];
+      } else {
+        if (!isset($st->parcels->{$withdraw})) throw new HttpError(404, 'not_found', 'Посылка не найдена.');
+        $st->parcels->{$withdraw}->withdrawn = now();
+      }
+      $json = json_encode($st, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+      if (strlen($json) > MAX_STATE_BYTES) throw new HttpError(413, 'too_big', 'Прогресс слишком большой.');
+      $n = $cur
+        ? q('UPDATE progress SET state = ?, version = ?, updated = ?, device_id = NULL WHERE student_id = ? AND version = ?', [$json, $curVersion + 1, now(), $id, $curVersion])->rowCount()
+        : (function() use ($id, $json){ try { q('INSERT INTO progress (student_id, state, version, updated, device_id) VALUES (?, ?, 1, ?, NULL)', [$id, $json, now()]); return 1; } catch (\PDOException $e){ return 0; } })();
+      if ($n !== 1) throw new HttpError(409, 'conflict', 'Прогресс ученика только что изменился. Обновите страницу и повторите.', ['version' => $curVersion]);
+      return ['version' => $curVersion + 1];
     }],
     ['GET', '#^/students/(s[0-9a-f]{16})/devices$#', function($id){
       student_for(need_user(), $id);

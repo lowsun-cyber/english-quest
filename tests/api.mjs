@@ -177,6 +177,25 @@ if (import.meta.url === `file://${process.argv[1]}`){
     check('домашка ученику без прогресса', r.status === 200 && r.data.version === 1);
     await call(`/students/${sonya}/delete`, { token: owner, body: {} });
 
+    // посылка от Dr. Harlow (итерация 5): кладётся в parcels, с проверкой версии; отзыв — отметка withdrawn
+    {
+      const pk = JSON.parse(readFileSync(join(ROOT, 'docs/ai-pack/example-parcel.json'), 'utf8'));
+      let v = (await call(`/students/${masha}/progress`, { token: teacher })).data.version;
+      r = await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v, parcel: pk } });
+      check('посылка отправлена с сервера', r.status === 200 && r.data.version === v + 1, r.data);
+      r = await call('/progress', { token: devA });
+      const got = r.data.state.parcels?.[pk.id];
+      check('устройство получает посылку, остальное не тронуто', got?.pack?.reward?.title === pk.reward.title && got.sent > 0 && got.withdrawn === null && r.data.state.xp === 20, got);
+      check('посылка: старая версия — 409', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v, parcel: pk } })).status === 409);
+      check('посылка: чужой формат не принимается', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, parcel: { ...pk, format: 'x' } } })).status === 400);
+      check('посылка: кривой id не принимается', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, parcel: { ...pk, id: '../x' } } })).status === 400);
+      check('посылка: слишком большая не принимается', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, parcel: { ...pk, note: 'я'.repeat(70000) } } })).status === 400);
+      check('посылка: без входа — 401', (await call(`/students/${masha}/parcel`, { body: { base: v + 1, parcel: pk } })).status === 401);
+      r = await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 1, withdraw: pk.id } });
+      check('посылку можно отозвать', r.status === 200 && (await call('/progress', { token: devA })).data.state.parcels[pk.id].withdrawn > 0);
+      check('отозвать несуществующую — 404', (await call(`/students/${masha}/parcel`, { token: teacher, body: { base: v + 2, withdraw: 'no-such' } })).status === 404);
+    }
+
     // удаление репетитора: ученики переходят
     check('владельца удалить нельзя', (await call(`/users/${(await call('/me', { token: owner })).data.user.id}/delete`, { token: admin, body: {} })).status === 403);
     r = await call(`/users/${anna.id}/delete`, { token: admin, body: {} });

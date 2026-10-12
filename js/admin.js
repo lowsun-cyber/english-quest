@@ -5,6 +5,7 @@ import { api, ApiError, deviceLabel } from './api.js';
 import { API_BASE, TEACHER_KEY } from './config.js';
 import { LESSONS, levelFromXp } from './eq.js';
 import { gapMapHtml } from './gapmap.js';
+import { aiExport, parcelsOf, parseParcel, promptWithExport, questSize, validateParcel } from './aipack.js';
 import { CHECKPOINT_SIZE, EX_NAMES, EX_ORDER, GRADES, PARTS, errorsLine, homeworkDone, levelTitle, makeHomeworkFor, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { WEEKDAYS, fmtDay } from './util.js';
 
@@ -441,6 +442,24 @@ async function renderStudent(id){
       </form>
     </section>
 
+    <section class="adm-card" id="adm-parcel-card">
+      <h2 class="adm-h2">Посылка от Dr. Harlow <span class="t-muted">AI-пакет</span></h2>
+      <p class="t-muted">Скопируйте задание для AI (прогресс без имени), вставьте ответ модели после проверки — посылка придёт ученику при следующей синхронизации.</p>
+      <div class="adm-tools"><button class="btn gold" id="adm-ai-copy">🤖 Скопировать задание для AI</button></div>
+      <textarea class="t-report" id="adm-ai-out" readonly hidden rows="6" aria-label="Задание для AI"></textarea>
+      <label class="t-label" for="adm-parcel-in">Посылка (JSON)</label>
+      <textarea class="t-report" id="adm-parcel-in" rows="6" placeholder='{"format": "eq-parcel/1", …}'></textarea>
+      <div class="adm-tools">
+        <label class="btn secondary t-file-btn">📂 Из файла<input type="file" id="adm-parcel-file" accept=".json,application/json" hidden></label>
+        <button class="btn secondary" id="adm-parcel-check">Проверить</button>
+        <button class="btn" id="adm-parcel-send">📦 Отправить ученику</button>
+      </div>
+      <div id="adm-parcel-msg" role="status"></div>
+      ${parcelsOf(st).length ? `<ul class="t-hard" role="list">${parcelsOf(st).map(x => `<li><span class="t-hard-main">${esc(x.pack.reward.emoji)} <b>${esc(x.pack.title)}</b> — ${esc(x.pack.reward.title)}</span>
+        <span class="t-muted">отправлена ${fmtDateTime(x.entry.sent)} · ${x.done ? `пройдена ${fmtDateTime(x.doneAt)}` : `пройдено квестов ${x.quests.length - x.left} из ${x.quests.length}${x.entry.opened ? '' : ', ещё не открыта'}`}</span>
+        ${x.done ? '' : `<button class="icon-btn" data-parcel-off="${esc(x.pack.id)}">Отозвать</button>`}</li>`).join('')}</ul>` : ''}
+    </section>
+
     <section class="adm-card">
       <h2 class="adm-h2">Темы</h2>
       <div class="t-table-wrap">
@@ -541,6 +560,37 @@ async function renderStudent(id){
     download(blob, `english-quest-${fileSafe(s.name)}-${new Date().toISOString().slice(0, 10)}.json`);
   };
   document.getElementById('adm-report-copy').onclick = async () => toast(await copy(document.getElementById('adm-report').value) ? 'Отчёт скопирован' : 'Скопируйте из поля');
+
+  // посылка от Dr. Harlow: проверка тем же правилом, что в приложении (js/aipack.js), отправка — как домашка
+  const pmsg = document.getElementById('adm-parcel-msg'), pin = document.getElementById('adm-parcel-in');
+  const checkParcel = () => {
+    const pk = parseParcel(pin.value.trim());
+    const errs = pk ? validateParcel(pk) : ['Это не JSON — вставьте ответ AI целиком, от { до }'];
+    if (!errs.length && pk.student && pk.student !== id) errs.push(`Посылка для другого ученика (код ${pk.student}, а у этого — ${id})`);
+    pmsg.innerHTML = errs.length
+      ? `<p class="t-err">Посылку нельзя отправить:</p><ul>${errs.map(e => `<li>${esc(e)}</li>`).join('')}</ul>`
+      : `<p>✅ Посылка в порядке: <b>${esc(pk.title)}</b> — приз ${esc(pk.reward.emoji)} ${esc(pk.reward.title)}</p>
+         <ul>${pk.quests.map(q => `<li>${esc(q.emoji)} ${esc(q.title)} — ${questSize(q)} заданий${q.focus?.length ? ` (${esc(q.focus.join(', '))})` : ''}</li>`).join('')}</ul>`;
+    return errs.length ? null : pk;
+  };
+  document.getElementById('adm-ai-copy').onclick = async () => {
+    const out = document.getElementById('adm-ai-out');
+    out.value = promptWithExport(aiExport(st, { student: id }));
+    out.hidden = false;
+    toast(await copy(out.value) ? 'Задание для AI скопировано' : 'Скопируйте из поля');
+  };
+  document.getElementById('adm-parcel-file').onchange = async e => { const f = e.target.files[0]; if (f){ pin.value = await f.text(); checkParcel(); } };
+  document.getElementById('adm-parcel-check').onclick = checkParcel;
+  document.getElementById('adm-parcel-send').onclick = async () => {
+    const pk = checkParcel();
+    if (!pk) return;
+    try { await call(`/students/${id}/parcel`, { base: p.version, parcel: pk }); toast('📦 Посылка отправлена'); await renderStudent(id); }
+    catch (err) { if (err instanceof ApiError && err.status === 409){ toast('Ученик только что занимался — данные обновлены, отправьте ещё раз'); await renderStudent(id); } else fail(err); }
+  };
+  main.querySelectorAll('[data-parcel-off]').forEach(b => b.onclick = async () => {
+    try { await call(`/students/${id}/parcel`, { base: p.version, withdraw: b.dataset.parcelOff }); toast('Посылка отозвана'); await renderStudent(id); }
+    catch (err) { if (err instanceof ApiError && err.status === 409) await renderStudent(id); else fail(err); }
+  });
 
   const readSpec = () => ({
     lessonId: document.getElementById('adm-hw-lesson').value,
