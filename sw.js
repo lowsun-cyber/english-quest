@@ -5,7 +5,7 @@
 // • Озвучка (tts_cache/*.mp3) — «сначала кэш»: файл скачивается один раз при первом
 //   прослушивании или кнопкой «Скачать всю озвучку» в панели для взрослых.
 // • Шрифты Google — берём из кэша и тихо обновляем в фоне.
-const SHELL_CACHE = 'eq-shell-v27';
+const SHELL_CACHE = 'eq-shell-v28';
 const AUDIO_CACHE = 'eq-audio-v1';   // то же имя использует app.js для массовой загрузки
 const FONT_CACHE = 'eq-fonts-v1';
 const KNOWN = [SHELL_CACHE, AUDIO_CACHE, FONT_CACHE];
@@ -52,6 +52,9 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // API сервера учителя (тот же адрес, что у сайта: /api/…) — мимо кэша и без перезапроса: иначе теряется
+  // заголовок входа X-EQ-Token (вход «слетал» сразу после ввода), а ответы с данными учеников попадали бы в кэш
+  if (url.origin === self.location.origin && /^\/api(\/|$)/.test(url.pathname)) return;
 
   if (url.origin === self.location.origin && url.pathname.includes('/tts_cache/')){
     event.respondWith(audio(req));
