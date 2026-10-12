@@ -410,6 +410,7 @@ async function renderStudent(id){
       </div>
       <p class="t-muted adm-alltime">За всё время: ${S.allTime.min} мин, ${S.allTime.activeDays} дн. с занятиями${S.allTime.first ? ` (с ${dayShort(S.allTime.first)})` : ''}, ответов ${S.allTime.ok + S.allTime.bad}${S.allTime.pct !== null ? `, верных ${S.allTime.pct}%` : ''}, выучено после ошибок ${S.mastered}.</p>
       <p class="t-muted">🏥 ${esc(S.clinic)}</p>
+      ${S.placement ? `<p class="t-muted">🛡️ ${esc(S.placement)}</p>` : ''}
       ${chart(S.days, S.goal)}
     </section>
 

@@ -264,5 +264,42 @@ check('подпись опор', /G4-06 .*\(освоено\)/.test(S.needsLine(g
   check('шаблон: задание + выгрузка', A.promptWithExport(exp).startsWith(A.AI_PROMPT) && A.promptWithExport(exp).includes('"student": "s123"') && A.AI_PROMPT.includes(A.PARCEL_FORMAT));
 }
 
+// вступительное испытание (страж ворот): адаптивное, docs/concept-entry-test-and-key.md, раздел 6
+{
+  const { PLACEMENT } = ctx.window.EQ;
+  // прогон: ok(part) — сдаёт ли игрок часть; возвращает ответы и порядок частей
+  const run = (g, ok) => { const answers = [], order = [], used = new Set(); let p;
+    while ((p = S.placementNext(g, answers)) != null){ order.push(p); const items = S.placementPart(g, p, used); items.forEach(x => x.skill && used.add(x.skill));
+      items.forEach((x, i) => answers.push({ part: p, ok: ok(p) ? i < PLACEMENT.pass : i < 1, skill: x.skill || null })); }
+    return { answers, order }; };
+  for (const g of S.GRADES){
+    const n = S.placementParts(g).length;
+    for (let p = 0; p < n; p++){
+      const it = S.placementPart(g, p);
+      check(`испытание ${g} кл., часть ${p + 1}: 4 задания — слово, «послушай» и 2 на навык`, it.length === PLACEMENT.perPart && it[0].type === 'word' && it[1].type === 'listen' && it.filter(x => x.skill).length === 2 && (new Set(it.filter(x => x.skill).map(x => x.skill)).size === 1 || S.placementParts(g)[p].length < 4), it.map(x => x.type + ':' + (x.skill || '')));
+    }
+    const allOk = run(g, () => true), noneOk = run(g, () => false);
+    check(`испытание ${g} кл.: начинается с середины`, allOk.order[0] === Math.floor((n - 1) / 2));
+    check(`испытание ${g} кл.: не больше ${PLACEMENT.maxTasks} заданий`, allOk.answers.length <= PLACEMENT.maxTasks && noneOk.answers.length <= PLACEMENT.maxTasks && allOk.answers.length >= 12, [allOk.answers.length, noneOk.answers.length]);
+    check(`испытание ${g} кл.: всё верно — вверх, старт с последней темы`, allOk.order[1] > allOk.order[0] && S.placementResult(g, allOk.answers).startIdx === S.lessonsOf(g).length - 1, allOk.order);
+    check(`испытание ${g} кл.: всё неверно — вниз, старт с первой темы`, noneOk.order[1] < noneOk.order[0] && S.placementResult(g, noneOk.answers).startIdx === 0, noneOk.order);
+  }
+  const g = 3, ls = S.lessonsOf(g);
+  const mid = run(g, p => p <= 2);   // сданы части 1–3
+  const r = S.placementResult(g, mid.answers);
+  check('испытание: граница между сданной и несданной частью — старт с части 4', r.startIdx === 12 && r.start === ls[12].id, { order: mid.order, startIdx: r.startIdx });
+  const used = new Set(), skillsPerPart = mid.order.map(p => { const it = S.placementPart(g, p, used); it.forEach(x => x.skill && used.add(x.skill)); return it.find(x => x.skill)?.skill; });
+  check('испытание: навыки частей не повторяются, если есть другие', new Set(skillsPerPart).size === skillsPerPart.length, skillsPerPart);
+  const ans = (pairs) => pairs.map(([skill, ok]) => ({ part: 0, ok, skill }));
+  const sk = S.placementResult(g, [...ans([['G3-01', true], ['G3-01', true], ['G2-01', true], ['G2-01', false], ['G3-02', false], ['G3-02', false]])]).skills;
+  check('испытание: навыки — освоено / проверим в игре / учим', sk['G3-01'] === 'mastered' && sk['G2-01'] === 'check' && sk['G3-02'] === 'learn', sk);
+  const st = fresh({ placement: r });
+  check('испытание: темы до стартовой открыты, дальше — нет', S.placementOpens(st, ls[0]) && S.placementOpens(st, ls[12]) && !S.placementOpens(st, ls[13]));
+  check('испытание: другой класс и пропуск не открывают', !S.placementOpens(st, S.lessonsOf(2)[3]) && !S.placementOpens(fresh({ placement: { skipped: 1 } }), ls[1]));
+  check('испытание: строка для родителя с навыками', /Вступительное испытание: 3 класс, верно \d+ из \d+/.test(S.placementLine(st)) && S.reportText(st).includes('Вступительное испытание'), S.placementLine(st));
+  check('испытание: пропуск — в строке', S.placementLine(fresh({ placement: { skipped: 1 } })) === 'Вступительное испытание: пропущено');
+  check('испытание: «один класс» — совета на другой класс нет', !('prev' in r));
+}
+
 console.log(`\n${total - fail} из ${total} проверок мастерства, квестов и достижений прошли`);
 process.exit(fail ? 1 : 0);

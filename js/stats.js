@@ -1,7 +1,7 @@
 // English Quest — Статистика ученика по его прогрессу (без DOM и без глобального state).
 // Общая для панели репетитора в приложении и для админ-панели (admin/), поэтому цифры везде одинаковые.
-import { ACHIEVEMENTS, ERROR_CODES, ERROR_GROUPS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS, CLINIC_PRIZE, CLINIC_ROOMS, CHARACTERS, CURRICULUM, MATERIALS, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
-import { dayKey, fmtDay, parseDay, shiftDay } from './util.js';
+import { ACHIEVEMENTS, PLACEMENT, ERROR_CODES, ERROR_GROUPS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS, CLINIC_PRIZE, CLINIC_ROOMS, CHARACTERS, CURRICULUM, MATERIALS, ERROR_TYPES, LESSONS, MAX_LEVEL, QUEST_PASS_PCT, QUEST_RARITY, RANK_STEPS, REGIONS, SECRET_REGIONS, SKILLS, extraQuestOf, isNewItem, questRarity, buildItemsFor, fillItemsFor, levelFromXp, rankOf } from './eq.js';
+import { dayKey, fmtDay, parseDay, shiftDay, shuffle } from './util.js';
 
 // ---------- уроки, упражнения, проверки ----------
 export const PARTS = ['vocab', 'listen', 'match', 'spell', 'grammar', 'reading', 'speak'];
@@ -133,6 +133,80 @@ export function secretRegionState(region, st){
     return { loc, res, passed: passed(loc), lock };
   });
   return { region, open, have: Math.min(have, need), need, pool, locations };
+}
+
+// ---------- вступительное испытание (страж ворот) ----------
+// Части класса — по BLOCK тем (последняя может быть короче). Главный навык части — тот, по которому в части
+// больше всего заданий (грамматика и «что на картинке»), и ещё не проверенный в этом испытании.
+export const placementParts = grade => { const ls = lessonsOf(grade), out = []; for (let i = 0; i < ls.length; i += BLOCK) out.push(ls.slice(i, i + BLOCK)); return out; };
+export function placementPart(grade, part, used = new Set()){
+  const ls = placementParts(grade)[part];
+  const words = shuffle(ls.flatMap(l => l.words.map(w => ({ w, l }))));
+  const bySkill = {};
+  for (const l of ls){
+    for (const q of l.grammar || []) if (q.skill && SKILLS[q.skill]) (bySkill[q.skill] ||= { g: [], p: [] }).g.push({ type: 'grammar', q, l });
+    for (const pic of l.pics || []) if (pic.skill && SKILLS[pic.skill]) (bySkill[pic.skill] ||= { g: [], p: [] }).p.push({ type: 'picture', pic, l });
+  }
+  const skills = Object.entries(bySkill).map(([code, x]) => ({ code, n: x.g.length + x.p.length, ...x }))
+    .sort((a, b) => (used.has(a.code) - used.has(b.code)) || b.n - a.n || a.code.localeCompare(b.code));
+  const sk = skills[0], items = [{ type: 'word', ...words[0] }, { type: 'listen', ...words[1] }];
+  if (sk){
+    const g = shuffle(sk.g), p = shuffle(sk.p);
+    const pair = g.length && p.length ? [g[0], p[0]] : [...g, ...p].slice(0, 2);   // разные типы, где есть
+    items.push(...pair.map(x => ({ ...x, skill: sk.code })));
+    // у навыка одно задание (короткая последняя часть) — второе по соседнему навыку той же части
+    for (const o of skills.slice(1)) if (items.length < PLACEMENT.perPart){ const x = [...o.g, ...o.p][0]; items.push({ ...x, skill: o.code }); }
+  }
+  while (items.length < PLACEMENT.perPart) items.push({ type: 'word', ...words[items.length] });
+  return items.slice(0, PLACEMENT.perPart).map(x => ({ ...x, part }));
+}
+// Сдана ли часть по ответам [{ part, ok }]
+const partPassed = (answers, part) => answers.filter(x => x.part === part && x.ok).length >= PLACEMENT.pass;
+// Следующая часть: с середины; сдана — выше, не сдана — ниже; когда граница найдена и задания ещё есть —
+// проверяем ближайшую непроверенную часть ниже границы. null — испытание закончено.
+export function placementNext(grade, answers){
+  const n = placementParts(grade).length, seen = [...new Set(answers.map(x => x.part))];
+  if (!seen.length) return Math.floor((n - 1) / 2);
+  if (answers.length + PLACEMENT.perPart > PLACEMENT.maxTasks) return null;
+  const last = seen[seen.length - 1], failed = seen.filter(p => !partPassed(answers, p));
+  const floor = failed.length ? Math.min(...failed) : n;   // всё ниже — пока считаем сданным
+  const up = last + 1, down = last - 1;
+  if (partPassed(answers, last) && up < floor && !seen.includes(up)) return up;
+  if (!partPassed(answers, last) && down >= 0 && !seen.includes(down)) return down;
+  for (let p = floor - 1; p >= 0; p--) if (!seen.includes(p)) return p;
+  return null;
+}
+// Итог: старт — первая тема самой нижней несданной части (непроверенные части ниже считаются сданными);
+// всё сдано — последняя тема класса. Навыки: оба задания верно — «освоено», одно — «проверим в игре», ни одного — «учим».
+export const SKILL_PLACEMENT = { mastered: 'освоено', check: 'проверим в игре', learn: 'учим' };
+export function placementResult(grade, answers, now = Date.now()){
+  const ls = lessonsOf(grade), all = placementParts(grade), seen = [...new Set(answers.map(x => x.part))].sort((a, b) => a - b);
+  const parts = seen.map(i => ({ part: i, right: answers.filter(x => x.part === i && x.ok).length, total: answers.filter(x => x.part === i).length,
+    passed: partPassed(answers, i), from: all[i][0].id, to: all[i][all[i].length - 1].id }));
+  const failed = parts.filter(p => !p.passed).map(p => p.part);
+  const startPart = failed.length ? Math.min(...failed) : null;
+  const startIdx = startPart == null ? ls.length - 1 : startPart * BLOCK;
+  const skills = {};
+  for (const code of new Set(answers.filter(x => x.skill).map(x => x.skill))){
+    const r = answers.filter(x => x.skill === code && x.ok).length;
+    skills[code] = r >= 2 ? 'mastered' : r === 1 ? 'check' : 'learn';
+  }
+  return { grade, at: now, right: answers.filter(x => x.ok).length, total: answers.length, parts, startIdx, start: ls[startIdx].id, skills };
+}
+// Открыта ли тема по итогу испытания (темы класса до стартовой включительно)
+export function placementOpens(st, lesson){
+  const p = st.placement;
+  if (!p || p.skipped || p.grade !== lesson.grade) return false;
+  return lessonsOf(lesson.grade).indexOf(lesson) <= p.startIdx;
+}
+export function placementLine(st){
+  const p = st.placement;
+  if (!p) return '';
+  if (p.skipped && !p.grade) return 'Вступительное испытание: пропущено';
+  const l = LESSONS.find(x => x.id === p.start);
+  const by = k => Object.entries(p.skills || {}).filter(([, v]) => v === k).map(([c]) => SKILLS[c]?.title).filter(Boolean);
+  const parts = [['освоено', by('mastered')], ['проверим в игре', by('check')], ['учим', by('learn')]].filter(([, v]) => v.length).map(([t, v]) => `${t}: ${v.join(', ')}`);
+  return `Вступительное испытание: ${p.grade} класс, верно ${p.right} из ${p.total} (${new Date(p.at).toLocaleDateString('ru-RU')}), старт — «${l?.title || p.start}» (тема ${p.startIdx + 1})${parts.length ? `; ${parts.join('; ')}` : ''}`;
 }
 
 // ---------- своя клиника (итерация 4) ----------
@@ -518,7 +592,7 @@ export function studentStats(st, n = 7){
     lessonsDone: lessons.filter(x => x.done).length,
     xp, level, maxLevel: MAX_LEVEL, rank: topRank(st), regions: regionRanks(st), gold: st.gold || 0, mastered: st.mastered || 0,
     collected: Object.keys(st.inventory || {}).length,
-    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st), clinic: clinicLine(st), gaps: errorGaps(st),
+    skills: skillStats(st), coverage: curriculumCoverage(st), mastery: masterySummary(st), clinic: clinicLine(st), gaps: errorGaps(st), placement: placementLine(st),
     allTime: { days: all, sec: allSec, min: minutes(allSec), ok: allOk, bad: allBad, pct: pctOf(allOk, allBad),
       activeDays: all.filter(d => d.sec > 0 || (d.ok || 0) + (d.bad || 0) > 0).length, first: allKeys[0] || null, last: allKeys[allKeys.length - 1] || null },
   };
@@ -544,6 +618,7 @@ export function reportText(st, who = '', s = studentStats(st), extra = []){
     lines.push(`Слова: освоено ${s.mastery.levels.mastered} из ${s.mastery.seen} встреченных${hardW.length ? `; трудные: ${hardW.join(', ')}` : ''}`);
   }
   if (st.mastered) lines.push(`Выучено после ошибок: ${st.mastered}`);
+  if (placementLine(st)) lines.push(placementLine(st));
   lines.push(gapsLine(s.gaps || errorGaps(st)));
   lines.push(s.clinic || clinicLine(st));
   lines.push(...extra);

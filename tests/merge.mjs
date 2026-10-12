@@ -163,6 +163,8 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
     const m3 = M(S({ parcels: { p1: { pack: pk, sent: 100 } } }), S({ parcels: { p1: { pack: pk, sent: 100, withdrawn: 500 } } }), S({ parcels: { p1: { pack: pk, sent: 100, opened: 200 } } }));
     check('посылки: отзыв из админ-панели не теряется', m3.parcels.p1.withdrawn === 500 && m3.parcels.p1.opened === 200, m3.parcels.p1);
   }
+  check('испытание: действует последнее', M(S({}), S({ placement: { grade: 3, at: 100, startIdx: 4 } }), S({ placement: { grade: 2, at: 200, startIdx: 8 } })).placement.at === 200
+    && M(S({}), S({ placement: { grade: 3, at: 300 } }), S({ placement: { skipped: 200 } })).placement.grade === 3);
   check('кристаллы складываются', M(S({ crystals: 3 }), S({ crystals: 6 }), S({ crystals: 13 })).crystals === 16);
 }
 

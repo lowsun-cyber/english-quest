@@ -13,6 +13,7 @@ import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock
 import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
 import { cloudLink, cloudOn, cloudPanelHtml, wireCloudPanel } from './cloud.js';
 import { gapMapHtml } from './gapmap.js';
+import { placementAdultHtml } from './placement.js';
 import { addParcel, aiExport, parcelsOf, parseParcel, promptWithExport, validateParcel } from './aipack.js';
 import { errorsLine, lastDaysOf, levelTitle, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, plural } from './util.js';
@@ -150,6 +151,9 @@ export function openTutorPanel(){
         return `<li>${cp.emoji} ${escapeHtml(cp.title)} — ${r?.passedAt ? `<b>сдана</b> (лучший ${r.best}/${CHECKPOINT_SIZE})` : r ? `не сдана (лучший ${r.best}/${CHECKPOINT_SIZE})` : '<span class="t-muted">не начата</span>'}</li>`;
       }).join('')}
     </ul>
+
+    <h3 class="t-h">Вступительное испытание</h3>
+    ${placementAdultHtml(state)}
 
     <h3 class="t-h">Карта пробелов</h3>
     ${gapMapHtml(s.gaps)}

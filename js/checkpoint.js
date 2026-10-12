@@ -13,8 +13,10 @@ import { classifyError, errorCodeOf, skillItems, skillWeak } from './stats.js';
 
 // === Смешанная викторина по темам: проверки-боссы и «Шахты» ===
 // mix — сколько вопросов каждого вида: { word, listen, grammar }; недостающие добираются словами.
-// onFinish(right, total) рисует итог.
-export function runQuiz({ header, lessons, size, mix, onFinish, record = true }){
+// onFinish(right, total) рисует итог. queue — готовый список вопросов вместо mix (вступительное испытание),
+// onAnswer(item, ok) — после каждого ответа; log: false — ответы не идут в мастерство, ошибки и «Мои ошибки».
+// total — сколько вопросов показывать в полоске, если queue пополняется по ходу; dontKnow — кнопка «Не знаю» без штрафа.
+export function runQuiz({ header, lessons, size, mix = {}, onFinish, record = true, queue: given = null, onAnswer = null, log = true, total = null, dontKnow = false }){
   const words = lessons.flatMap(l => l.words.map(w => ({ w, l })));
   const grammar = lessons.flatMap(l => l.grammar.map(q => ({ q, l })));
   const picked = shuffle(words);
@@ -26,7 +28,7 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
     ...shuffle(grammar).slice(0, mix.grammar || 0).map(x => ({ type: 'grammar', ...x })),
   ];
   qs = qs.concat(take(size - qs.length).map(x => ({ type: 'word', ...x })));
-  const queue = shuffle(qs).slice(0, size);
+  const queue = given || shuffle(qs).slice(0, size);
   let idx = 0, right = 0;
   render();
 
@@ -43,6 +45,11 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
       options = shuffle([item.w, ...others(3).map(x => x.w)]);
       answer = item.w.en;
       body = `<div class="q-listen-icon" aria-hidden="true">🔊</div><div class="q-text pixel">Слушай и выбирай картинку</div>`;
+    } else if (item.type === 'picture'){
+      // «Что на картинке?»: верная фраза и неверная (pics в content.js)
+      options = shuffle([item.pic.right, item.pic.wrong]);
+      answer = item.pic.right; say = item.pic.right;
+      body = `<span class="q-emoji">${item.pic.emoji}</span><div class="q-text pixel">Что на картинке?</div>`;
     } else {
       options = shuffle(item.q.options);
       answer = item.q.a; say = item.q.q.replace('___', item.q.a);
@@ -50,7 +57,7 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
     }
     openModal(`
       ${header}
-      <div class="review-progress" aria-label="Вопрос ${idx + 1} из ${queue.length}"><span style="width:${Math.round(idx * 100 / queue.length)}%"></span></div>
+      <div class="review-progress" aria-label="Вопрос ${idx + 1} из ${total || queue.length}"><span style="width:${Math.round(idx * 100 / (total || queue.length))}%"></span></div>
       <div class="question">
         ${body}
         <div class="options">
@@ -58,6 +65,7 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
             ? `<button class="opt opt-emoji" data-o="${escapeHtml(o.en)}" aria-label="${escapeHtml(o.ru)}">${o.emoji}</button>`
             : `<button class="opt" data-o="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join('')}
         </div>
+        ${dontKnow ? '<button class="opt opt-skip" data-o="" data-skip="1">🤷 Не знаю</button>' : ''}
       </div>
       ${item.type === 'listen' ? '<div class="controls"><button class="btn secondary" id="hear">🔊 Повторить</button></div>' : ''}
     `);
@@ -68,16 +76,20 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
     document.querySelectorAll('.opt').forEach(btn => {
       btn.onclick = () => {
         document.querySelectorAll('.opt').forEach(b => b.disabled = true);
-        const ok = btn.dataset.o === answer;
+        const skip = !!btn.dataset.skip, ok = !skip && btn.dataset.o === answer;
         logAnswer(ok);
-        if (item.type === 'grammar') logSkill(item.q, ok, btn.dataset.o);
-        if (ok){ btn.classList.add('correct'); right++; if (item.w) logWord(item.w.en, true); }
+        if (log && item.type === 'grammar') logSkill(item.q, ok, btn.dataset.o);
+        onAnswer?.(item, ok);
+        if (ok){ btn.classList.add('correct'); right++; if (log && item.w) logWord(item.w.en, true); }
+        else if (skip){ document.querySelector(`.opt[data-o="${CSS.escape(answer)}"]`)?.classList.add('correct'); }   // «Не знаю»: показать ответ, без разбора
         else {
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${CSS.escape(answer)}"]`)?.classList.add('correct');
           // record: false — темы нет в учебнике (особые квесты): в «Мои ошибки» не пишем, но тип и код ошибки считаем
           const info = { exercise: item.type === 'listen' ? 'listen' : 'checkpoint', chosen: btn.dataset.o, skill: item.q?.skill };
-          const error = !record
+          const error = !log
+            ? classifyError({ type: item.type === 'grammar' ? 'grammar' : 'word', ...info, answer })
+            : !record
             ? (() => { const e = classifyError({ type: item.type === 'grammar' ? 'grammar' : 'word', ...info, answer }); countError(e, errorCodeOf({ ...info, error: e })); return e; })()
             : item.type === 'grammar'
             ? recordMistake('grammar', item.l, item.q.q, { exercise: 'checkpoint', chosen: btn.dataset.o, skill: item.q.skill })
@@ -85,7 +97,7 @@ export function runQuiz({ header, lessons, size, mix, onFinish, record = true })
           whyWrong({ lesson: item.l, error, answer, chosen: btn.dataset.o, q: item.q });
         }
         if (say) speak(say);
-        afterFeedback(() => { idx++; render(); }, ok ? 800 : WHY_MS);
+        afterFeedback(() => { idx++; render(); }, ok || skip ? 800 : WHY_MS);   // «Не знаю» — без разбора, дальше сразу
       };
     });
   }
