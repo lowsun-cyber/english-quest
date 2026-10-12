@@ -1226,7 +1226,7 @@ try {
     const back = JSON.parse(saved); if (back) state.parcels = back; else delete state.parcels; await saveState();
     return 'задание для AI с кодом ученика, проверка, добавление и «Убрать»';`)));
 
-  await test('вступительное испытание: страж ворот, старт с части, «Не сейчас»', () => load().then(() => js(`
+  await test('вступительное испытание: страж ворот, адаптивно, «Ворота открыты», «Не сейчас»', () => load().then(() => js(`
     const f = id => document.getElementById(id);
     const { state, saveState } = await import('./js/state.js'), map = await import('./js/map.js'), S = await import('./js/stats.js');
     const saved = JSON.stringify({ p: state.placement || null, lp: state.lessonProgress, sk: state.skills, g: state.settings.mapGrade, v: state.settings.mapView, u: !!state.settings.unlockAll, mi: state.mistakes });
@@ -1237,27 +1237,39 @@ try {
     document.querySelector('[data-placement="go"]').click(); await __sleep(200);
     if (document.querySelectorAll('[data-pg]').length !== S.GRADES.length) throw new Error('нет выбора класса');
     document.querySelector('[data-pg="3"]').click(); await __sleep(400);
-    const mist0 = JSON.stringify(state.mistakes);
-    const words = G3.flatMap(l => l.words), gram = G3.flatMap(l => l.grammar), n = S.placementPlan(3).length;
-    for (let i = 0; i < n; i++){
-      const opts = [...document.querySelectorAll('.opt')].map(o => o.dataset.o); let ans;
+    const mist0 = JSON.stringify(state.mistakes), xp0 = state.xp;
+    // часть вопроса — по теме, откуда слово или вопрос; игрок знает части 1–3 (индексы 0–2)
+    const partOf = l => Math.floor(G3.indexOf(l) / 4);
+    const parts = [];
+    for (let i = 0; i < 15 && document.querySelector('.opt'); i++){
+      if (!document.querySelector('.opt-skip')) throw new Error('нет кнопки «Не знаю»');
+      const opts = [...document.querySelectorAll('.opt:not(.opt-skip)')].map(o => o.dataset.o); let ans, l;
       const em = document.querySelector('.q-emoji'), sn = document.querySelector('.q-sentence');
-      if (em) ans = words.filter(w => w.emoji === em.textContent).map(w => w.en).find(e => opts.includes(e));
-      else if (sn) ans = gram.filter(g => g.q === sn.textContent).map(g => g.a).find(a => opts.includes(a));
-      else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o === String(__said)); }
-      if (!ans) throw new Error('вопрос ' + (i + 1) + ': нет ответа среди ' + opts.join('/'));
-      const pick = i < 6 ? ans : opts.find(o => o !== ans);   // две первые части — верно, дальше — неверно
-      window.__said = null; [...document.querySelectorAll('.opt')].find(o => o.dataset.o === pick).click(); await __sleep(i < 6 ? 1100 : 3100);
+      if (sn){ l = G3.find(x => x.grammar.some(g => g.q === sn.textContent && opts.includes(g.a))); ans = l.grammar.find(g => g.q === sn.textContent && opts.includes(g.a)).a; }
+      else if (em){ l = G3.find(x => x.words.some(w => w.emoji === em.textContent && opts.includes(w.en))); ans = l?.words.find(w => w.emoji === em.textContent && opts.includes(w.en))?.en; }
+      else { for (let k = 0; k < 20 && !opts.includes(String(__said)); k++) await __sleep(100); ans = opts.find(o => o === String(__said)); l = G3.find(x => x.words.some(w => w.en === ans)); }
+      if (!ans || !l) throw new Error('вопрос ' + (i + 1) + ': нет ответа среди ' + opts.join('/') + ' (картинка ' + (em?.textContent || '—') + ', фраза ' + (sn?.textContent || '—') + ')');
+      const p = partOf(l); if (parts[parts.length - 1] !== p) parts.push(p);
+      window.__said = null;
+      if (p <= 2) [...document.querySelectorAll('.opt')].find(o => o.dataset.o === ans).click();
+      else document.querySelector('.opt-skip').click();   // «Не знаю»
+      const sig = document.querySelector('.review-progress')?.getAttribute('aria-label');
+      for (let k = 0; k < 40 && document.querySelector('.review-progress')?.getAttribute('aria-label') === sig; k++) await __sleep(100);   // ждём следующий вопрос
+      await __sleep(150);
     }
+    if (parts[0] !== 2 || parts[1] !== 3) throw new Error('порядок частей не адаптивный: ' + parts.join(','));
     const res = f('modal').innerText;
-    if (!/Итог испытания/.test(res) || !res.includes(G3[8].title)) throw new Error('итог: ' + res.slice(0, 200));
-    if (state.placement?.startIdx !== 8 || state.placement.passed !== 2) throw new Error('результат: ' + JSON.stringify(state.placement));
+    if (!/Ворота открыты/.test(res) || !res.includes(G3[12].title) || /Часть \d/.test(res)) throw new Error('итог для ребёнка: ' + res.slice(0, 240));
+    if (state.placement?.startIdx !== 12) throw new Error('старт: ' + JSON.stringify(state.placement));
+    if (state.xp !== xp0 + 30) throw new Error('награда стража: ' + (state.xp - xp0));
     if (JSON.stringify(state.mistakes) !== mist0) throw new Error('ошибки испытания попали в «Мои ошибки»');
     document.querySelector('[data-pgo="3"]').click(); await __sleep(300);
     const node = i => map.mapNodes(3).find(n => n.lesson?.id === G3[i].id);
-    if (map.lockReason(node(8)) || map.lockReason(node(3)) || !map.lockReason(node(9))) throw new Error('замки: 9-я ' + map.lockReason(node(8)) + ', 10-я ' + map.lockReason(node(9)));
-    if (map.currentNode(3)?.lesson?.id !== G3[8].id) throw new Error('текущая тема не стартовая: ' + map.currentNode(3)?.lesson?.id);
+    if (map.lockReason(node(12)) || map.lockReason(node(3)) || !map.lockReason(node(13))) throw new Error('замки: 13-я ' + map.lockReason(node(12)) + ', 14-я ' + map.lockReason(node(13)));
+    if (map.currentNode(3)?.lesson?.id !== G3[12].id) throw new Error('текущая тема не стартовая: ' + map.currentNode(3)?.lesson?.id);
     if (!document.querySelector('.placement-again') || document.querySelector('.placement-card')) throw new Error('после испытания — только «пройти заново»');
+    const adult = (await import('./js/placement.js')).placementAdultHtml(state);
+    if (!/освоено|проверим в игре|учим/.test(adult) || !/Часть 3/.test(adult)) throw new Error('разбор для взрослого: ' + adult.slice(0, 200));
     // «Не сейчас»
     delete state.placement; await saveState(); map.renderMap();
     document.querySelector('[data-placement="skip"]').click(); await __sleep(200);
@@ -1266,7 +1278,7 @@ try {
     if (back.p) state.placement = back.p; else delete state.placement;
     state.lessonProgress = back.lp; state.skills = back.sk; state.mistakes = back.mi; state.settings.mapGrade = back.g; state.settings.mapView = back.v || null; state.settings.unlockAll = back.u;
     await saveState(); map.renderMap();
-    return 'выбор класса → ' + n + ' вопросов → 2 части сданы → старт с темы 9, ошибки не в «Моих ошибках»; «Не сейчас»';`)));
+    return 'класс 3 → части ' + parts.map(x => x + 1).join('→') + ' (с середины, «Не знаю») → «Ворота открыты», старт с темы 13, +30 XP; разбор взрослому; «Не сейчас»';`)));
 
   await test('без ошибок JavaScript', async () => { assert(!errors.length, errors.join(' | ')); return 'ни одной'; });
 } catch (e) {

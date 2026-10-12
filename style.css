@@ -513,6 +513,8 @@ section { margin-top: 32px; }
 .placement-parts li { padding: 8px 10px; border: 2.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
 .placement-parts li.ok { border-color: var(--grass); }
 .placement-parts small { color: var(--muted); margin-left: 6px; }
+.opt.opt-skip { display: block; width: 100%; margin-top: 10px; font-size: 16px; background: var(--surface); border-style: dashed; color: var(--ink-2); }
+.placement-reward { font-size: 17px; }
 @media (max-width: 420px){ .placement-card { flex-direction: column; } .placement-actions .btn { width: 100%; } }
 /* посылка от Dr. Harlow (итерация 5, js/parcels.js) */
 .parcel-banner { display: block; width: 100%; margin: 0 0 12px; padding: 12px 14px; min-height: 48px; text-align: left; font: inherit; font-size: 16px; color: var(--ink); background: var(--surface); border: 3px solid var(--line); border-left: 10px solid var(--rarity-special); border-radius: 14px; box-shadow: var(--shadow-press); cursor: pointer; }
