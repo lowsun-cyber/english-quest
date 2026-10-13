@@ -9,6 +9,7 @@ import { afterFeedback, closeModal, confetti, openModal } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
 import { SKILLS } from './eq.js';
+import { selfRow } from './heroes.js';
 import { classifyError, errorCodeOf, skillItems, skillWeak } from './stats.js';
 
 // === Смешанная викторина по темам: проверки-боссы и «Шахты» ===
@@ -108,7 +109,9 @@ export function startCheckpoint(cp){
   const header = `
     <h2>${cp.emoji} ${escapeHtml(cp.title)}</h2>
     <div class="lead">Темы: ${cp.lessons.map(l => escapeHtml(l.title)).join(', ')}. Нужно ${CHECKPOINT_PASS} из ${CHECKPOINT_SIZE}.</div>`;
-  runQuiz({ header, lessons: cp.lessons, size: CHECKPOINT_SIZE, mix: { word: 4, listen: 3, grammar: 3 }, onFinish: finish });
+  // герой игрока собирается перед боссом — реплика одна на всё испытание
+  const ready = selfRow('boss');
+  runQuiz({ header: header + ready, lessons: cp.lessons, size: CHECKPOINT_SIZE, mix: { word: 4, listen: 3, grammar: 3 }, onFinish: finish });
 
   function finish(right, total){
     const prev = state.checkpoints[cp.id] || {};
@@ -130,6 +133,7 @@ export function startCheckpoint(cp){
         ${firstPass ? `<p>Награда: ${cp.emoji} в инвентаре и +50 XP.${nextLesson ? ` Открыта тема «${escapeHtml(nextLesson.title)}».` : ''}</p>` : ''}
         ${!passed ? '<p>Ошибки попали в «Мои ошибки» — повтори их и попробуй снова.</p>' : ''}
       </div>
+      ${selfRow(passed ? 'bosswin' : 'oops')}
       <div class="controls">
         ${passed ? '' : '<button class="btn" id="cp-retry">🔁 Попробовать снова</button>'}
         <button class="btn ${passed ? '' : 'secondary'}" id="cp-close">К карте</button>

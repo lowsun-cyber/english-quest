@@ -1,16 +1,16 @@
 // English Quest — Упражнения: карточки, слова, слушай, пары, напиши, грамматика, чтение, говори.
 import { PASS_SCORE, candidatesFromResults, phraseWords, scoreSpeech } from './speech.js';
 import { logAnswer } from './activity.js';
-import { CHARACTERS, LESSONS, buildItemsFor, extraQuestOf, fillItemsFor, lessonStartLine, questLesson } from './eq.js';
-import { heroPic, nextScreenMood, setHeroMood, takeScreenMood } from './heroes.js';
+import { LESSONS, buildItemsFor, extraQuestOf, fillItemsFor, guideFor, lessonStartLine, locationIntro, questLesson } from './eq.js';
+import { chosenHeroId, heroById, heroPic, narratorHero, nextScreenMood, reactionLine, sayRow, setHeroMood, setSayContext, takeScreenMood } from './heroes.js';
 import { checkHomework } from './homework.js';
 import { isLessonComplete, lastXp, penalty, renderHUD, reward } from './hud.js';
 import { openLessonHub, renderMap } from './map.js';
-import { questResult, startQuest } from './quests.js';
+import { questOutcome, questResult, startQuest } from './quests.js';
 import { countError, logSkill, logWord, recordMistake } from './mistakes.js';
 import { saveState, state } from './state.js';
 import { speak, speakWordOrPhrase, stopSpeech } from './tts.js';
-import { afterFeedback, back, closeModal, modal, openModal, showGuide, toast } from './ui.js';
+import { afterFeedback, back, closeModal, modal, openModal, showNarrator, toast } from './ui.js';
 import { distractors, escapeHtml, hasEmojiTwin, shuffle, uniqueByEmoji } from './util.js';
 import { WHY_MS, whyWrong } from './why.js';
 import { errorCodeOf } from './stats.js';
@@ -208,10 +208,10 @@ export function startExercise(lesson, kind){
   // квест из пакета локации — то же упражнение на его словах, вопросах или тексте (questLesson в content.js)
   const extra = extraQuestOf(lesson, kind);
   if (extra){ lesson = questLesson(lesson, kind); kind = extra.kind; }
-  // intro от Dr. Harlow + гида темы
-  const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
-  const harlowLine = lessonStartLine(lesson);
-  showGuide('Dr. Harlow', harlowLine, CHARACTERS.harlow);
+  // вступление ведущего; гид темы (или запасной, если ребёнок играет за гида) реагирует на ответы
+  const guide = heroById(guideFor(lesson, chosenHeroId()));
+  showNarrator(lessonStartLine(lesson));
+  setSayContext({ ex: kind });
   nextScreenMood('happy');
   // Упражнения, которые сами сразу озвучивают слово, не перебиваем приветствием
   if (!['cards', 'vocab', 'listen', 'spell', 'speak'].includes(kind)) setTimeout(() => speak('Let us start!'), 400);
@@ -233,20 +233,30 @@ export function startExercise(lesson, kind){
 
 // mood — эмоция гида темы: thinking (ждёт ответа, по умолчанию), praise (конец задания),
 // happy / hint (экран с разбором ответа). Начало урока — «рад» (startExercise → nextScreenMood).
-export function lessonHeader(lesson, guide, extra='', mood='thinking'){
-  const m = takeScreenMood(mood), harlow = CHARACTERS.harlow;
+// Две строки: ведущий (вступление к теме) и гид темы — его реплика меняется после каждого ответа.
+// hub — экран локации: вместо реплики гид говорит вступление к локации (LOCATION_INTROS).
+export function lessonHeader(lesson, guide, extra='', mood='thinking', { hub = false } = {}){
+  let m = takeScreenMood(mood);
+  const narrator = narratorHero(), same = guide.id === narrator.id;
+  // картинка гида темы «живая» (эмоция по setHeroMood), у ведущего — только если он и есть гид
+  const intro = sayRow({ speaker: narrator.id, text: lesson.intro, lang: 'ru' }, { mood: same ? m : 'happy', live: hub && same, say: lessonStartLine(lesson) });
+  let rows;
+  if (hub){
+    const loc = locationIntro(lesson, chosenHeroId());
+    rows = intro + (loc ? sayRow(loc, { mood: m, live: !same })
+      : !same ? `<div class="lead-guide"><div class="mini-avatar" style="--hero-color:${guide.color}">${heroPic(guide, m, { live: true })}</div><div class="txt"><strong>${guide.name}:</strong> ${guide.role}</div></div>` : '');
+  } else {
+    // экран итога: квест не пройден — гид подбадривает, а не хвалит
+    const o = mood === 'praise' ? questOutcome() : null;
+    if (o && !o.passed) m = 'hint';
+    const line = reactionLine(guide.id, mood === 'praise' && o && !o.passed ? 'hint' : mood, { perfect: o?.perfect });
+    const react = sayRow(line, { mood: m, live: true });
+    rows = guide.id === narrator.id ? react : intro + react;
+  }
   return `
     <div class="lesson-title-row"><h2>${lesson.title}</h2><button class="icon-btn lesson-dict" data-open-dict title="Словарь" aria-label="Открыть словарь">📖</button></div>
     <div class="lead">${lesson.subtitle} · ${lesson.grade} класс</div>
-    <div class="lead-guide">
-      <div class="mini-avatar" style="--hero-color:${harlow.color}">${heroPic(harlow, guide.id === 'harlow' ? m : 'happy', { live: guide.id === 'harlow' })}</div>
-      <div class="txt"><strong>Dr. Harlow:</strong> ${lesson.intro}</div>
-    </div>
-    ${guide.id !== 'harlow' ? `
-    <div class="lead-guide">
-      <div class="mini-avatar" style="--hero-color:${guide.color}">${heroPic(guide, m, { live: true })}</div>
-      <div class="txt"><strong>${guide.name}:</strong> ${guide.role}</div>
-    </div>` : ''}
+    ${rows}
     ${extra}
   `;
 }
@@ -489,7 +499,7 @@ export function exGrammar(lesson, guide){
           btn.classList.add('wrong');
           document.querySelector(`.opt[data-o="${q.a}"]`)?.classList.add('correct');
           const error = recordMistake('grammar', lesson, q.q, { exercise: 'grammar', chosen: btn.dataset.o, skill: q.skill });
-          penalty();
+          penalty({ skill: q.skill });   // Prof. Owl объяснит правило этого навыка
           whyWrong({ lesson, error, answer: q.a, chosen: btn.dataset.o, q });
           afterFeedback(() => { idx++; render(); }, WHY_MS);
         }
@@ -845,6 +855,8 @@ export function exSpeak(lesson, guide){
         errored = true;
         if (e.error === 'aborted') return;
         resEl.textContent = SPEECH_ERRORS[e.error] || 'Не получилось распознать. Попробуй ещё раз.';
+        if (e.error === 'no-speech') setHeroMood('hint', { id: 'quiet' });
+        else if (e.error === 'not-allowed' || e.error === 'audio-capture') setHeroMood('hint', { id: 'nomic' });
         if (e.error === 'network' || e.error === 'not-allowed' || e.error === 'service-not-allowed') selfOk.hidden = false;
       };
       rec.onend = () => {
@@ -855,7 +867,7 @@ export function exSpeak(lesson, guide){
         liveEl.textContent = '';
         if (done) return;
         const cands = candidatesFromResults(finals);
-        if (!cands.length){ if (!errored) resEl.textContent = SPEECH_ERRORS['no-speech']; return; }
+        if (!cands.length){ if (!errored){ resEl.textContent = SPEECH_ERRORS['no-speech']; setHeroMood('hint', { id: 'quiet' }); } return; }
         const r = scoreSpeech(phrase, cands);
         paint(r.words);
         tries++;
@@ -868,6 +880,7 @@ export function exSpeak(lesson, guide){
           afterFeedback(() => { idx++; render(); }, 1600);
         } else {
           logAnswer(false);                           // для статистики; без штрафа
+          setHeroMood('hint');
           resEl.innerHTML = `Ты сказал: <em>«${escapeHtml(r.said)}»</em> · <b>${r.score}%</b>. Почти! Красные слова можно послушать — нажми на них и попробуй ещё раз.`;
           if (tries >= MAX_TRIES) selfOk.hidden = false;
         }

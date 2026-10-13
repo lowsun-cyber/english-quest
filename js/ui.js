@@ -1,7 +1,7 @@
 // English Quest — Всплывающие сообщения, конфетти, пузырь гида и окно урока.
 import { endView } from './backup.js';
 import { CHARACTERS } from './eq.js';
-import { heroPic } from './heroes.js';
+import { heroPic, narratorHero } from './heroes.js';
 import { speak, speechDone, stopSpeech } from './tts.js';
 
 // ---------- TOAST / CONFETTI ----------
@@ -43,10 +43,13 @@ export function showGuide(name, text, character=null){
   document.getElementById('guide-name').textContent = name;
   document.getElementById('guide-name').style.setProperty('--guide-accent', c.accent);
   document.getElementById('guide-text').textContent = text;
+  g.dataset.speaker = c.id;   // кнопка 🔊 и аватар читают реплику голосом этого героя
   clearTimeout(guideTimer);
   guideTimer = setTimeout(() => { g.hidden = true; }, 8000);
   guideScrollY = window.scrollY;
 }
+// Общие реплики ведущего: Dr. Harlow, а если ребёнок играет за него — Nurse Luna (narratorFor в content.js)
+export function showNarrator(text){ const c = narratorHero(); showGuide(c.name, text, c); }
 // Прячем гида, как только ребёнок начинает листать — он не должен закрывать уроки
 export let guideScrollY = 0;
 window.addEventListener('scroll', () => {
@@ -54,11 +57,10 @@ window.addEventListener('scroll', () => {
   if (!g.hidden && Math.abs(window.scrollY - guideScrollY) > 80) g.hidden = true;
 }, { passive: true });
 document.getElementById('guide-close').addEventListener('click', () => document.getElementById('guide').hidden = true);
-document.getElementById('guide-listen').addEventListener('click', () => speak(document.getElementById('guide-text').textContent));
-document.getElementById('guide-avatar').addEventListener('click', () => {
-  // Читаем ровно то, что написано в пузыре, на его языке (реплики гида — по-русски)
-  speak(document.getElementById('guide-text').textContent);
-});
+const sayGuide = () => speak(document.getElementById('guide-text').textContent, { speaker: document.getElementById('guide').dataset.speaker });
+document.getElementById('guide-listen').addEventListener('click', sayGuide);
+// Читаем ровно то, что написано в пузыре, на его языке и голосом того, кто говорит
+document.getElementById('guide-avatar').addEventListener('click', sayGuide);
 
 // ---------- MODAL ----------
 export const back = document.getElementById('modal-back');

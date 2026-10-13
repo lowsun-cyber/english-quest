@@ -1,23 +1,34 @@
 #!/usr/bin/env node
 // Озвучивает реплики героев через Gemini TTS: русские реплики Dr. Harlow (его голос Enceladus —
-// тот же, что у английской озвучки) и приветствия остальных героев, у каждого свой голос.
+// тот же, что у английской озвучки) и реплики остальных героев, у каждого свой голос.
 //
 //   GEMINI_API_KEY=… node tools/gen-voices.mjs            — озвучить фразы, которых ещё нет
 //   GEMINI_API_KEY=… node tools/gen-voices.mjs --force    — перезаписать все
 //   node tools/gen-voices.mjs --list                       — показать список с номерами
+//   node tools/gen-voices.mjs --out ~/Downloads/quest-voice-gen — записать в отдельную папку, проект не трогать;
+//       подключить потом: node tools/import-voices.mjs ~/Downloads/quest-voice-gen
+//   пробный прогон: --only <герой> (harlow, luna, max, owl, robo), --kind <вид> (correct, grammar, location,
+//       narrator, self-win…; «self» — все реплики героя игрока), --limit N — записать не больше N новых фраз:
+//       GEMINI_API_KEY=… node tools/gen-voices.mjs --out ~/Downloads/quest-voice-gen --only owl --kind grammar --limit 3
+//   --wait — при лимите «в минуту» (бесплатный тариф) ждать и продолжать самому; суточный лимит — всё равно стоп
+//   --prune — убрать из словаря записи фраз, которых больше нет в контенте (без флага записанное не трогается)
 //
-// Фразы берутся из content.js (voiceLines), файлы — tts_cache/<sha1>.m4a, словарь «фраза → файл» —
-// tts_voices.json. Уже записанные фразы (в том числе импортированные) пропускаются,
-// удалённые из контента — убираются из словаря. Нужен macOS (afconvert для сжатия в AAC).
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdtempSync } from 'node:fs';
+// Фразы берутся из content.js (voiceLines), файлы — tts_cache/<sha1>.m4a, словарь «ключ → файл» —
+// tts_voices.json (ключ — фраза у Dr. Harlow, «герой|фраза» у остальных; см. voiceKey). Уже записанные фразы
+// (в том числе импортированные) пропускаются и не перезаписываются. Модель для новых фраз — MODEL ниже,
+// другую можно задать через GEMINI_TTS_MODEL. Лимит запросов Gemini исчерпан — записанное сохраняется,
+// скрипт останавливается (код выхода 2); повторный запуск продолжит с того же места.
+// Нужен macOS (afconvert для сжатия в AAC).
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdtempSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { loadContent } from './packs.mjs';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
-const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-pro-preview-tts'; // та же линейка, что у английской озвучки
+// новые фразы — gemini-3.8-flash-tts (решение владельца 12.10.2026); записанное раньше (2.5 Pro) не перезаписывается
+const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts';
 // Голос и манера для каждого героя (названия голосов — из списка Gemini TTS)
 const VOICES = {
   harlow: { voice: 'Enceladus', style: 'тёплый, добрый и спокойный голос доктора, который объясняет детям 7–10 лет; говорит не спеша и чётко' },
@@ -31,21 +42,47 @@ const MANIFEST = join(ROOT, 'tts_voices.json');
 // content.js написан для браузера — выполняем его с «пустым» window
 // контент и все пакеты локаций (packs/*.json): новые пакеты озвучиваются до подключения
 const sandbox = { window: { EQ: loadContent({ packs: 'all' }) } };
-const items = sandbox.window.EQ.voiceLines();
+const all = sandbox.window.EQ.voiceLines();
+const keys = new Set(all.map(x => x.key));   // ключ записи: фраза (Dr. Harlow) или «герой|фраза»
+const FORCE = process.argv.includes('--force'), PRUNE = process.argv.includes('--prune'), WAIT = process.argv.includes('--wait');
+const arg = name => { const i = process.argv.indexOf(name); return i > 0 ? (process.argv[i + 1] || '') : null; };
+// пробный прогон: только один герой, один вид реплик, не больше N новых фраз
+const ONLY = arg('--only'), KIND = arg('--kind'), LIMIT = arg('--limit') == null ? Infinity : Number(arg('--limit'));
+if (ONLY != null && !['harlow', 'luna', 'max', 'owl', 'robo'].includes(ONLY)){ console.error('--only: harlow, luna, max, owl или robo'); process.exit(1); }
+if (KIND === ''){ console.error('--kind: вид реплики, например correct, grammar, location, narrator, self-win или self'); process.exit(1); }
+if (!(LIMIT > 0)){ console.error('--limit: целое число больше нуля'); process.exit(1); }
+const kindOk = x => KIND == null || x.kind === KIND || (KIND === 'self' && x.kind?.startsWith('self-'));
+const items = all.filter(x => (ONLY == null || x.speaker === ONLY) && kindOk(x));
+if (!items.length){ console.error(`Нет фраз${ONLY ? ` героя ${ONLY}` : ''}${KIND ? ` вида ${KIND}` : ''}. Виды: ${[...new Set(all.map(x => x.kind || x.lang))].join(', ')}`); process.exit(1); }
 const lines = items.map(x => x.text);
-const FORCE = process.argv.includes('--force');
+if (PRUNE && (ONLY != null || KIND != null)){ console.error('--prune — только при полном прогоне, без --only и --kind'); process.exit(1); }
+// --out <папка>: файлы и их список (generated.json) — только туда; tts_cache/ и tts_voices.json не меняются
+const outArg = process.argv.indexOf('--out');
+const OUT = outArg > 0 ? resolve((process.argv[outArg + 1] || '').replace(/^~/, process.env.HOME)) : null;
+if (outArg > 0 && !process.argv[outArg + 1]){ console.error('Укажите папку: --out ~/Downloads/quest-voice-gen'); process.exit(1); }
 
 if (process.argv.includes('--list')){
-  items.forEach((x, i) => console.log(`${String(i + 1).padStart(3)}. [${x.speaker}, ${x.kind || x.lang}] ${x.text}`));
+  // номер — по полному списку (как в import-voices), даже если выбран один герой или вид
+  items.forEach(x => console.log(`${String(all.indexOf(x) + 1).padStart(3)}. [${x.speaker}, ${x.kind || x.lang}] ${x.text}`));
   process.exit(0);
 }
-const KEY = process.env.GEMINI_API_KEY;
+const KEY = (process.env.GEMINI_API_KEY || '').trim();
 if (!KEY){
   console.error('Нужен ключ: GEMINI_API_KEY=… node tools/gen-voices.mjs  (ключ — в Google AI Studio → Get API key)');
   process.exit(1);
 }
+// ключ Gemini — латинские буквы, цифры и знаки без пробелов (старые — AIza…, новые длиннее);
+// «…» или кириллица — значит, вставили не ключ
+if (!/^[\x21-\x7e]{20,}$/.test(KEY)){
+  console.error('GEMINI_API_KEY не похож на ключ (нужны латинские буквы, цифры и знаки без пробелов). Скопируйте ключ из AI Studio заново.');
+  process.exit(1);
+}
 
 const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
+// режим --out: что уже записано в папку — { ключ: { file, speaker, text, kind } }
+const GEN = OUT && join(OUT, 'generated.json');
+if (OUT) mkdirSync(OUT, { recursive: true });
+const generated = GEN && existsSync(GEN) ? JSON.parse(readFileSync(GEN, 'utf8')) : {};
 const fileFor = (text, speaker) => createHash('sha1').update(`${speaker}|${VOICES[speaker].voice}|${MODEL}|${text}`).digest('hex') + '.m4a';
 const tmp = mkdtempSync(join(tmpdir(), 'eq-ru-'));
 
@@ -70,11 +107,27 @@ const KIND_STYLE = {
   word: 'чётко и не спеша произнеси одно английское слово для ребёнка 7–10 лет, с естественным английским произношением',
   lesson: 'чётко, не спеша и дружелюбно прочитай по-английски для ребёнка 7–10 лет, с естественным английским произношением',
 };
+// реплики героев: манера героя + подсказка, как читать
+const KIND_HINT = {
+  en: 'короткая фраза по-английски, с естественным английским произношением',
+  grammar: 'объясняет правило: английские слова — с английским произношением, не спеша',
+};
 // английская озвучка уроков, записанная раньше (tts_manifest.json → tts_cache/*.mp3): такие фразы не перезаписываем
 const LESSON_AUDIO = existsSync(join(ROOT, 'tts_manifest.json')) ? JSON.parse(readFileSync(join(ROOT, 'tts_manifest.json'), 'utf8')) : {};
 const hasLessonAudio = text => !!(LESSON_AUDIO[text] || LESSON_AUDIO[text.replace(/(^|\s)I(?=[\s'’.,!?]|$)/g, '$1i')]);
+// исчерпан лимит запросов (HTTP 429 / RESOURCE_EXHAUSTED): дальше пробовать бессмысленно — сохраняемся и выходим
+// retry — через сколько секунд можно снова (из ответа Gemini), perMinute — лимит в минуту, а не в сутки
+class LimitError extends Error {
+  constructor(message, body){
+    super(message);
+    const hint = body?.error?.details?.find(d => d.retryDelay)?.retryDelay || /retry in ([\d.]+)\s*s/i.exec(message)?.[1];
+    this.retry = hint ? Math.ceil(parseFloat(hint)) : null;
+    this.perMinute = /per minute/i.test(message) || (this.retry != null && this.retry <= 120);
+  }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function synth(text, speaker, kind){
-  const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || VOICES[speaker].style;
+  const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || [VOICES[speaker].style, KIND_HINT[kind]].filter(Boolean).join('; ');
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
@@ -86,41 +139,75 @@ async function synth(text, speaker, kind){
     }),
   });
   const body = await res.json().catch(() => ({}));
+  if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`, body);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${body.error?.message || JSON.stringify(body).slice(0, 300)}`);
   const b64 = findAudio(body);
   if (!b64) throw new Error('в ответе нет аудио: ' + JSON.stringify(body).slice(0, 300));
   return toWav(Buffer.from(b64, 'base64'));
 }
 
-let made = 0, kept = 0, failed = 0;
-for (const [i, { text, speaker, kind }] of items.entries()){
+let made = 0, kept = 0, failed = 0, limited = null;
+for (const [i, { text, speaker, kind, key }] of items.entries()){
+  if (made + failed >= LIMIT) break;
   const file = fileFor(text, speaker);
-  const out = join(ROOT, 'tts_cache', file);
-  if (!FORCE && manifest[text] && existsSync(join(ROOT, 'tts_cache', manifest[text]))){ kept++; continue; }
+  const out = join(OUT || join(ROOT, 'tts_cache'), file);
+  if (!FORCE && manifest[key] && existsSync(join(ROOT, 'tts_cache', manifest[key]))){ kept++; continue; }
+  if (OUT && !FORCE && generated[key] && existsSync(join(OUT, generated[key].file))){ kept++; continue; }
   if (kind === 'lesson' && hasLessonAudio(text)){ kept++; continue; }
   process.stdout.write(`${i + 1}/${lines.length} ${text.slice(0, 60)}… `);
   try {
     const wav = join(tmp, 'line.wav');
-    writeFileSync(wav, await synth(text, speaker, kind));
+    // --wait: минутный лимит (бесплатный тариф — несколько запросов в минуту) — ждём и пробуем ту же фразу снова
+    let audio;
+    for (;;){
+      try { audio = await synth(text, speaker, kind); break; }
+      catch (e){
+        if (!(WAIT && e instanceof LimitError && e.perMinute)) throw e;
+        const sec = Math.max(e.retry || 20, 5) + 2;
+        process.stdout.write(`⏳ ${sec} с… `);
+        await sleep(sec * 1000);
+      }
+    }
+    writeFileSync(wav, audio);
     execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '64000', wav, out]);
-    const old = manifest[text];
-    manifest[text] = file;
-    if (old && old !== file && !Object.values(manifest).includes(old) && existsSync(join(ROOT, 'tts_cache', old))) unlinkSync(join(ROOT, 'tts_cache', old));
     made++;
+    if (OUT){
+      generated[key] = { file, speaker, text, kind };
+      writeFileSync(GEN, JSON.stringify(generated, null, 2) + '\n');   // сохраняем после каждой фразы
+      console.log('✓');
+      continue;
+    }
+    const old = manifest[key];
+    manifest[key] = file;
+    if (old && old !== file && !Object.values(manifest).includes(old) && existsSync(join(ROOT, 'tts_cache', old))) unlinkSync(join(ROOT, 'tts_cache', old));
     console.log('✓');
   } catch (e) {
+    if (e instanceof LimitError){ limited = e.message; console.log('✗ лимит'); break; }
     failed++;
     console.log('✗ ' + e.message);
   }
-  writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n'); // сохраняем после каждой фразы
+  if (!OUT) writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n'); // сохраняем после каждой фразы
+}
+const left = items.length - made - kept - failed;   // ещё не записано (лимит, --limit)
+const where = OUT ? `Файлы — в ${OUT}\nПодключить: node tools/import-voices.mjs ${OUT}` : 'Словарь: tts_voices.json';
+if (!OUT) writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
+if (limited){
+  console.log(`\nЛимит запросов Gemini исчерпан — остановились. Записанное сохранено: озвучено ${made}, уже было ${kept}, осталось ${left}.\n` +
+    `Ответ Gemini: ${limited}\nЗапустите ту же команду позже (обычно лимит сбрасывается через минуту или в начале суток) — готовое пропустится.\n` +
+    `${WAIT ? '' : 'Если лимит «в минуту» — добавьте --wait: скрипт сам будет ждать и продолжать.\n'}${where}`);
+  process.exit(2);
+}
+if (OUT || !PRUNE){
+  console.log(`\nГотово: озвучено ${made}, уже было ${kept}, ошибок ${failed}${left ? `, осталось ${left} (--limit)` : ''}. ${where}`);
+  process.exit(failed ? 1 : 0);
 }
 
-// реплики, которых больше нет в контенте (слова словаря — не трогаем: их озвучивают отдельно, см. voice-todo.mjs)
+// --prune: реплики, которых больше нет в контенте (слова словаря — не трогаем: их озвучивают отдельно, см. voice-todo.mjs)
 const { DICT } = await import(join(ROOT, 'js/dict-data.js'));
 const dictWords = new Set(DICT.split('\n').filter(l => l && !l.startsWith('#')).map(l => l.split('|')[0].trim()));
-for (const text of Object.keys(manifest)) if (!lines.includes(text) && !dictWords.has(text)){
-  const f = manifest[text];
-  delete manifest[text];
+for (const key of Object.keys(manifest)) if (!keys.has(key) && !dictWords.has(key)){
+  const f = manifest[key];
+  delete manifest[key];
   if (!Object.values(manifest).includes(f) && existsSync(join(ROOT, 'tts_cache', f))) unlinkSync(join(ROOT, 'tts_cache', f));
 }
 writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');

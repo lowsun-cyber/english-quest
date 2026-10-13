@@ -1,13 +1,13 @@
 // English Quest — Карта уровней и экран темы.
 import { startCheckpoint, startSkillPractice } from './checkpoint.js';
-import { CHARACTERS, LESSONS, LOCATION_ART, QUEST_PASS_PCT, SECRET_REGIONS, extraQuestOf, isNewItem, regionOfGrade } from './eq.js';
+import { LESSONS, LOCATION_ART, QUEST_PASS_PCT, SECRET_REGIONS, extraQuestOf, guideFor, isNewItem, regionOfGrade } from './eq.js';
 import { lessonHeader, startExercise } from './exercises.js';
 import { renderSecret } from './mines.js';
 import { hideCard, renderPath, showCard } from './path.js';
 import { OBJECTS, renderScene } from './scene.js';
 import { parcelBanner } from './parcels.js';
 import { placementBanner } from './placement.js';
-import { playerHero } from './heroes.js';
+import { chosenHeroId, heroById, playerHero } from './heroes.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
 import { saveState, state } from './state.js';
@@ -232,7 +232,7 @@ const QUEST_WHAT = {
   fill: 'Вставь пропущенное слово во фразу.', build: 'Собери предложение из слов по порядку.',
 };
 export function openLessonHub(lesson, selected){
-  const guide = CHARACTERS[lesson.guide] || CHARACTERS.harlow;
+  const guide = heroById(guideFor(lesson, chosenHeroId()));
   const p = state.lessonProgress[lesson.id] || {};
   const qs = lessonQuests(lesson);
   const next = qs.find(q => !p[q.kind] && !questLock(lesson, q.kind, state));
@@ -263,7 +263,7 @@ export function openLessonHub(lesson, selected){
   };
   const done = qs.filter(passed).length;
   openModal(`
-    ${lessonHeader(lesson, guide, '', 'happy')}
+    ${lessonHeader(lesson, guide, '', 'happy', { hub: true })}
     <div class="scene-progress" aria-label="Квестов пройдено ${done} из ${qs.length}"><span class="scene-bar"><i style="width:${Math.round(done * 100 / qs.length)}%"></i></span><b>${done} из ${qs.length}</b></div>
     ${renderScene({ grade: lesson.grade, art, regionName: region?.name, quests: marks, emoji: lesson.words[0]?.emoji })}
     <div id="scene-card-slot">${card(sel)}</div>

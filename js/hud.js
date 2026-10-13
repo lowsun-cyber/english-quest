@@ -8,7 +8,7 @@ import { isReplay } from './quests.js';
 import { CHECKPOINTS } from './map.js';
 import { activeId, saveState, state } from './state.js';
 import { speak } from './tts.js';
-import { confetti, openModal, showGuide, toast } from './ui.js';
+import { confetti, openModal, showGuide, showNarrator, toast } from './ui.js';
 import { pick } from './util.js';
 import { isLessonComplete as lessonComplete, regionRanks, topRank } from './stats.js';
 
@@ -124,7 +124,7 @@ export function renderTeam(){
     card.addEventListener('click', () => {
       const { en, ru } = heroIntro(c);
       showGuide(c.name, ru, c);
-      speak(en);
+      speak(en, { speaker: c.id });
     });
     card.querySelector('.char-pick')?.addEventListener('click', (e) => { e.stopPropagation(); chooseHero(c.id); });
     container.appendChild(card);
@@ -197,16 +197,17 @@ export function reward(xp, gold, opts={}){
     confetti();
     toast(`🎉 Level ${newLvl}!`);
     speak(`Level ${newLvl}!`);
-    showGuide('Dr. Harlow', pick(HARLOW_LINES.levelUp), CHARACTERS.harlow);
+    showNarrator(pick(HARLOW_LINES.levelUp));
   }
   saveState();
   renderHUD();
   renderInventory();
 }
 // Неверный ответ: без штрафа (сердечек больше нет) — ошибка уходит в «Мои ошибки», сбрасывается счётчик верных подряд
-export function penalty(){
+// opts.skill — навык вопроса: Prof. Owl объясняет правило (reactionLine в heroes.js)
+export function penalty(opts = {}){
   logAnswer(false);
-  setHeroMood('hint');   // и подсказывает после ошибки
+  setHeroMood('hint', opts);   // и подсказывает после ошибки
   state.streak = 0;
   saveState();
   renderHUD();

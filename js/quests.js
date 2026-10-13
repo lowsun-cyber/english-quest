@@ -1,6 +1,7 @@
 // English Quest — Квесты: упражнение темы как квест — счёт ответов, результат в %, награда за редкость.
 // Редкость и условия открытия — questRarity (content.js) и questLock (stats.js).
 import { QUEST_PASS_PCT } from './eq.js';
+import { selfRow } from './heroes.js';
 import { reward } from './hud.js';
 import { saveState, state } from './state.js';
 import { prizeLine, questKey, questLock, questRarityOf, rarityOf } from './stats.js';
@@ -24,6 +25,12 @@ export const isReplay = () => !!run?.replay;
 // Каждый ответ в упражнении (activity.logAnswer)
 export function noteAnswer(ok){ if (run) run[ok ? 'ok' : 'bad']++; }
 
+// Чем кончается идущий квест (экран итога, до questResult): гид хвалит или подбадривает
+export function questOutcome(){
+  if (!run) return null;
+  const pct = run.ok + run.bad ? Math.round(run.ok * 100 / (run.ok + run.bad)) : 100;
+  return { pct, passed: pct >= QUEST_PASS_PCT, perfect: !run.bad };
+}
 // Конец квеста: результат, первое прохождение на 80% — награда за редкость (один раз). Возвращает HTML для экрана итога.
 export function questResult(){
   if (!run) return '';
@@ -42,5 +49,6 @@ export function questResult(){
   else saveState();
   const prize = first ? ` <b>+${rarity.xp} XP, +${rarity.coins} 🪙</b> за ${escapeHtml(rarity.title.toLowerCase())} квест! Для клиники: <b>${escapeHtml(clinic)}</b>.` : '';
   return `<p class="quest-result" style="--rarity:${rarity.color}">Результат квеста: <b>${pct}%</b>.${
-    pct >= QUEST_PASS_PCT ? (first ? ` Квест пройден!${prize}` : ` Лучший результат: ${q.best}%.`) : ` Чтобы пройти квест, нужно ${QUEST_PASS_PCT}% — попробуй ещё раз!`}</p>`;
+    pct >= QUEST_PASS_PCT ? (first ? ` Квест пройден!${prize}` : ` Лучший результат: ${q.best}%.`) : ` Чтобы пройти квест, нужно ${QUEST_PASS_PCT}% — попробуй ещё раз!`}</p>
+    ${selfRow(pct >= QUEST_PASS_PCT ? 'win' : 'oops')}`;
 }

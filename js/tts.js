@@ -1,4 +1,5 @@
-// English Quest — Озвучка: английские MP3, русские записи Dr. Harlow, голос устройства.
+// English Quest — Озвучка: английские MP3, записи героев, голос устройства.
+import { voiceKey } from './eq.js';
 
 // ---------- TTS ----------
 // Живой голос Enceladus (Gemini 2.5 Pro TTS). Все фразы прегенерированы
@@ -8,8 +9,8 @@ export const TTS_VOICE = 'enceladus';
 export const TTS_CACHE_DIR = 'tts_cache/';
 export let _ttsManifest = null;
 export let _ttsManifestLoading = null;
-// Фразы, записанные голосами героев: { фраза -> 'файл.m4a' } (tools/gen-voices.mjs, tools/import-voices.mjs):
-// русские реплики Dr. Harlow и приветствия остальных героев. Запись героя важнее общего голоса.
+// Фразы, записанные голосами героев: { ключ -> 'файл.m4a' } (tools/gen-voices.mjs, tools/import-voices.mjs).
+// Ключ — фраза у Dr. Harlow и «герой|фраза» у остальных (voiceKey в content.js). Запись героя важнее общего голоса.
 let _voices = null;
 export function loadVoiceManifest(){
   return _voices || (_voices = fetch('tts_voices.json').then(r => r.ok ? r.json() : {}).catch(() => ({})));
@@ -129,6 +130,9 @@ export function _keepAlive(){
   }, 5000);
 }
 
+// Запись фразы голосом героя opts.speaker; нет такой — запись Dr. Harlow с тем же текстом (лучше, чем голос устройства)
+const voiceFile = (v, raw, speaker) => v[voiceKey(speaker, raw)] || v[raw];
+// opts: lang, rate, speaker — чей голос (id героя; по умолчанию Dr. Harlow)
 export function speak(text, opts={}){
   const raw = String(text).trim();
   if (!raw) return;
@@ -142,13 +146,14 @@ export function speak(text, opts={}){
 
   // Русский: запись героя, если есть; иначе — голос устройства.
   if (lang !== 'en'){
-    loadVoiceManifest().then(v => v[raw] ? playFile(v[raw], () => speakFallback(clean, lang)) : speakFallback(clean, lang));
+    loadVoiceManifest().then(v => { const f = voiceFile(v, raw, opts.speaker); f ? playFile(f, () => speakFallback(clean, lang)) : speakFallback(clean, lang); });
     return;
   }
 
   Promise.all([loadManifest(), loadVoiceManifest()]).then(([, voices]) => {
     // английская фраза, записанная голосом конкретного героя (например, «I am Nurse Luna…»)
-    if (voices[raw]) return playFile(voices[raw], () => speakFallback(clean, lang));
+    const f = voiceFile(voices, raw, opts.speaker);
+    if (f) return playFile(f, () => speakFallback(clean, lang));
     // Пробуем найти MP3 сразу по исходной фразе; иначе — по нормализованной;
     // иначе — фолбэк на браузерный голос.
     const url = ttsFileUrl(raw) || ttsFileUrl(clean);

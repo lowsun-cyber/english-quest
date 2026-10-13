@@ -2319,8 +2319,315 @@ const HARLOW_LINES = {
 function lessonStartLine(lesson){ return `Урок «${lesson.title}». ${lesson.intro}`; }
 // Что говорит герой при нажатии на его карточку в «Команде»
 function heroIntro(ch){ return { en: ch.introEn, ru: ch.introRu || HARLOW_LINES.teamCard }; }
+
+// ---------- ГОЛОСА ГЕРОЕВ: ГИД, ЗАПАСНОЙ ГИД, ВЕДУЩИЙ, ГЕРОЙ ИГРОКА ----------
+// Задание на озвучку — WebPro/soundfix/hero-lines.js (12.10.2026), утверждено владельцем с правками.
+// Каждый герой бывает гидом локации (lesson.guide) и героем игрока (state.hero). Если ребёнок играет
+// за гида текущей локации, гида заменяет запасной. Если играет за Dr. Harlow, общие реплики ведущего
+// (приветствие, уровень, начало урока) говорит Nurse Luna — те же тексты, второй голос.
+const FALLBACK_GUIDE = { harlow: 'luna', luna: 'harlow', max: 'harlow', owl: 'harlow', robo: 'harlow' };
+const NARRATOR = 'harlow', NARRATOR_FALLBACK = 'luna';
+const guideFor = (lesson, heroId) => { const g = CHARACTERS[lesson.guide] ? lesson.guide : NARRATOR; return g === heroId ? FALLBACK_GUIDE[g] : g; };
+const narratorFor = heroId => heroId === NARRATOR ? NARRATOR_FALLBACK : NARRATOR;
+// Ключ записи в tts_voices.json: у Dr. Harlow — сама фраза (так записано с самого начала),
+// у остальных — «герой|фраза»: одну и ту же фразу могут сказать два голоса.
+const voiceKey = (speaker, text) => !speaker || speaker === NARRATOR ? text : `${speaker}|${text}`;
+
+// Вступление гида при входе в локацию (названия — из LOCATION_ART). speaker — гид по предложению
+// GUIDE_PROPOSAL из задания; пока владелец его не подтвердил, у 7 тем гид прежний (Dr. Harlow) —
+// он и читает вступление (alt — текст без «бип»). Записываются оба голоса.
+const LOCATION_INTROS = {
+  // Prof. Owl
+  'g2-letters':    { speaker: 'owl',  text: 'Добро пожаловать на Алфавитную поляну! Здесь живут английские буквы. Послушаем, как звучит каждая.' },
+  'g3-school':     { speaker: 'owl',  text: 'Звенит звонок — мы в Школе! Узнаем, как по-английски ручка, книга и урок.' },
+  'g3-daybyday':   { speaker: 'owl',  text: 'Тик-так, это Часовая башня. Научимся говорить, который час и какой сегодня день.' },
+  'g4-yesterday':  { speaker: 'owl',  text: 'Тише, мы в Музее. Здесь всё о том, что было вчера: was и were.' },
+  'g4-tellthetale':{ speaker: 'owl',  text: 'Открываем Книгу сказок! Сказки рассказывают о прошлом, поэтому глаголы здесь в прошедшем времени.' },
+  // Nurse Luna
+  'g2-animals':    { speaker: 'luna', text: 'Это Пруд зверят! Лягушка прыгает, рыбка плавает. Узнаем, кто что умеет.' },
+  'g3-animals3':   { speaker: 'luna', text: 'Добро пожаловать в Питомник. Здесь живут пушистые друзья. Посчитаем лапки и хвосты!' },
+  'g4-workingday': { speaker: 'luna', text: 'Мы в Больнице! Здесь работают врачи и медсёстры. Узнаем, кто где работает.' },
+  'g4-zoo':        { speaker: 'luna', text: 'Добро пожаловать в Зоопарк! Сравним зверей: кто больше, кто быстрее, кто выше всех.' },
+  // Miner Max
+  'g2-home':       { speaker: 'max',  text: 'Вот Мой домик! Заглянем в каждую комнату и назовём её по-английски.' },
+  'g2-toys':       { speaker: 'max',  text: 'Ух ты, Магазин игрушек! Мячи, машинки, мишки. Выбирай, что назовём первым.' },
+  'g3-toys3':      { speaker: 'max',  text: 'Это Игровая комната. Игрушки разбежались по полкам и сундукам. Найдём их!' },
+  'g3-home3':      { speaker: 'max',  text: 'Добро пожаловать в Уютный дом. Диван, кресло, зеркало — расставим всё по местам.' },
+  'g4-tastytreats':{ speaker: 'max',  text: 'Мы на Рынке! Сахар, мука, лимоны. Сколько чего купить: much или many?' },
+  // DJ Robo
+  'g2-hello':      { speaker: 'robo', text: 'Бип! Это Арка приветствий. Здесь все говорят Hello! Скажи и ты!', alt: 'Это Арка приветствий. Здесь все говорят Hello! Скажи и ты!' },
+  'g2-birthday':   { speaker: 'robo', text: 'Пип-пип, праздник! Это Праздничный торт. Посчитаем свечи по-английски.', alt: 'У нас праздник! Это Праздничный торт. Посчитаем свечи по-английски.' },
+  'g3-dayoff':     { speaker: 'robo', text: 'Мы в Парке! Выходной день — время играть. Расскажем, кто что делает прямо сейчас.' },
+  'g4-daystoremember': { speaker: 'robo', text: 'Бум-бум, салют! Это Площадь праздников. Вспомним, что было в особые дни.', alt: 'Смотри, салют! Это Площадь праздников. Вспомним, что было в особые дни.' },
+  'g4-placestogo': { speaker: 'robo', text: 'Ту-ту! Мы в Порту. Отсюда отправляются в путешествия. Куда поплывём?' },
+};
+// Вступление к локации голосом того, кто её сейчас ведёт: { speaker, text } или null
+function locationIntro(lesson, heroId){
+  const x = LOCATION_INTROS[lesson.id];
+  if (!x) return null;
+  const speaker = guideFor(lesson, heroId);
+  return { speaker, text: speaker === x.speaker ? x.text : (x.alt || x.text) };
+}
+
+// Реплики гида по ситуациям. kind — когда звучит, emo — эмоция героя на экране
+// (happy | thinking | hint | praise | calm — «спокоен», рисунок как у «рад»).
+// Без родовых окончаний: играют и мальчики, и девочки.
+const HERO_LINES = {
+  harlow: [
+    // Dr. Harlow как гид своих тем и как запасной гид
+    { kind: 'correct', emo: 'happy', text: 'Отлично! Ты молодец.' },
+    { kind: 'correct', emo: 'happy', text: 'Правильно! Так держать.' },
+    { kind: 'correct', emo: 'happy', text: 'Верно! Получилось.' },
+    { kind: 'correct', emo: 'happy', text: 'Да, именно так говорят по-английски.' },
+    { kind: 'think', emo: 'thinking', text: 'Подумай спокойно, время есть.' },
+    { kind: 'think', emo: 'thinking', text: 'Можно послушать ещё раз.' },
+    { kind: 'wrong', emo: 'hint', text: 'Ничего страшного. Попробуй ещё раз.' },
+    { kind: 'wrong', emo: 'hint', text: 'Почти! Послушай снова и подумай.' },
+    { kind: 'wrong', emo: 'hint', text: 'Ошибки — часть учёбы. Это слово мы повторим позже.' },
+    { kind: 'praise', emo: 'praise', text: 'Квест пройден! Забирай награду.' },
+    { kind: 'praise', emo: 'praise', text: 'Превосходно! Клиника тобой гордится.' },
+    { kind: 'praise', id: 'perfect', emo: 'praise', text: 'Без ошибок! Это редкость.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Well done!' },
+    { kind: 'en', lang: 'en', emo: 'hint', text: 'Try again.' },
+  ],
+  luna: [
+    { kind: 'correct', emo: 'happy', text: 'Верно! Ты молодец.' },
+    { kind: 'correct', emo: 'happy', text: 'Правильно! Зверятам стало веселее.' },
+    { kind: 'correct', emo: 'happy', text: 'Да! Именно так.' },
+    { kind: 'correct', emo: 'happy', text: 'Отлично получилось!' },
+    { kind: 'correct', emo: 'happy', text: 'Умница! Идём дальше.' },
+    { kind: 'correct', emo: 'happy', text: 'Точно! Запишу это в карточку.' },
+    { kind: 'think', emo: 'thinking', text: 'Не спеши. Подумай спокойно.' },
+    { kind: 'think', emo: 'thinking', text: 'Послушай ещё раз, если хочешь.' },
+    { kind: 'think', emo: 'thinking', text: 'Я подожду. Выбирай.' },
+    { kind: 'wrong', emo: 'hint', text: 'Почти! Давай попробуем ещё раз.' },
+    { kind: 'wrong', emo: 'hint', text: 'Ничего страшного. Это слово я вылечу в «Моих ошибках».' },
+    { kind: 'wrong', emo: 'hint', text: 'Ой, не то. Посмотри на картинку внимательнее.' },
+    { kind: 'wrong', emo: 'hint', text: 'Послушай, как я говорю, и повтори.' },
+    { kind: 'praise', emo: 'praise', text: 'Квест пройден! Вот это помощь, спасибо от всех зверят.' },
+    { kind: 'praise', emo: 'praise', text: 'Ура! Все задания выполнены.' },
+    { kind: 'praise', emo: 'praise', text: 'Замечательно! Забирай награду.' },
+    { kind: 'praise', id: 'perfect', emo: 'praise', text: 'Без единой ошибки! Это редкость.' },
+    // клиника
+    { kind: 'clinic', id: 'cured', emo: 'happy', text: 'Пациент здоров! Он машет тебе лапкой.' },
+    { kind: 'clinic', id: 'patient', emo: 'calm', text: 'В клинику пришёл новый пациент. Поможем ему?' },
+    { kind: 'clinic', id: 'built', emo: 'happy', text: 'Новая комната готова! Клиника растёт.' },
+    { kind: 'clinic', id: 'blocks', emo: 'calm', text: 'Для этой комнаты нужно больше блоков. Пройди ещё квест.' },
+    // квест-реванш («Мои ошибки»)
+    { kind: 'revenge', id: 'start', emo: 'calm', text: 'Трудные слова собрались вместе. Давай их вылечим!' },
+    { kind: 'revenge', id: 'won', emo: 'praise', text: 'Трудные слова больше не трудные. Мы их победили!' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Well done!' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Good job!' },
+    { kind: 'en', lang: 'en', emo: 'hint', text: 'Try again.' },
+    { kind: 'en', lang: 'en', emo: 'praise', text: 'You are a great helper!' },
+  ],
+  max: [
+    { kind: 'correct', emo: 'happy', text: 'Есть! Попадание в точку.' },
+    { kind: 'correct', emo: 'happy', text: 'Верно! Держи блок.' },
+    { kind: 'correct', emo: 'happy', text: 'Отлично! Копаем дальше.' },
+    { kind: 'correct', emo: 'happy', text: 'Да! Вот это находка.' },
+    { kind: 'correct', emo: 'happy', text: 'Правильно! Крепко построено.' },
+    { kind: 'correct', emo: 'happy', text: 'Бум! Ещё один верный ответ.' },
+    { kind: 'think', emo: 'thinking', text: 'Хм, что тут у нас? Подумай.' },
+    { kind: 'think', emo: 'thinking', text: 'Посвети фонариком на картинку.' },
+    { kind: 'think', emo: 'thinking', text: 'Не торопись, руда не убежит.' },
+    { kind: 'wrong', emo: 'hint', text: 'Не та руда! Попробуй ещё раз.' },
+    { kind: 'wrong', emo: 'hint', text: 'Почти! Ещё один удар киркой.' },
+    { kind: 'wrong', emo: 'hint', text: 'Ошибка — это тоже находка. Отложим её в «Мои ошибки».' },
+    { kind: 'wrong', emo: 'hint', text: 'Посмотри внимательнее, ответ где-то рядом.' },
+    { kind: 'praise', emo: 'praise', text: 'Квест пройден! Вот это добыча.' },
+    { kind: 'praise', emo: 'praise', text: 'Готово! Неси награду в сундук.' },
+    { kind: 'praise', emo: 'praise', text: 'Мастерская работа! Так держать.' },
+    { kind: 'praise', id: 'perfect', emo: 'praise', text: 'Ни одной ошибки! Это редкий самоцвет.' },
+    // материалы и строительство
+    { kind: 'build', id: 'ready', emo: 'happy', text: 'Материалы собраны! Можно строить.' },
+    { kind: 'build', id: 'boards', emo: 'calm', text: 'Не хватает досок. Их дают за обычные и редкие квесты.' },
+    // Шахты (секретный регион); id — место из SECRET_REGIONS
+    { kind: 'mines', id: 'locked', emo: 'calm', text: 'Слышишь стук под землёй? Пройди десять редких квестов, и мы узнаем, что там.' },
+    { kind: 'mines', id: 'closer', emo: 'happy', text: 'Ещё один редкий квест! До Шахт всё ближе.' },
+    { kind: 'mines', id: 'open', emo: 'praise', text: 'Шахты открыты! Бери каску, спускаемся.' },
+    { kind: 'mines', id: 'entry', emo: 'calm', text: 'Это Входная штольня. Здесь задания из всех пройденных тем.' },
+    { kind: 'mines', id: 'cave', emo: 'happy', text: 'Кристальная пещера! Здесь слова и грамматика. За неё — три кристалла.' },
+    { kind: 'mines', id: 'lake', emo: 'calm', text: 'Подземное озеро. Тут почти все задания на слух — слушай внимательно.' },
+    { kind: 'mines', id: 'deep', emo: 'thinking', text: 'Это Глубокий забой, самое трудное место Шахт. Ну что, вперёд!' },
+    { kind: 'mines', id: 'deepwin', emo: 'praise', text: 'Глубокий забой пройден! Из кристаллов можно построить Кристальную лабораторию.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Great find!' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Awesome!' },
+    { kind: 'en', lang: 'en', emo: 'hint', text: 'One more try!' },
+    { kind: 'en', lang: 'en', emo: 'praise', text: 'You are a master!' },
+  ],
+  owl: [
+    { kind: 'correct', emo: 'happy', text: 'Совершенно верно.' },
+    { kind: 'correct', emo: 'happy', text: 'Правильно! Правило работает.' },
+    { kind: 'correct', emo: 'happy', text: 'Блестяще! Так и говорят по-английски.' },
+    { kind: 'correct', emo: 'happy', text: 'Верно. Ты внимательно читаешь.' },
+    { kind: 'correct', emo: 'happy', text: 'Да! Запомни этот пример.' },
+    { kind: 'think', emo: 'thinking', text: 'Прочитай ещё раз, не спеша.' },
+    { kind: 'think', emo: 'thinking', text: 'Вспомни правило. Ты его знаешь.' },
+    { kind: 'think', emo: 'thinking', text: 'Хорошенько подумай, а потом выбирай.' },
+    { kind: 'wrong', emo: 'hint', text: 'Не совсем. Давай разберёмся.' },
+    { kind: 'wrong', emo: 'hint', text: 'Почти. Посмотри на конец слова.' },
+    { kind: 'wrong', emo: 'hint', text: 'Ошибаться полезно: так правило запоминается лучше.' },
+    { kind: 'praise', emo: 'praise', text: 'Квест пройден. Я горжусь тобой.' },
+    { kind: 'praise', emo: 'praise', text: 'Превосходно! Новое правило освоено.' },
+    { kind: 'praise', id: 'perfect', emo: 'praise', text: 'Мудрый ответ на каждый вопрос!' },
+    // Разбор неверного ответа по навыку (коды — SKILLS): звучит после ошибки в вопросе с этим навыком
+    { kind: 'grammar', skill: 'G2-01', emo: 'hint', text: 'Запомни: I am, he is, they are. С I всегда am.' },
+    { kind: 'grammar', skill: 'G2-02', emo: 'hint', text: 'I have got, но he has got. С he и she — has.' },
+    { kind: 'grammar', skill: 'G2-03', emo: 'hint', text: 'После can глагол без окончания: he can swim, а не swims.' },
+    { kind: 'grammar', skill: 'G2-04', emo: 'hint', text: 'Если много — добавь s: one cat, two cats.' },
+    { kind: 'grammar', skill: 'G2-05', emo: 'hint', text: "Чтобы попросить не делать, скажи don't: Don't run!" },
+    { kind: 'grammar', skill: 'G2-06', emo: 'hint', text: 'Мой — my, твой — your. My book, your pen.' },
+    { kind: 'grammar', skill: 'G2-07', emo: 'hint', text: 'In — внутри, on — на, under — под. Посмотри, где спрятан предмет.' },
+    { kind: 'grammar', skill: 'G2-08', emo: 'hint', text: 'Один предмет — there is, много — there are.' },
+    { kind: 'grammar', skill: 'G2-09', emo: 'hint', text: 'I like, но she likes. С he и she добавляем s.' },
+    { kind: 'grammar', skill: 'G3-01', emo: 'hint', text: 'В вопросе с he и she — does, а глагол без s: Does he like milk?' },
+    { kind: 'grammar', skill: 'G3-02', emo: 'hint', text: 'Some — в обычных предложениях, any — в вопросах и с not.' },
+    { kind: 'grammar', skill: 'G3-03', emo: 'hint', text: 'Перед гласным звуком — an: an apple, an egg.' },
+    { kind: 'grammar', skill: 'G3-04', emo: 'hint', text: 'Близко — this и these, далеко — that и those.' },
+    { kind: 'grammar', skill: 'G3-05', emo: 'hint', text: "Чей предмет — ставим апостроф и s: Ann's book." },
+    { kind: 'grammar', skill: 'G3-06', emo: 'hint', text: 'Это слово особенное: mouse — mice, child — children.' },
+    { kind: 'grammar', skill: 'G3-07', emo: 'hint', text: 'После s, x, sh и ch пишем es: box — boxes.' },
+    { kind: 'grammar', skill: 'G3-08', emo: 'hint', text: 'Сейчас — am, is или are плюс ing: he is playing.' },
+    { kind: 'grammar', skill: 'G3-09', emo: 'hint', text: 'С днями недели — on, со временем — at: on Monday, at five.' },
+    { kind: 'grammar', skill: 'G3-10', emo: 'hint', text: 'Went — это go в прошлом. Он ушёл — he went.' },
+    { kind: 'grammar', skill: 'G4-01', emo: 'hint', text: 'Каждый день — he plays. Прямо сейчас — he is playing.' },
+    { kind: 'grammar', skill: 'G4-02', emo: 'hint', text: 'Many — то, что можно посчитать, much — то, что нельзя: much milk, many apples.' },
+    { kind: 'grammar', skill: 'G4-03', emo: 'hint', text: 'После must глагол без to: you must go.' },
+    { kind: 'grammar', skill: 'G4-04', emo: 'hint', text: 'Big — bigger — the biggest. А good — better — the best.' },
+    { kind: 'grammar', skill: 'G4-05', emo: 'hint', text: 'I и he — was, we и they — were.' },
+    { kind: 'grammar', skill: 'G4-06', emo: 'hint', text: 'После did глагол в обычной форме: Did you play?' },
+    { kind: 'grammar', skill: 'G4-07', emo: 'hint', text: 'Это неправильный глагол: go — went, а не goed.' },
+    { kind: 'grammar', skill: 'G4-08', emo: 'hint', text: 'Собираюсь — I am going to. Не забудь am.' },
+    { kind: 'grammar', skill: 'G4-09', emo: 'hint', text: 'С he и she — has to: he has to go.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Excellent!' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'That is right.' },
+    { kind: 'en', lang: 'en', emo: 'hint', text: 'Read it again.' },
+    { kind: 'en', lang: 'en', emo: 'praise', text: 'Wise answer!' },
+  ],
+  robo: [
+    { kind: 'correct', emo: 'happy', text: 'Бип-бип! Верно!' },
+    { kind: 'correct', emo: 'happy', text: 'Сигнал принят! Правильно.' },
+    { kind: 'correct', emo: 'happy', text: 'Йе-е! Ответ на сто процентов.' },
+    { kind: 'correct', emo: 'happy', text: 'Отличный звук! Так держать.' },
+    { kind: 'correct', emo: 'happy', text: 'Бум! В ритм попадаешь!' },
+    { kind: 'think', emo: 'thinking', text: 'Загружаю ответ... Твоя очередь думать.' },
+    { kind: 'think', emo: 'thinking', text: 'Включи звук ещё раз, если нужно.' },
+    { kind: 'think', emo: 'thinking', text: 'Пип... жду твой ответ.' },
+    { kind: 'wrong', emo: 'hint', text: 'Пип! Не тот сигнал. Попробуй ещё.' },
+    { kind: 'wrong', emo: 'hint', text: 'Помехи на линии! Послушай ещё раз.' },
+    { kind: 'wrong', emo: 'hint', text: 'Почти! Перемотаем и снова.' },
+    { kind: 'praise', emo: 'praise', text: 'Квест пройден! Включаю праздничную музыку!' },
+    { kind: 'praise', emo: 'praise', text: 'Бип-бип-ура! Всё выполнено.' },
+    { kind: 'praise', id: 'perfect', emo: 'praise', text: 'Чистый звук без ошибок! Ты звезда.' },
+    // режим «Говори»: think — ждёт, correct / wrong — после попытки, id — особый случай
+    { kind: 'speak', id: 'think', emo: 'calm', text: 'Нажми на микрофон и скажи фразу вслух.' },
+    { kind: 'speak', id: 'think', emo: 'calm', text: 'Сначала послушай, потом повтори.' },
+    { kind: 'speak', id: 'correct', emo: 'happy', text: 'Слышу тебя отлично! Звучит по-английски.' },
+    { kind: 'speak', id: 'wrong', emo: 'hint', text: 'Почти! Скажи ещё раз, чуть медленнее.' },
+    { kind: 'speak', id: 'quiet', emo: 'hint', text: 'Скажи погромче, я тебя плохо слышу.' },
+    { kind: 'speak', id: 'nomic', emo: 'hint', text: 'Тишина в эфире. Проверь, включён ли микрофон.' },
+    { kind: 'speak', id: 'wrong', emo: 'hint', text: 'Нажми на красное слово, и я скажу его отдельно.' },
+    // аудирование
+    { kind: 'listen', id: 'think', emo: 'calm', text: 'Надень уши поудобнее! Слушай и выбирай.' },
+    { kind: 'listen', id: 'think', emo: 'calm', text: 'Звук можно включить ещё раз — кнопка с динамиком.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Yeah! Correct!' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Nice sound!' },
+    { kind: 'en', lang: 'en', emo: 'hint', text: 'Say it again!' },
+    { kind: 'en', lang: 'en', emo: 'calm', text: 'Listen and repeat.' },
+  ],
+};
+
+// Реплики героя игрока: голосом героя, за которого играет ребёнок, от первого лица.
+// Пол героя постоянный (Luna — она, остальные — он), поэтому здесь родовые окончания допустимы.
+// kind: start — начало квеста, win — квест пройден, item — новый предмет, level — новый уровень,
+// rare — открыт редкий квест, boss — перед боссом, bosswin — босс побеждён, region — открыт регион,
+// oops — квест не пройден (подбадривает себя), en — короткая фраза по-английски.
+const SELF_LINES = {
+  harlow: [
+    { kind: 'start', emo: 'calm', text: 'Халат надет, стетоскоп со мной. Начинаем!' },
+    { kind: 'win', emo: 'praise', text: 'Ещё один квест пройден. Отличная работа!' },
+    { kind: 'win', emo: 'happy', text: 'Получилось! Записываю в карточку.' },
+    { kind: 'item', emo: 'happy', text: 'Какой подарок! Сразу примерю.' },
+    { kind: 'level', emo: 'praise', text: 'Новый уровень! Я становлюсь опытнее.' },
+    { kind: 'rare', emo: 'happy', text: 'Редкий квест! Такое не каждый день бывает.' },
+    { kind: 'boss', emo: 'thinking', text: 'Впереди испытание. Вспомним всё, что знаем.' },
+    { kind: 'bosswin', emo: 'praise', text: 'Испытание пройдено! Путь открыт.' },
+    { kind: 'region', emo: 'happy', text: 'Новый регион! Сколько там пациентов нас ждёт?' },
+    { kind: 'oops', emo: 'hint', text: 'Не беда. Доктора тоже учатся.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Let us go!' },
+  ],
+  luna: [
+    { kind: 'start', emo: 'calm', text: 'Аптечка собрана. Я готова!' },
+    { kind: 'win', emo: 'praise', text: 'Ура, у меня получилось!' },
+    { kind: 'win', emo: 'happy', text: 'Квест пройден! Все зверята довольны.' },
+    { kind: 'item', emo: 'happy', text: 'Ой, какая красота! Это мне?' },
+    { kind: 'level', emo: 'praise', text: 'Новый уровень! Я стала ещё сильнее.' },
+    { kind: 'rare', emo: 'happy', text: 'Редкий квест! Сердечко так и прыгает.' },
+    { kind: 'boss', emo: 'thinking', text: 'Впереди испытание. Я спокойна и всё помню.' },
+    { kind: 'bosswin', emo: 'praise', text: 'Испытание позади! Я справилась!' },
+    { kind: 'region', emo: 'happy', text: 'Новый регион! Интересно, какие там звери?' },
+    { kind: 'oops', emo: 'hint', text: 'Ничего, сейчас всё исправлю.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'I did it!' },
+  ],
+  max: [
+    { kind: 'start', emo: 'calm', text: 'Каска на голове, кирка в руке. Копаем!' },
+    { kind: 'win', emo: 'praise', text: 'Есть! Квест добыт!' },
+    { kind: 'win', emo: 'happy', text: 'Готово! Несу добычу в сундук.' },
+    { kind: 'item', emo: 'happy', text: 'Вот это вещь! Беру с собой.' },
+    { kind: 'level', emo: 'praise', text: 'Новый уровень! Кирка стала крепче.' },
+    { kind: 'rare', emo: 'happy', text: 'Редкий квест! Чую кристаллы.' },
+    { kind: 'boss', emo: 'thinking', text: 'Впереди босс. Затяну ремень на каске.' },
+    { kind: 'bosswin', emo: 'praise', text: 'Босс повержен! Я смог!' },
+    { kind: 'region', emo: 'happy', text: 'Новый регион! Там точно есть что копать.' },
+    { kind: 'oops', emo: 'hint', text: 'Мимо жилы. Сейчас ещё раз ударю.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Let us dig!' },
+  ],
+  owl: [
+    { kind: 'start', emo: 'calm', text: 'Очки протёрты, книга открыта. Приступим.' },
+    { kind: 'win', emo: 'praise', text: 'Квест пройден. Весьма достойно.' },
+    { kind: 'win', emo: 'happy', text: 'Ух-ху! Ещё одна страница прочитана.' },
+    { kind: 'item', emo: 'happy', text: 'Какой ценный предмет! Добавлю в коллекцию.' },
+    { kind: 'level', emo: 'praise', text: 'Новый уровень. Знаний всё больше.' },
+    { kind: 'rare', emo: 'happy', text: 'Редкий квест! Любопытно, очень любопытно.' },
+    { kind: 'boss', emo: 'thinking', text: 'Впереди испытание. Повторим правила.' },
+    { kind: 'bosswin', emo: 'praise', text: 'Испытание пройдено! Мудрость победила.' },
+    { kind: 'region', emo: 'happy', text: 'Новый регион! Новые слова, новые правила.' },
+    { kind: 'oops', emo: 'hint', text: 'Хм, ошибочка. Перечитаю внимательнее.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Knowledge is power!' },
+  ],
+  robo: [
+    { kind: 'start', emo: 'calm', text: 'Система загружена. Бип! Поехали!' },
+    { kind: 'win', emo: 'praise', text: 'Квест пройден! Включаю победный трек!' },
+    { kind: 'win', emo: 'happy', text: 'Бип-бип! Задача выполнена.' },
+    { kind: 'item', emo: 'happy', text: 'Новая деталь! Устанавливаю.' },
+    { kind: 'level', emo: 'praise', text: 'Обновление системы! Новый уровень.' },
+    { kind: 'rare', emo: 'happy', text: 'Редкий сигнал! Принимаю квест.' },
+    { kind: 'boss', emo: 'thinking', text: 'Впереди босс. Заряд на максимум.' },
+    { kind: 'bosswin', emo: 'praise', text: 'Босс побеждён! Громкость на полную!' },
+    { kind: 'region', emo: 'happy', text: 'Новый регион на радаре! Летим!' },
+    { kind: 'oops', emo: 'hint', text: 'Сбой! Перезагружаюсь и пробую снова.' },
+    { kind: 'en', lang: 'en', emo: 'happy', text: 'Level up!' },
+  ],
+};
+// Случайная реплика героя: heroLine('owl', 'grammar', { skill: 'G2-01' }), heroLine('max', 'mines', { id: 'cave' }).
+// Без id — только реплики без id (id: 'perfect' — «без ошибок» — звучит, лишь когда ошибок не было).
+// self — реплики героя игрока (SELF_LINES). null — у героя такой реплики нет.
+function heroLine(heroId, kind, { id, skill, self = false, rnd = Math.random } = {}){
+  const list = ((self ? SELF_LINES : HERO_LINES)[heroId] || [])
+    .filter(x => x.kind === kind && (id == null ? !x.id : x.id === id) && (skill == null || x.skill === skill));
+  const x = list.length ? list[Math.floor(rnd() * list.length)] : null;
+  return x && { speaker: heroId, lang: x.lang || 'ru', emo: x.emo, text: x.text };
+}
+// Общие реплики ведущего (narratorFor): у Dr. Harlow — все его русские фразы; Nurse Luna читает те же,
+// кроме тех, где ведущий называет себя («Я Dr. Harlow»).
+function narratorLines(speaker){
+  const all = harlowRussianLines();
+  return speaker === NARRATOR ? all : all.filter(t => t !== HARLOW_LINES.teamCard && !/Я Dr\. Harlow/.test(t));
+}
 // Все фразы, записанные голосами героев (tts_voices.json). Порядок = номера файлов при импорте:
-// 1–30 — русские реплики Dr. Harlow, 31–38 — остальные герои, 39–64 — буквы, 65+ — отдельные слова.
+// 1–30 — русские реплики Dr. Harlow, 31–38 — остальные герои, 39–64 — буквы, 65+ — отдельные слова,
+// потом фразы уроков, в самом конце — реплики героев. key — ключ записи в tts_voices.json (voiceKey).
 function voiceLines(){
   const out = harlowRussianLines().map(text => ({ speaker: 'harlow', lang: 'ru', text }));
   for (const id of ['luna', 'max', 'owl', 'robo']){
@@ -2343,7 +2650,21 @@ function voiceLines(){
     ...(q.words || []).map(w => w.en), ...(q.phrases || []), ...(q.grammar || []).map(g => g.q.replace('___', g.a)),
     ...(q.pics || []).map(p => p.right), ...(q.reading ? [q.reading.text] : []),
   ]) if (!seen.has(text)){ seen.add(text); out.push({ speaker: 'harlow', lang: 'en', kind: 'lesson', text }); }
-  return out;
+  // реплики героев (hero-lines, 12.10.2026) — в конце: номера старых записей не сдвигаются,
+  // и фраза урока никогда не достанется голосу героя
+  const add = (speaker, lang, kind, text) => out.push({ speaker, lang, kind, text });
+  for (const [id, list] of Object.entries(HERO_LINES)) list.forEach(x => add(id, x.lang || 'ru', x.kind, x.text));
+  for (const [id, list] of Object.entries(SELF_LINES)) list.forEach(x => add(id, x.lang || 'ru', 'self-' + x.kind, x.text));
+  // вступление к локации — голосом гида и его запасного гида (alt — текст без «бип»)
+  for (const x of Object.values(LOCATION_INTROS)){
+    add(x.speaker, 'ru', 'location', x.text);
+    add(FALLBACK_GUIDE[x.speaker], 'ru', 'location', x.alt || x.text);
+  }
+  // ребёнок играет за Dr. Harlow — общие реплики ведущего голосом Nurse Luna
+  narratorLines(NARRATOR_FALLBACK).forEach(text => add(NARRATOR_FALLBACK, 'ru', 'narrator', text));
+  // одна запись на ключ: у Dr. Harlow ключ — сама фраза, у остальных — «герой|фраза»
+  const keys = new Set();
+  return out.map(x => ({ ...x, key: voiceKey(x.speaker, x.text) })).filter(x => !keys.has(x.key) && keys.add(x.key));
 }
 // Отдельные буквы и слова из фраз «Говори», у которых нет своей записи (по нажатию на красное слово).
 // Буквы — названия букв; слова — в нижнем регистре, кроме имён. Пока записи нет, звучит вся фраза медленнее.
@@ -2764,5 +3085,7 @@ window.EQ = {
   PACKS, addPacks, EXTRA_KINDS, extraQuestOf, questLesson, isNewItem, LOCATION_ART,
   PLACEMENT, MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
+  FALLBACK_GUIDE, NARRATOR, NARRATOR_FALLBACK, guideFor, narratorFor, voiceKey, LOCATION_INTROS, locationIntro,
+  HERO_LINES, SELF_LINES, heroLine, narratorLines,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };

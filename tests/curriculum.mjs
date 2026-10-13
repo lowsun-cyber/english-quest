@@ -83,6 +83,35 @@ for (const l of LESSONS.filter(l => l.grade === 3)){
 }
 for (const g of [2, 3, 4]) check(`${g} класс: у грамматики есть коды навыков`, LESSONS.filter(l => l.grade === g).some(l => l.grammar.some(q => q.skill)));
 
+// реплики героев (HERO_LINES, SELF_LINES, LOCATION_INTROS) и выбор голоса
+{
+  const { CHARACTERS, HERO_LINES, SELF_LINES, LOCATION_INTROS, LOCATION_ART, SECRET_REGIONS, FALLBACK_GUIDE, guideFor, narratorFor, locationIntro, heroLine, voiceKey, voiceLines } = ctx.window.EQ;
+  const heroes = Object.keys(CHARACTERS);
+  check('реплики есть у каждого героя — гида и героя игрока', heroes.every(h => HERO_LINES[h]?.length && SELF_LINES[h]?.length));
+  check('запасной гид — другой герой', heroes.every(h => FALLBACK_GUIDE[h] && FALLBACK_GUIDE[h] !== h && CHARACTERS[FALLBACK_GUIDE[h]]));
+  const all = Object.values(HERO_LINES).flat();
+  check('разбор Prof. Owl — по существующим навыкам', all.filter(x => x.skill).every(x => SKILLS[x.skill]), all.filter(x => x.skill && !SKILLS[x.skill]).map(x => x.skill));
+  // у гида нет пола: «справился/справилась», «готов/готова» — только в репликах героя игрока
+  const gendered = /справил(ся|ась)|\bготов[аы]?\b|\bрад[аы]?\b|\bсмог(ла)?\b|\bсам[аи]?\b/i;
+  check('реплики гида без родовых окончаний', !all.some(x => gendered.test(x.text)), all.filter(x => gendered.test(x.text)).map(x => x.text));
+  check('реплики Шахт — о существующих местах', heroLine('max', 'mines', { id: 'x' }) === null && SECRET_REGIONS[0].locations.every(l => heroLine('max', 'mines', { id: l.id })));
+  for (const [id, x] of Object.entries(LOCATION_INTROS)){
+    const l = LESSONS.find(l => l.id === id);
+    // speaker — гид по предложению владельца; пока оно не подтверждено, тему ведёт Dr. Harlow
+    check(`вступление ${id}: тема есть, говорит её гид или Dr. Harlow, место — из атласа`, l && (l.guide === x.speaker || l.guide === 'harlow') && CHARACTERS[x.speaker] && x.text.toLowerCase().includes(LOCATION_ART[id].name.split(' ')[0].toLowerCase().slice(0, 3)), { guide: l?.guide, speaker: x.speaker });
+  }
+  const lunaLesson = LESSONS.find(l => l.guide === 'luna'), harlowLesson = LESSONS.find(l => l.guide === 'harlow');
+  check('играешь за гида — ведёт запасной', guideFor(lunaLesson, 'luna') === 'harlow' && guideFor(lunaLesson, 'max') === 'luna' && guideFor(harlowLesson, 'harlow') === 'luna');
+  check('играешь за Dr. Harlow — ведущая Nurse Luna', narratorFor('harlow') === 'luna' && narratorFor('owl') === 'harlow');
+  check('запасной гид читает вступление без «бип»', locationIntro(LESSONS.find(l => l.id === 'g2-hello'), 'robo').text.startsWith('Это Арка'));
+  const v = voiceLines(), keys = v.map(x => x.key);
+  check('озвучка: ключи записей не повторяются', uniq(keys));
+  check('озвучка: ключ — фраза у Dr. Harlow, «герой|фраза» у остальных', v.every(x => x.key === voiceKey(x.speaker, x.text)) && voiceKey('owl', 'A') === 'owl|A' && voiceKey('harlow', 'A') === 'A');
+  check('озвучка: все реплики героев попали в задание', heroes.every(h => [...HERO_LINES[h], ...SELF_LINES[h]].every(x => keys.includes(voiceKey(h, x.text)))));
+  check('озвучка: вступления — голосом гида и запасного гида', Object.values(LOCATION_INTROS).every(x => keys.includes(voiceKey(x.speaker, x.text)) && keys.includes(voiceKey(FALLBACK_GUIDE[x.speaker], x.alt || x.text))));
+  check('озвучка: Nurse Luna-ведущая не называет себя Dr. Harlow', !v.some(x => x.speaker === 'luna' && /Я Dr\. Harlow/.test(x.text)));
+}
+
 // сводка (не проверка): насколько словарь дотягивает до цели ФРП
 const words = new Set();
 const lines = [];

@@ -1293,6 +1293,23 @@ section { margin-top: 32px; }
 [data-theme="dark"] .modal .lead-guide { background: #223140; }
 .modal .lead-guide .mini-avatar { width: 56px; height: 56px; border-radius: 12px; border: 2px solid var(--line); display:grid;place-items:center; font-size: 26px; flex-shrink: 0; overflow: hidden; background: var(--hero-tint); }
 .modal .lead-guide .txt { font-size: 14px; }
+/* Реплика героя: нажатие — озвучка его голосом (sayRow в js/heroes.js). Внутри урока выглядит как .lead-guide,
+   на карте и в клинике — облачко по STYLE.md v2 */
+.hero-say {
+  display: flex; gap: 10px; align-items: center; width: 100%;
+  margin-top: 12px; padding: 10px;
+  font: inherit; color: var(--ink); text-align: left; cursor: pointer;
+  background: var(--surface); border: 3px solid var(--line); border-radius: 12px; box-shadow: 3px 3px 0 var(--line);
+}
+.hero-say .mini-avatar { width: 56px; height: 56px; border-radius: 12px; border: 2px solid var(--line); display:grid; place-items:center; font-size: 26px; flex-shrink: 0; overflow: hidden; background: var(--hero-tint); }
+.hero-say .txt { flex: 1; font-size: 15px; font-weight: 700; }
+.hero-say .txt strong { color: var(--ink); }
+.hero-say-ico { flex-shrink: 0; font-size: 18px; }
+.modal .hero-say { box-shadow: none; border-width: 2px; }
+.modal .hero-say .txt { font-size: 14px; font-weight: 400; }
+.hero-say:active { transform: translateY(2px); }
+.hero-say:focus-visible { outline: 3px solid var(--diamond); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce){ .hero-say:active { transform: none; } }
 
 /* Word card grid */
 .word-grid {
