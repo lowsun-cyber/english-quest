@@ -129,6 +129,7 @@ class LimitError extends Error {
   }
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+class BusyError extends Error {}
 async function synth(text, speaker, kind){
   const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || [VOICES[speaker].style, KIND_HINT[kind]].filter(Boolean).join('; ');
   // запрос без ответа не должен вешать запись навсегда: 2 минуты — и это обычная ошибка фразы
@@ -145,6 +146,8 @@ async function synth(text, speaker, kind){
   });
   const body = await res.json().catch(() => ({}));
   if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`, body);
+  // перегрузка модели (503 / 500 / UNAVAILABLE): на бесплатном тарифе и неудачный запрос съедает суточную квоту
+  if (res.status === 503 || res.status === 500 || body.error?.status === 'UNAVAILABLE') throw new BusyError(`HTTP ${res.status}: ${body.error?.message || 'модель перегружена'}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${body.error?.message || JSON.stringify(body).slice(0, 300)}`);
   const b64 = findAudio(body);
   if (!b64) throw new Error('в ответе нет аудио: ' + JSON.stringify(body).slice(0, 300));
@@ -164,10 +167,17 @@ for (const [i, { text, speaker, kind, key }] of items.entries()){
     const wav = join(tmp, 'line.wav');
     // --wait: минутный лимит (бесплатный тариф — несколько запросов в минуту) — ждём и пробуем ту же фразу снова
     // не дольше 10 минут ожидания на одну фразу — иначе это уже не минутный лимит, останавливаемся
-    let audio, waited = 0;
+    // модель перегружена — одна повторная попытка через 90 с, потом стоп на сегодня (квоту не жжём)
+    let audio, waited = 0, busy = 0;
     for (;;){
       try { audio = await synth(text, speaker, kind); break; }
       catch (e){
+        if (WAIT && e instanceof BusyError){
+          if (++busy > 1) throw new LimitError(`модель перегружена и после повтора — на сегодня хватит, чтобы не тратить квоту. ${e.message}`);
+          console.log(`⏳ 90 с (${e.message.slice(0, 120)})`);
+          await sleep(90000);
+          continue;
+        }
         if (!(WAIT && e instanceof LimitError && e.perMinute)) throw e;
         const sec = Math.max(e.retry || 20, 5) + 2;
         if ((waited += sec) > 600) throw new LimitError(`ждали ${Math.round(waited / 60)} мин, лимит не отпускает. ${e.message}`);
