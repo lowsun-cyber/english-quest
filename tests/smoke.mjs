@@ -887,6 +887,16 @@ try {
         for (let i = 0; i < 30 && !/Владелец/.test(document.getElementById('adm-who').textContent); i++) await new Promise(r => setTimeout(r, 150));
         if (!/Владелец/.test(document.getElementById('adm-who').textContent)) throw new Error('не вошли по почте и паролю: ' + document.querySelector('.gate-err')?.textContent);
         return true;`);
+      // вкладка «Семьи» — только владельцу, только общие числа
+      const fam = (await call('/family', { body: { consent: true, label: 'iPad' } })).data;
+      await call('/family/children', { token: fam.token, body: { avatar: '🐼' } });
+      await js(`const tab = document.getElementById('adm-tab-families');
+        if (!tab || tab.hidden) throw new Error('у владельца нет вкладки «Семьи»');
+        location.hash = '#families';
+        for (let i = 0; i < 30 && !/Новые семьи по неделям/.test(document.getElementById('adm-main').textContent); i++) await new Promise(r => setTimeout(r, 100));
+        const t = document.getElementById('adm-main').innerText;
+        if (!/1\\s*семей/.test(t) || !/1\\s*детей/.test(t)) throw new Error('счётчик семей: ' + t.slice(0, 200));
+        location.hash = '#students'; return true;`);
       await call('/users', { token: owner, body: { name: 'Нина', email: 'nina@example.org', access: 'invite' } });
       const inviteLink = /#reset=([0-9a-f]{64})/.exec(srv.mails().at(-1)?.text || '')?.[1];
       assert(inviteLink, 'нет письма с приглашением');
@@ -1361,6 +1371,20 @@ try {
     if (!document.querySelector('.placement-again') || document.querySelector('.placement-card')) throw new Error('после испытания — только «пройти заново»');
     const adult = (await import('./js/placement.js')).placementAdultHtml(state);
     if (!/освоено|проверим в игре|учим/.test(adult) || !/Часть 3/.test(adult)) throw new Error('разбор для взрослого: ' + adult.slice(0, 200));
+    // итог картинкой: кнопка в панели для взрослых, PNG скачивается без сервера
+    (await import('./js/tutor.js')).openTutorPanel(); await __sleep(200);
+    if (!f('t-pl-png')) throw new Error('нет кнопки «Сохранить итог картинкой»');
+    const cv = await (await import('./js/placement.js')).placementCanvas(state, 'Тест');
+    const px = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    let dark = 0; for (let k = 0; k < px.length; k += 4 * 97) if (px[k] < 80 && px[k + 1] < 80 && px[k + 2] < 80) dark++;
+    if (cv.width !== 1080 || cv.height < 800 || dark < 200) throw new Error('картинка итога: ' + cv.width + '×' + cv.height + ', тёмных точек ' + dark);
+    let pngName = null; const click0 = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function(){ pngName = this.download; };
+    f('t-pl-png').click();
+    for (let k = 0; k < 30 && !pngName; k++) await __sleep(100);
+    HTMLAnchorElement.prototype.click = click0;
+    if (!/^english-quest-ispytanie-3-klass-\\d{4}-\\d\\d-\\d\\d\\.png$/.test(pngName || '')) throw new Error('картинка не скачалась: ' + pngName);
+    (await import('./js/ui.js')).closeModal(); await __sleep(100);
     // «Не сейчас»
     delete state.placement; await saveState(); map.renderMap();
     document.querySelector('[data-placement="skip"]').click(); await __sleep(200);

@@ -99,5 +99,100 @@ export function placementAdultHtml(st){
       return `<li class="${x.passed ? 'ok' : ''}"><span aria-hidden="true">${x.passed ? '✅' : '📘'}</span> Часть ${x.part + 1}: ${escapeHtml(a?.title || '')}${a !== b ? ` — ${escapeHtml(b?.title || '')}` : ''} <small>${x.right} из ${x.total}${x.passed ? ', сдана' : ', учим'}</small></li>`;
     }).join('')}</ul>
     ${skills.length ? `<ul class="t-hard" role="list">${skills.map(([c, v]) => `<li><span class="t-hard-main">${v === 'mastered' ? '✅' : v === 'check' ? '🔍' : '📘'} ${escapeHtml(SKILLS[c].title)} <span class="t-muted">${c}</span></span><span class="t-muted">${SKILL_PLACEMENT[v]}</span></li>`).join('')}</ul>` : ''}
-    <p class="t-muted">«Освоено» — оба задания на навык верно; «проверим в игре» — одно из двух; «учим» — ни одного. Части, которые испытание не проверяло, ниже стартовой считаются знакомыми.</p>`;
+    <p class="t-muted">«Освоено» — оба задания на навык верно; «проверим в игре» — одно из двух; «учим» — ни одного. Части, которые испытание не проверяло, ниже стартовой считаются знакомыми.</p>
+    <div class="controls"><button type="button" class="btn secondary" id="t-pl-png">🖼️ Сохранить итог картинкой</button></div>`;
+}
+
+// ---------- итог картинкой (концепция, раздел 3: «сохранить картинкой» — без почты и без сервера) ----------
+// Картинка всегда светлая, как лист для печати: цвета — светлой темы style.css (--bg, --surface, --ink, --ink-2, --grass-2, --violet, --violet-2)
+const PAPER = { bg: '#cfe9f6', surface: '#fffdf6', ink: '#1c2b1a', ink2: '#3a4a38', grass: '#2e8a3d', violet: '#a870ff', violet2: '#7c4bd6' };
+const W = 1080, PAD = 64;
+
+// Строки по ширине: перенос по словам
+function wrap(ctx, text, max){
+  const out = []; let line = '';
+  for (const w of String(text).split(' ')){
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width > max && line){ out.push(line); line = w; } else line = t;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+// Холст с итогом испытания: класс и дата, «верно N из M», стартовая тема, части, навыки тремя группами
+export async function placementCanvas(st, who = ''){
+  const p = st.placement;
+  if (!p?.grade) return null;
+  try { await document.fonts?.ready; } catch (e) {}
+  const font = (size, weight = 700) => `${weight} ${size}px 'Baloo 2', 'Nunito', system-ui, sans-serif`;
+  const start = LESSONS.find(l => l.id === p.start);
+  const skills = Object.entries(p.skills || {}).filter(([c]) => SKILLS[c]);
+  const groups = [['mastered', '✅ Освоено'], ['check', '🔍 Проверим в игре'], ['learn', '📘 Учим']]
+    .map(([k, title]) => ({ title, items: skills.filter(([, v]) => v === k).map(([c]) => `${SKILLS[c].title} (${c})`) }))
+    .filter(g => g.items.length);
+  // строки: [текст, размер, жирность, цвет, отступ сверху, сдвиг слева]
+  const rows = [];
+  const add = (text, size, weight, color, gap = 0, indent = 0) => rows.push({ text, size, weight, color, gap, indent });
+  add('🛡️ Испытание стража ворот', 54, 800, PAPER.ink);
+  add([who, `${p.grade} класс`, new Date(p.at).toLocaleDateString('ru-RU')].filter(Boolean).join(' · '), 34, 600, PAPER.ink2, 6);
+  add(`Верно ${p.right} из ${p.total}`, 40, 800, PAPER.ink, 22);
+  add(`Старт — тема ${p.startIdx + 1} «${start?.title || p.start}»${p.startIdx ? ', темы до неё открыты' : ''}`, 34, 700, PAPER.grass, 10);
+  add('Части класса', 36, 800, PAPER.ink, 30);
+  for (const x of p.parts){
+    const a = LESSONS.find(l => l.id === x.from), b = LESSONS.find(l => l.id === x.to);
+    add(`${x.passed ? '✅' : '📘'} Часть ${x.part + 1}: ${a?.title || ''}${a !== b ? ` — ${b?.title || ''}` : ''} · ${x.right} из ${x.total}${x.passed ? ', сдана' : ', учим'}`, 30, 600, PAPER.ink, 8, 8);
+  }
+  for (const g of groups){
+    add(g.title, 34, 800, PAPER.ink, 28);
+    for (const t of g.items) add('• ' + t, 30, 600, PAPER.ink, 6, 8);
+  }
+  add('«Освоено» — оба задания на навык верно, «проверим в игре» — одно из двух, «учим» — ни одного. Это стартовая точка, не оценка: программа уточняется по ходу игры.', 24, 600, PAPER.ink2, 34);
+  add('English Quest — английский для 2–4 класса по Spotlight', 24, 700, PAPER.violet2, 10);   // текст — тёмный фиолетовый (контраст ≥ 4.5)
+
+  // раскладка: сначала считаем высоту с переносами, потом рисуем
+  const measure = document.createElement('canvas').getContext('2d');
+  const inner = W - PAD * 2 - 40;
+  let h = PAD + 40;
+  for (const r of rows){
+    measure.font = font(r.size, r.weight);
+    r.lines = wrap(measure, r.text, inner - r.indent);
+    h += r.gap + r.lines.length * Math.round(r.size * 1.3);
+  }
+  h += 40 + PAD;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = h;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = PAPER.bg; ctx.fillRect(0, 0, W, h);
+  // карточка: жёсткая тень и контур 6 px, как в игре; слева полоса стража (эпическая редкость)
+  const box = [PAD - 24, PAD - 24, W - (PAD - 24) * 2, h - (PAD - 24) * 2];
+  ctx.fillStyle = PAPER.ink; ctx.fillRect(box[0] + 10, box[1] + 10, box[2], box[3]);
+  ctx.fillStyle = PAPER.surface; ctx.fillRect(...box);
+  ctx.fillStyle = PAPER.violet; ctx.fillRect(box[0], box[1], 18, box[3]);
+  ctx.strokeStyle = PAPER.ink; ctx.lineWidth = 6; ctx.strokeRect(...box);
+  let y = PAD + 40;
+  ctx.textBaseline = 'top';
+  for (const r of rows){
+    y += r.gap;
+    ctx.font = font(r.size, r.weight); ctx.fillStyle = r.color;
+    for (const line of r.lines){ ctx.fillText(line, PAD + 20 + r.indent, y); y += Math.round(r.size * 1.3); }
+  }
+  return cv;
+}
+
+// Кнопка в панели для взрослых: PNG скачивается на устройство — без почты и без сервера
+export function wirePlacementAdult(st, who){
+  const btn = document.getElementById('t-pl-png');
+  if (!btn) return;
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      const cv = await placementCanvas(st, who);
+      const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `english-quest-ispytanie-${st.placement.grade}-klass-${new Date(st.placement.at).toISOString().slice(0, 10)}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    } finally { btn.disabled = false; }
+  };
 }

@@ -272,6 +272,27 @@ function family_routes(): array {
       q('UPDATE orgs SET warned = NULL WHERE id = ?', [$r['subject']]);
       return family_login_out($r['subject'], clean_name(body()['label'] ?? '', 60), $key);
     }],
+    // Владельцу платформы — только общие числа по семьям, без номеров, имён и прогресса (концепция, раздел 10)
+    ['GET', '#^/stats/families$#', function(){
+      $u = need_user();
+      if ($u['role'] !== 'owner') throw new HttpError(403, 'forbidden', 'Это видит только владелец.');
+      $at = now(); $day = 86400 * 1000;
+      $orgs = all("SELECT id, created, email, warned FROM orgs WHERE kind = 'family'");
+      $out = ['families' => count($orgs), 'children' => (int)one("SELECT COUNT(*) AS n FROM students s JOIN orgs o ON o.id = s.org_id WHERE o.kind = 'family'")['n'],
+        'withEmail' => 0, 'warned' => 0, 'active7' => 0, 'active30' => 0, 'new30' => 0, 'weeks' => array_fill(0, 8, 0), 'at' => $at];
+      foreach ($orgs as $o){
+        if ($o['email']) $out['withEmail']++;
+        if ($o['warned']) $out['warned']++;
+        if ((int)$o['created'] > $at - 30 * $day) $out['new30']++;
+        $w = intdiv($at - (int)$o['created'], 7 * $day);
+        if ($w >= 0 && $w < 8) $out['weeks'][$w]++;   // 0 — эта неделя (последние 7 дней)
+        // «занимались» — была запись прогресса; создание семьи и вход взрослого не считаются
+        $p = (int)(one('SELECT MAX(p.updated) AS t FROM progress p JOIN students s ON s.id = p.student_id WHERE s.org_id = ?', [$o['id']])['t'] ?? 0);
+        if ($p > $at - 7 * $day) $out['active7']++;
+        if ($p > $at - 30 * $day) $out['active30']++;
+      }
+      return $out;
+    }],
     ['POST', '#^/family/delete$#', function(){
       delete_family(need_family()['org']['id']);
       return ['ok' => true];
