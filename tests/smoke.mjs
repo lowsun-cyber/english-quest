@@ -1019,6 +1019,7 @@ try {
         await S.saveProfiles(); (await import('./js/map.js')).renderMap();
         // без входа на сервер — подсказка, как войти
         document.querySelector('[data-team]').click(); await __sleep(200);
+        document.querySelector('[data-how="net"]').click(); await __sleep(200);
         if (!f('team-login')) throw new Error('без входа нет подсказки «Войти»');
         (await import('./js/ui.js')).closeModal();
         const pr = C.claimCode('${A.code}');
@@ -1026,6 +1027,7 @@ try {
         await pr;
         (await import('./js/ui.js')).closeModal(); await __sleep(100);
         document.querySelector('[data-team]').click(); await __sleep(200);
+        document.querySelector('[data-how="net"]').click(); await __sleep(200);
         document.querySelector('[data-mode="patient"]').click();
         for (let i = 0; i < 30 && !document.querySelector('.team-code'); i++) await __sleep(100);
         if (!document.querySelector('.team-code-box svg.qr')) throw new Error('нет QR-кода комнаты');
@@ -1079,6 +1081,55 @@ try {
       await srv.stop();
     }
   });
+
+  await test('командный квест за одним устройством: ребёнок и взрослый по очереди, призы только ребёнку', () => load(APP + '?local=1').then(() => js(`
+    const f = id => document.getElementById(id), S = await import('./js/state.js');
+    const me = S.activeId(), saved = JSON.stringify({ xp: S.state.xp, gold: S.state.gold, ach: S.state.achievements, tg: S.state.teamGames || null, mist: S.state.mistakes });
+    document.querySelector('[data-team]').click(); await __sleep(200);
+    document.querySelector('[data-how="local"]').click(); await __sleep(200);
+    document.querySelectorAll('.team-who input').forEach(i => { if (i.checked !== (i.value === me || i.value === 'team-guest')) i.click(); });
+    document.querySelector('[data-mode="boss"]').click();
+    f('team-local-go').click(); await __sleep(400);
+    const L = window.EQ.LESSONS, turns = [];
+    // верный ответ — по данным темы: слово по картинке, «послушай» по озвученному, грамматика по фразе
+    const answerOf = async () => {
+      const opts = [...document.querySelectorAll('.options .opt:not(:disabled)')].map(o => o.dataset.o);
+      const sn = document.querySelector('.q-sentence'), em = document.querySelector('.q-emoji');
+      if (sn) return L.flatMap(l => l.grammar || []).find(g => g.q === sn.textContent && opts.includes(g.a))?.a;
+      if (em) return L.flatMap(l => l.words).find(w => w.emoji === em.textContent && opts.includes(w.en))?.en;
+      for (let k = 0; k < 30 && !opts.includes(String(__said)); k++) await __sleep(100);
+      return opts.includes(String(__said)) ? String(__said) : null;
+    };
+    let hinted = false;
+    for (let i = 0; i < 40 && f('team-hud'); i++){
+      turns.push(S.activeId());
+      if (!hinted && document.querySelectorAll('.options .opt').length >= 4){
+        f('team-hint').click(); await __sleep(150); hinted = true;
+        if (document.querySelectorAll('.opt.opt-off').length !== 2) throw new Error('подсказка не убрала два варианта');
+      }
+      const ans = await answerOf();
+      window.__said = null;
+      const btn = [...document.querySelectorAll('.options .opt:not(:disabled)')].find(o => o.dataset.o === ans) || document.querySelector('.options .opt:not(:disabled)');
+      const sig = document.querySelector('.team-turn')?.textContent;
+      btn.click();
+      for (let k = 0; k < 60 && f('team-hud') && document.querySelector('.team-turn')?.textContent === sig; k++) await __sleep(100);
+      await __sleep(100);
+    }
+    const h = document.querySelector('#modal h2')?.textContent || '';
+    if (!/побеждён/.test(h)) throw new Error('нет итога: ' + h + ' | ходы ' + turns.length);
+    if (!turns.includes('team-guest') || turns[0] === turns[1]) throw new Error('ходы не по очереди: ' + turns.slice(0, 6).join(','));
+    if (S.activeId() !== me) throw new Error('после игры не вернулся игрок');
+    if (localStorage.getItem('english_quest_v2__team-guest')) throw new Error('прогресс взрослого не стёрт');
+    const g = Object.values(S.state.teamGames || {}).find(x => x.local);
+    const got = S.state.xp - JSON.parse(saved).xp;
+    if (!g || got !== 20 + 2 * g.ok || !S.state.achievements['team-1']) throw new Error('приз ребёнку: ' + got + ' ' + JSON.stringify(g));
+    if (!/Взрослый/.test(f('modal-body').textContent)) throw new Error('взрослого нет в итоге');
+    f('team-done').click();
+    const s0 = JSON.parse(saved);
+    S.state.xp = s0.xp; S.state.gold = s0.gold; S.state.achievements = s0.ach; S.state.mistakes = s0.mist;
+    if (s0.tg) S.state.teamGames = s0.tg; else delete S.state.teamGames;
+    await S.saveState();
+    return 'ребёнок и взрослый по очереди (' + turns.length + ' ходов), подсказка, «побеждён», приз только ребёнку (+' + got + ' XP), прогресс взрослого стёрт';`)));
 
   await test('квест-реванш и «Продолжить»', () => load().then(() => js(`
     const f = id => document.getElementById(id);

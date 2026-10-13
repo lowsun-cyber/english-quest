@@ -4,16 +4,21 @@
 // устройство из своих тем. На сервер уходит только «верно / неверно»: верный ответ любого игрока двигает общую
 // шкалу. Ошибки и мастерство — в профиль того, кто отвечал (как в обычном квесте). Подсказки — из общего запаса.
 // Устройство опрашивает комнату раз в 1,5 с. В конце каждый получает свой приз и командный.
+// За одним устройством (без сервера): игроки — профили устройства, ходят по очереди; на время хода текущим
+// становится профиль того, кто отвечает, — ошибки, мастерство и призы попадают ему. Можно позвать взрослого:
+// он отвечает на задания уровня ребёнка без своего прогресса и призов, а ребёнок слышит озвученные ответы.
 import { api, ApiError } from './api.js';
 import { CHARACTERS, CLINIC_PATIENTS } from './eq.js';
 import { checkAchievements } from './achievements.js';
+import { applyLoadedState } from './backup.js';
 import { runQuiz } from './checkpoint.js';
 import { cloudLink, cloudOn, openAccount } from './cloud.js';
 import { heroPic, playerHero } from './heroes.js';
+import { renderProfileChip } from './profiles.js';
 import { renderHUD, reward } from './hud.js';
 import { currentNode } from './map.js';
 import { qrSvg } from './qr.js';
-import { saveState, state } from './state.js';
+import { activeId, deleteStoredState, freshState, loadState, profiles, saveState, setState, state, takeDeviceSettings } from './state.js';
 import { lessonsOf, playerGrade } from './stats.js';
 import { closeModal, confetti, modalClosedHooks, openModal, toast } from './ui.js';
 import { escapeHtml, shuffle } from './util.js';
@@ -28,9 +33,9 @@ const heroes = () => Object.values(CHARACTERS).filter(c => c.playable);
 let cur = null;
 const token = () => cloudLink()?.token;
 
-// Кнопка над картой (только если есть сервер)
+// Кнопка над картой: за одним устройством можно играть и без сервера
 export function teamButton(){
-  return cloudOn() ? '<button type="button" class="team-btn" data-team>👥 Играть командой</button>' : '';
+  return '<button type="button" class="team-btn" data-team>👥 Играть командой</button>';
 }
 
 // Пациент или босс — одинаковый на всех устройствах (по номеру комнаты)
@@ -43,8 +48,24 @@ function foe(room){
 const who = (room, id) => room.players.find(p => p.id === id);
 const heroOf = p => CHARACTERS[p?.hero] || null;
 
-// ---------- вход: создать комнату или войти по коду ----------
+// ---------- вход: за одним устройством или по сети ----------
 export function openTeam(code = ''){
+  if (code) return openNetwork(code);
+  if (cur && !cur.local) return reopen();
+  openModal(`
+    <h2>👥 Играть командой</h2>
+    <p>Вместе против квеста! Каждый верный ответ любого игрока помогает всей команде.</p>
+    <div class="team-modes">
+      <button class="team-mode" data-how="local"><span aria-hidden="true">📱</span><b>На этом устройстве</b><small>По очереди: передаём планшет друг другу. Можно позвать маму или папу</small></button>
+      ${cloudOn() ? '<button class="team-mode" data-how="net"><span aria-hidden="true">🌐</span><b>Каждый со своего устройства</b><small>Комната по коду, все отвечают одновременно</small></button>' : ''}
+    </div>`);
+  document.querySelector('[data-how="local"]').onclick = openLocal;
+  const net = document.querySelector('[data-how="net"]');
+  if (net) net.onclick = () => openNetwork();
+}
+
+// По сети: создать комнату или войти по коду
+function openNetwork(code = ''){
   if (!cloudOn()) return;
   if (!cloudLink()){
     openModal(`
@@ -57,8 +78,8 @@ export function openTeam(code = ''){
   }
   if (cur && !code) return reopen();
   openModal(`
-    <h2>👥 Играть командой</h2>
-    <p>Вместе против квеста! Каждый отвечает на свои задания, а каждый верный ответ любого игрока помогает всей команде.</p>
+    <h2>🌐 Командный квест по сети</h2>
+    <p>Каждый отвечает на свои задания на своём устройстве, а каждый верный ответ любого игрока помогает всей команде.</p>
     <div class="team-modes">
       <button class="team-mode" data-mode="patient"><span aria-hidden="true">🏥</span><b>Вылечить пациента</b><small>Каждый верный ответ лечит</small></button>
       <button class="team-mode" data-mode="boss"><span aria-hidden="true">${BOSS.emoji}</span><b>Победить босса</b><small>Каждый верный ответ — удар по боссу</small></button>
@@ -193,6 +214,7 @@ let hooked = false;
 function hookClose(){ if (!hooked){ hooked = true; modalClosedHooks.add(onClosed); } }
 function onClosed(){
   if (quiet || !cur) return;
+  if (cur.local){ if (cur.phase === 'play'){ restoreLocal(); toast('👥 Командная игра остановлена. Ответы уже сохранены у тех, кто отвечал.'); } return; }
   if (cur.phase === 'lobby') leave();
   else if (cur.phase === 'play'){ stop(); cur.timer = null; toast('👥 Ты вышел из командного квеста. Вернуться — «Играть командой» и тот же код.'); cur = null; }
 }
@@ -248,12 +270,17 @@ function wireHint(){
   const b = document.getElementById('team-hint');
   if (!b) return;
   b.onclick = async () => {
+    // подсказка убирает два неверных варианта — у вопроса из двух вариантов её не тратим
+    const wrong = [...document.querySelectorAll('.options .opt:not(:disabled)')].filter(o => o.dataset.o !== cur.answer);
+    if (wrong.length < 2){ toast('💡 Здесь всего два варианта — подсказка сохранится для трудного вопроса'); return; }
     b.disabled = true;
     try {
-      update(await api(`/rooms/${cur.id}/hint`, { token: token(), body: {} }));
-      // подсказка: убрать два неверных варианта текущего вопроса
-      const wrong = [...document.querySelectorAll('.options .opt:not(:disabled)')].filter(o => o.dataset.o !== cur.answer);
-      shuffle(wrong).slice(0, Math.min(2, wrong.length - 1)).forEach(o => { o.disabled = true; o.classList.add('opt-off'); o.setAttribute('aria-hidden', 'true'); });
+      if (cur.local){
+        if (cur.room.hints < 1) return;
+        cur.room.hints--;
+        localEvent('hint', cur.room.me);
+      } else update(await api(`/rooms/${cur.id}/hint`, { token: token(), body: {} }));
+      shuffle(wrong).slice(0, 2).forEach(o => { o.disabled = true; o.classList.add('opt-off'); o.setAttribute('aria-hidden', 'true'); });
       paintHud();
     } catch (e){ toast('💡 ' + e.message); paintHud(); }
   };
@@ -301,5 +328,145 @@ function finish(){
     ${first ? `<p class="placement-reward">Командный приз: <b>+${TEAM_PRIZE.xp + 2 * (me?.ok || 0)} XP, +${TEAM_PRIZE.coins} 🪙</b></p>` : ''}
     <div class="controls"><button class="btn" id="team-done">Ура!</button></div>`));
   cur = null;
+  document.getElementById('team-done').onclick = () => { closeModal(); renderHUD(); };
+}
+
+// ---------- за одним устройством ----------
+const GUEST = 'team-guest';   // взрослый без профиля: его ход идёт на временном прогрессе, который потом стирается
+
+function openLocal(){
+  hookClose();
+  const list = profiles.list;
+  openModal(`
+    <h2>📱 Командный квест на этом устройстве</h2>
+    <p>Игроки отвечают по очереди и передают устройство друг другу. Вопросы — по темам каждого игрока, все ответы звучат вслух.</p>
+    <h3 class="team-h">Кто играет (2–4)</h3>
+    <div class="team-who">
+      ${list.map(p => `<label class="team-who-item"><input type="checkbox" value="${escapeHtml(p.id)}" ${p.id === activeId() ? 'checked' : ''} /><span aria-hidden="true">${escapeHtml(p.avatar)}</span><b>${escapeHtml(p.name)}</b></label>`).join('')}
+      <label class="team-who-item"><input type="checkbox" value="${GUEST}" ${list.length < 2 ? 'checked' : ''} /><span aria-hidden="true">🧑</span><b>Взрослый</b><small>без своего прогресса и призов</small></label>
+    </div>
+    ${list.length < 2 ? '<p class="t-muted">На устройстве один игрок — можно играть вместе со взрослым. Ещё игроков добавляет взрослый в «Для взрослых» → «Ученики».</p>' : ''}
+    <h3 class="team-h">Против кого</h3>
+    <div class="team-modes">
+      <button class="team-mode" data-mode="patient" aria-pressed="true"><span aria-hidden="true">🏥</span><b>Вылечить пациента</b></button>
+      <button class="team-mode" data-mode="boss" aria-pressed="false"><span aria-hidden="true">${BOSS.emoji}</span><b>Победить босса</b></button>
+    </div>
+    <p class="gate-err" id="team-err" role="alert" hidden></p>
+    <div class="controls"><button class="btn" id="team-local-go">▶ Начать</button></div>`);
+  let mode = 'patient';
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  });
+  document.getElementById('team-local-go').onclick = async () => {
+    const ids = [...document.querySelectorAll('.team-who input:checked')].map(i => i.value);
+    const err = document.getElementById('team-err');
+    if (ids.length < 2 || ids.length > 4){ err.textContent = ids.length < 2 ? 'Отметьте хотя бы двух игроков.' : 'Не больше четырёх игроков.'; err.hidden = false; return; }
+    if (!ids.some(id => id !== GUEST)){ err.textContent = 'Нужен хотя бы один игрок с профилем.'; err.hidden = false; return; }
+    await startLocal(ids, mode);
+  };
+}
+
+// Темы игрока: на время расчёта текущим становится его прогресс (темы считаются по карте игрока)
+function lessonsFor(pid, st){
+  const keep = state, keepId = profiles.active;
+  setState(st); profiles.active = pid;
+  try { return myLessons(); } finally { setState(keep); profiles.active = keepId; }
+}
+
+async function startLocal(ids, mode){
+  await saveState();
+  const origin = activeId(), originState = state;
+  const states = {}, pools = {}, used = new Set(), players = [];
+  for (const pid of ids.filter(x => x !== GUEST)){
+    states[pid] = pid === origin ? state : takeDeviceSettings(await loadState(pid));
+    pools[pid] = lessonsFor(pid, states[pid]);
+  }
+  // взрослый отвечает на задания уровня детей — из их тем
+  pools[GUEST] = [...new Set(Object.values(pools).flat())];
+  const free = want => { const h = !used.has(want) ? want : heroes().find(c => !used.has(c.id))?.id; used.add(h); return h; };
+  for (const pid of ids){
+    const p = profiles.list.find(x => x.id === pid);
+    players.push({ id: pid, name: p ? p.name : 'Взрослый', avatar: p ? p.avatar : '🧑', hero: free(pid === GUEST ? 'harlow' : playerHero(states[pid]).id), ok: 0, bad: 0, online: true, guest: pid === GUEST });
+  }
+  const room = { id: 'local' + Date.now().toString(36), mode, status: 'play', goal: 6 * players.length, progress: 0, hints: 3, players, events: [], me: ids[0] };
+  cur = { local: true, id: room.id, room, phase: 'play', seq: 0, answer: null, finished: false, states, pools, origin, originState, guestState: freshState() };
+  localEvent('start', ids[0]);
+  // очередь: по одному вопросу каждому по кругу; вид вопроса меняется от круга к кругу
+  const queue = [];
+  let n = 0;
+  const more = k => { for (let i = 0; i < k; i++, n++){ const pid = ids[n % ids.length]; const it = makeItems(pools[pid], 3)[Math.floor(n / ids.length) % 3]; queue.push({ ...it, pid }); } };
+  more(ids.length * 3);
+  ours(() => runQuiz({
+    header: () => turnHtml() + `<div id="team-hud" class="team-hud">${hudHtml()}</div>`,
+    lessons: [...new Set(Object.values(pools).flat())], queue, hideProgress: true,
+    stop: () => !cur || cur.phase !== 'play',
+    before: item => switchTo(item.pid),
+    onShow: (item, answer) => { if (cur) cur.answer = answer; wireHint(); },
+    onAnswer: (item, ok) => {
+      if (!cur) return;
+      if (queue.length - queue.indexOf(item) < ids.length + 1) more(ids.length * 2);
+      const p = who(cur.room, item.pid);
+      if (ok){ cur.room.progress++; p.ok++; localEvent('ok', item.pid); } else p.bad++;
+      if (cur.room.progress >= cur.room.goal){ cur.room.status = 'done'; cur.phase = 'done'; localEvent('done', item.pid); }
+      paintHud();
+    },
+    onFinish: () => { if (cur?.local && cur.phase === 'done') finishLocal(); },
+  }));
+}
+function localEvent(k, s){
+  const ev = cur.room.events;
+  ev.push({ n: (ev.at(-1)?.n || 0) + 1, k, s, at: Date.now() });
+  if (ev.length > 12) ev.shift();
+}
+// Чей ход: прогресс этого игрока становится текущим (взрослый — временный)
+function switchTo(pid){
+  if (!cur?.local || (cur.room.me === pid && activeId() === pid)) return;
+  // забрать актуальный прогресс уходящего игрока (синхронизация могла заменить объект)
+  if (activeId() === cur.room.me && cur.states[cur.room.me]) cur.states[cur.room.me] = state;
+  saveState();
+  profiles.active = pid;
+  setState(pid === GUEST ? cur.guestState : cur.states[pid]);
+  cur.room.me = pid;
+  renderHUD();
+}
+function turnHtml(){
+  const p = who(cur.room, cur.room.me), h = heroOf(p);
+  return `<h2>👥 Командный квест</h2>
+    <div class="team-turn" style="--hero-color:${h?.color || 'var(--diamond)'}">${h ? heroPic(h, 'thinking') : ''}<span>Отвечает: <b>${escapeHtml(p.avatar)} ${escapeHtml(p.name)}</b></span></div>`;
+}
+// Вернуть игрока, который был до игры, и стереть временный прогресс взрослого
+function restoreLocal(){
+  if (!cur?.local) return;
+  if (activeId() === cur.room.me && cur.states[cur.room.me]) cur.states[cur.room.me] = state;
+  saveState();
+  profiles.active = cur.origin;
+  setState(cur.states[cur.origin] || cur.originState);
+  deleteStoredState(GUEST);
+  cur = null;
+  applyLoadedState();
+  renderProfileChip();
+}
+function finishLocal(){
+  if (!cur || cur.finished) return;
+  cur.finished = true;
+  const room = cur.room, f = foe(room);
+  for (const p of room.players.filter(x => !x.guest)){
+    switchTo(p.id);
+    state.teamGames ||= {};
+    state.teamGames[room.id] = { at: Date.now(), mode: room.mode, ok: p.ok, team: room.players.length, local: true };
+    reward(TEAM_PRIZE.xp + 2 * p.ok, TEAM_PRIZE.coins, { bonus: true });
+    checkAchievements();
+    saveState();
+  }
+  restoreLocal();
+  confetti();
+  const best = [...room.players].sort((a, b) => b.ok - a.ok);
+  ours(() => openModal(`
+    <h2>${f.kind === 'boss' ? `🏆 ${escapeHtml(f.name)} побеждён!` : `🎉 ${escapeHtml(f.name)} здоров!`}</h2>
+    <p>Команда справилась вместе: ${room.goal} верных ответов на всех.</p>
+    <ul class="team-players team-final" role="list">${best.map(p => `<li>${heroOf(p) ? heroPic(heroOf(p), 'praise') : ''}<b>${escapeHtml(p.avatar)} ${escapeHtml(p.name)}</b><span>верно: ${p.ok}${p.guest ? '' : ` · +${TEAM_PRIZE.xp + 2 * p.ok} XP`}</span></li>`).join('')}</ul>
+    <p class="placement-reward">Командный приз каждому ребёнку: <b>+${TEAM_PRIZE.xp} XP, +${TEAM_PRIZE.coins} 🪙</b> и по 2 XP за свой верный ответ.</p>
+    <div class="controls"><button class="btn" id="team-done">Ура!</button></div>`));
   document.getElementById('team-done').onclick = () => { closeModal(); renderHUD(); };
 }
