@@ -104,6 +104,7 @@ export function achievementsOf(st){
     if (w.words != null) return words >= w.words;
     if (w.mastered != null) return (st.mastered || 0) >= w.mastered;
     if (w.revenge != null) return (st.revengeWins || 0) >= w.revenge;
+    if (w.team != null) return Object.keys(st.teamGames || {}).length >= w.team;   // командные квесты (js/team.js)
     if (w.minesBoss != null) return !!st.quests?.['mines:deep']?.passedAt;
     if (w.rank) return (ranks.find(r => r.region.id === w.rank[0])?.step || 0) >= w.rank[1];
     return false;

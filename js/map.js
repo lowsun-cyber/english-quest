@@ -7,6 +7,7 @@ import { hideCard, renderPath, showCard } from './path.js';
 import { OBJECTS, renderScene } from './scene.js';
 import { parcelBanner } from './parcels.js';
 import { placementBanner } from './placement.js';
+import { teamButton } from './team.js';
 import { chosenHeroId, heroById, playerHero } from './heroes.js';
 import { EX_NAMES } from './homework.js';
 import { isLessonComplete } from './hud.js';
@@ -132,7 +133,7 @@ export function renderMap(){
     ? `<button type="button" class="path-next" data-grade="${next.grade}"><span aria-hidden="true">🔒</span><span><b>${escapeHtml(next.name)}</b><small>Дорога дальше — ${next.grade} класс. Нажми, чтобы посмотреть</small></span></button>`
     : `<button type="button" class="path-next" data-secret="${mines?.id}"><span aria-hidden="true">❔</span><span><b>Тайное место</b><small>Кто-то стучит под землёй… Пройди 10 редких квестов</small></span></button>`;
   const revenge = revengeReady(state) ? `<button class="revenge-banner" data-revenge>⚔️ <b>Квест-реванш!</b> ${revengeItems(state).length} самых трудных слов и вопросов — одолей их</button>` : '';
-  const { pts, H } = renderPath(wrap, { grade, nodes, st, label, hero: playerHero(state), head: placementBanner() + parcelBanner() + revenge + head, tail });
+  const { pts, H } = renderPath(wrap, { grade, nodes, st, label, hero: playerHero(state), head: placementBanner() + parcelBanner() + revenge + teamButton() + head, tail });
   // метка → карточка рядом: «Войти в локацию», «Повторить» или замок с условием
   let open = -1;
   wrap.querySelectorAll('.path-mark').forEach(b => b.onclick = () => {

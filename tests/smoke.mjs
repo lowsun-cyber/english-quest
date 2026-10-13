@@ -1003,6 +1003,83 @@ try {
     }
   });
 
+  await test('командный квест по сети: комната по коду, герои, общая шкала, подсказка, итог с призом', async () => {
+    const srv = await startApi();
+    try {
+      const owner = (await call('/login', { body: { code: srv.ownerCode } })).data.token;
+      const mk = async name => { const st = (await call('/students', { token: owner, body: { name, avatar: '🦊' } })).data.student; return { st, code: (await call(`/students/${st.id}/code`, { token: owner, body: {} })).data.code }; };
+      const A = await mk('Аня'), B = await mk('Боря');
+      const tokB = (await call('/claim', { body: { code: B.code } })).data.token;
+      await js(`localStorage.setItem('eq_api', '${srv.api}'); return true;`);
+      await load(APP + '?team=1');
+      const code = await js(`
+        const f = id => document.getElementById(id), S = await import('./js/state.js'), C = await import('./js/cloud.js');
+        window.__teamSaved = JSON.stringify({ xp: S.state.xp, gold: S.state.gold, ach: S.state.achievements, tg: S.state.teamGames || null, cloud: S.profiles.list.map(p => p.cloud || null) });
+        for (const p of S.profiles.list) delete p.cloud;
+        await S.saveProfiles(); (await import('./js/map.js')).renderMap();
+        // без входа на сервер — подсказка, как войти
+        document.querySelector('[data-team]').click(); await __sleep(200);
+        if (!f('team-login')) throw new Error('без входа нет подсказки «Войти»');
+        (await import('./js/ui.js')).closeModal();
+        const pr = C.claimCode('${A.code}');
+        for (let i = 0; i < 30 && !C.cloudLink(); i++){ if (f('cl-this')) f('cl-this').click(); await __sleep(100); }
+        await pr;
+        (await import('./js/ui.js')).closeModal(); await __sleep(100);
+        document.querySelector('[data-team]').click(); await __sleep(200);
+        document.querySelector('[data-mode="patient"]').click();
+        for (let i = 0; i < 30 && !document.querySelector('.team-code'); i++) await __sleep(100);
+        if (!document.querySelector('.team-code-box svg.qr')) throw new Error('нет QR-кода комнаты');
+        if (!/Вылечить пациента/.test(f('team-lobby').textContent)) throw new Error('не тот режим');
+        return document.querySelector('.team-code').textContent;`);
+      let r = await call('/rooms/join', { token: tokB, body: { code } });
+      assert(r.status === 200 && r.data.players.length === 2, 'второй игрок не вошёл: ' + JSON.stringify(r.data));
+      const room = r.data.id;
+      const mine = r.data.players.find(p => p.name === 'Аня').hero;
+      assert(mine, 'у Ани не выбран герой по умолчанию');
+      assert((await call(`/rooms/${room}/hero`, { token: tokB, body: { hero: mine } })).data.error === 'hero_taken', 'герой Ани достался Боре');
+      await call(`/rooms/${room}/hero`, { token: tokB, body: { hero: mine === 'owl' ? 'robo' : 'owl' } });
+      const played = await js(`
+        const f = id => document.getElementById(id);
+        for (let i = 0; i < 40 && (!f('team-start') || f('team-start').disabled); i++) await __sleep(100);
+        if (!f('team-start') || f('team-start').disabled) throw new Error('«Начать» не включилась: ' + f('team-lobby')?.textContent.slice(0, 200));
+        f('team-start').click();
+        for (let i = 0; i < 30 && !f('team-hud'); i++) await __sleep(100);
+        if (!/0\\/12/.test(f('team-hud').textContent)) throw new Error('шкала: ' + f('team-hud').textContent);
+        if (document.querySelector('.review-progress')) throw new Error('в командном квесте полоска «вопрос N из M»');
+        // подсказка из общего запаса: два неверных варианта пропадают
+        const n4 = document.querySelectorAll('.options .opt').length;
+        f('team-hint').click();
+        for (let i = 0; i < 20 && !document.querySelector('.opt-off'); i++) await __sleep(100);
+        if (n4 >= 3 && document.querySelectorAll('.opt.opt-off').length !== 2) throw new Error('подсказка не убрала варианты');
+        if (!/Подсказка · 2/.test(f('team-hint').textContent)) throw new Error('запас подсказок: ' + f('team-hint').textContent);
+        const S = await import('./js/state.js'); window.__xp0 = S.state.xp;
+        return true;`);
+      // Боря добивает квест со своего устройства
+      for (let i = 0; i < 12; i++) r = await call(`/rooms/${room}/answer`, { token: tokB, body: { ok: true } });
+      assert(r.data.status === 'done', 'квест не закончился: ' + JSON.stringify(r.data));
+      const fin = await js(`
+        const f = id => document.getElementById(id), S = await import('./js/state.js');
+        for (let i = 0; i < 50 && !/здоров/.test(document.querySelector('#modal h2')?.textContent || ''); i++) await __sleep(100);
+        const h = document.querySelector('#modal h2')?.textContent || '';
+        if (!/здоров/.test(h)) throw new Error('нет итога у Ани: ' + h + ' | ' + f('modal-body').textContent.slice(0, 200));
+        if (!/Командный приз: \\+20 XP/.test(f('modal-body').textContent)) throw new Error('приз: ' + f('modal-body').textContent);
+        if (S.state.xp - __xp0 !== 20 || Object.keys(S.state.teamGames || {}).length !== 1 || !S.state.achievements['team-1']) throw new Error('приз и достижение: ' + (S.state.xp - __xp0) + ' ' + JSON.stringify(S.state.teamGames));
+        f('team-done').click();
+        // вернуть как было: прогресс и привязку к серверу других проверок
+        const saved = JSON.parse(__teamSaved);
+        S.state.xp = saved.xp; S.state.gold = saved.gold; S.state.achievements = saved.ach;
+        if (saved.tg) S.state.teamGames = saved.tg; else delete S.state.teamGames;
+        S.profiles.list.forEach((p, i) => { if (saved.cloud[i]) p.cloud = saved.cloud[i]; else delete p.cloud; });
+        await S.saveProfiles(); await S.saveState();
+        return true;`);
+      assert(played && fin, 'командный квест');
+      return 'вход нужен для игры, комната с QR, герой по умолчанию и без повторов, «Начать» после выбора героев, шкала 0/12, подсказка из запаса, Боря добивает → «здоров!», +20 XP, достижение «Командный игрок»';
+    } finally {
+      await js(`localStorage.removeItem('eq_api'); return true;`).catch(() => {});
+      await srv.stop();
+    }
+  });
+
   await test('квест-реванш и «Продолжить»', () => load().then(() => js(`
     const f = id => document.getElementById(id);
     const { state, saveState } = await import('./js/state.js'), M = await import('./js/mistakes.js');

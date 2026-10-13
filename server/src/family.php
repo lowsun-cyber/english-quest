@@ -125,6 +125,7 @@ function delete_student(string $id): void {
   q("DELETE FROM tokens WHERE kind = 'device' AND subject = ?", [$id]);
   q("DELETE FROM codes WHERE kind = 'device' AND subject = ?", [$id]);
   q('DELETE FROM resets WHERE subject = ?', [$id]);
+  q('DELETE FROM room_players WHERE student_id = ?', [$id]);
   q('DELETE FROM students WHERE id = ?', [$id]);
 }
 // «Удалить всё»: дети, прогресс, устройства, ссылки восстановления и сама семья

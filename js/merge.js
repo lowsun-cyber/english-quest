@@ -102,6 +102,8 @@ const RULES = {
   errorTypes: addMap,
   errorCodes: addMap,
   revengeWins: add,
+  // командные квесты (js/team.js): { комната: { at, mode, ok, team } } — объединение, запись комнаты не меняется
+  teamGames: (b, l, r) => objMap(b, l, r, (bb, ll, rr) => clone(ll ?? rr)),
   crystals: add,
   // { регион: полученный шаг звания } — максимум
   rankSteps: (b, l, r) => { const out = {}; for (const k of keysOf(b, l, r)) out[k] = Math.max(n(l?.[k]), n(r?.[k])); return out; },

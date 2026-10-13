@@ -35,6 +35,7 @@ import { loadProfiles, loadState, saveState, setProfiles, setState, state, takeD
 import { multi, openProfileChooser, renderProfileChip } from './profiles.js';
 import { initCloud, linkFromHash, syncNow, viewFromHash } from './cloud.js';
 import { familyFromHash } from './family.js';
+import { openTeam, teamFromHash } from './team.js';
 import { initDictionary } from './dictionary.js';
 import { showNarrator, toast } from './ui.js';
 import { pick } from './util.js';
@@ -57,6 +58,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('[data-revenge]
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-parcel]'); if (b) openParcel(b.dataset.parcel, renderMap); });
 // вступительное испытание: карточка стража ворот над картой (js/placement.js)
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-placement]'); if (b) onPlacementClick(b, renderMap); });
+document.addEventListener('click', (e) => { if (e.target.closest('[data-team]')) openTeam(); });   // «👥 Играть командой» над картой
 document.addEventListener('eq:revenge', () => startRevenge());
 document.addEventListener('eq:review', () => startReview());
 document.getElementById('btn-hero-team').onclick = () => document.getElementById('team-sec').scrollIntoView({behavior:'smooth'});
@@ -87,7 +89,8 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
   };
   // ссылки из кабинета учителя: подключить устройство (#link=…) или посмотреть прогресс (#view=…);
   // ключ семьи: QR-код карточки (#fk=…) и письмо «новый ключ» (#famkey=…). viewFromHash — последней: она асинхронная
-  const fromTeacher = () => linkFromHash() || familyFromHash() || viewFromHash();
+  // командный квест: QR-код комнаты (#room=…)
+  const fromTeacher = () => linkFromHash() || familyFromHash() || teamFromHash() || viewFromHash();
   if (!(await fromTeacher())) chooseThenHomework();
   // ссылка на задание, открытая во вкладке, где приложение уже запущено
   window.addEventListener('hashchange', () => { if (location.hash.startsWith('#hw')) chooseThenHomework(); else fromTeacher(); });
