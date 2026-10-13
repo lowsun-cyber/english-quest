@@ -3030,6 +3030,8 @@ const ACHIEVEMENTS = [
   { id: 'skill-1', title: 'Мастер правила', emoji: '🛠️', rarity: 'rare', text: 'Освой грамматический навык', when: { skills: 1 } },
   { id: 'mistake-1', title: 'Победитель ошибки', emoji: '🧹', rarity: 'rare', text: 'Выучи до конца слово из «Моих ошибок»', when: { mastered: 1 } },
   { id: 'revenge-1', title: 'Реванш взят', emoji: '⚔️', rarity: 'rare', text: 'Пройди квест-реванш на 80%', when: { revenge: 1 } },
+  { id: 'team-1', title: 'Командный игрок', emoji: '👥', rarity: 'rare', text: 'Пройди командный квест с друзьями', when: { team: 1 } },
+  { id: 'team-5', title: 'Душа команды', emoji: '🤝', rarity: 'epic', text: 'Пройди 5 командных квестов', when: { team: 5 } },
   { id: 'words-50', title: 'Знаток слов', emoji: '📚', rarity: 'rare', text: 'Освой 50 слов', when: { words: 50 } },
   { id: 'first-epic', title: 'Эпический подвиг', emoji: '🟣', rarity: 'epic', text: 'Пройди эпический квест на 80%', when: { epic: 1 } },
   { id: 'cloak-valley', title: 'Плащ Зелёной долины', emoji: '🌳', rarity: 'epic', text: 'Получи звание «Хранитель долины»', when: { rank: ['valley', 4] } },

@@ -11,8 +11,9 @@ use Throwable;
 
 require_once __DIR__ . '/auth.php';   // пароли, почта, восстановление доступа
 require_once __DIR__ . '/family.php'; // ключ семьи: прогресс детей без логинов
+require_once __DIR__ . '/rooms.php';  // командная игра по сети
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const MAX_STATE_BYTES = 512 * 1024;
 const MAX_PARCEL_BYTES = 60 * 1024;   // посылка от Dr. Harlow (AI-пакет), как PARCEL_MAX_BYTES в js/aipack.js
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // без 0/O и 1/I — легко продиктовать
@@ -78,6 +79,7 @@ function migrate(PDO $pdo): void {
   if ($cur < 1) migrate_v1($pdo, $big, $tail);
   if ($cur < 2) migrate_v2($pdo, $tail);
   if ($cur < 3) migrate_v3($pdo);
+  if ($cur < 4) migrate_v4($pdo, $tail);
   $pdo->prepare("DELETE FROM meta WHERE k = 'schema'")->execute();
   $pdo->prepare("INSERT INTO meta (k, v) VALUES ('schema', ?)")->execute([(string)SCHEMA_VERSION]);
 }
@@ -355,7 +357,7 @@ function cors(): void {
 // ---------- маршруты ----------
 // Только GET и POST: на виртуальных хостингах PUT/DELETE иногда режутся защитой.
 function routes(): array {
-  return [...auth_routes(), ...family_routes(), ...base_routes()];
+  return [...auth_routes(), ...family_routes(), ...room_routes(), ...base_routes()];
 }
 function base_routes(): array {
   return [
@@ -523,6 +525,7 @@ function base_routes(): array {
       q("DELETE FROM tokens WHERE kind = 'device' AND subject = ?", [$id]);
       q("DELETE FROM codes WHERE kind = 'device' AND subject = ?", [$id]);
       q('DELETE FROM resets WHERE subject = ?', [$id]);
+      q('DELETE FROM room_players WHERE student_id = ?', [$id]);
       q('DELETE FROM students WHERE id = ?', [$id]);
       db()->commit();
       return ['ok' => true];
