@@ -7,6 +7,8 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Сервер GitHub — Ubuntu 26.04 (Node 24, Chrome, MySQL 8.4) явно: с 19.10.2026 ubuntu-latest и так переходит на неё,
+# а с явной меткой обновление образа не застанет выкладку врасплох. Действия — версии на Node 24.
 permissions:
   contents: read
   pages: write
@@ -20,15 +22,15 @@ concurrency:
 jobs:
   test:
     name: Тесты
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # вся история: тест обновления базы берёт старую версию сервера из git
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'   # самая старая версия, которую должен поддерживать сервер
@@ -46,7 +48,7 @@ jobs:
         run: node tests/packs.mjs
       - name: Сервер учителя (API) на SQLite
         run: node tests/api.mjs
-      - name: Сервер учителя (API) на MySQL 8, как на хостинге
+      - name: Сервер учителя (API) на MySQL 8.4
         run: |
           sudo systemctl start mysql
           mysql --version
@@ -60,23 +62,23 @@ jobs:
     name: Публикация на GitHub Pages
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Собрать сайт (без тестов, инструментов и кода сервера)
         run: |
           mkdir _site
           rsync -a --exclude '.git' --exclude '.github' --exclude 'tests' --exclude 'tools' --exclude 'packs' --exclude 'docs' --exclude 'server' --exclude '_site' --exclude 'CLAUDE.md' --exclude 'README.md' --exclude 'DESIGN.md' ./ _site/
           node tools/stamp.mjs _site   # версия в адресах скриптов и стилей
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # Сайт и код сервера — на хостинг (Спринтхост, SFTP): https://quest.logiqa.ru/
   # Загружаются только изменённые файлы (tools/deploy-hosting.mjs); config.php на сервере не трогается.
@@ -86,12 +88,12 @@ jobs:
     name: Публикация на quest.logiqa.ru
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.SPRINTHOST_HOST != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     concurrency:
       group: hosting
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Установить lftp
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
       # Вход по ключу (секрет SPRINTHOST_SSH_KEY) или по паролю (секрет SPRINTHOST_PASSWORD).
