@@ -14,7 +14,7 @@ import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
 import { cloudLink, cloudOn, cloudPanelHtml, wireCloudPanel } from './cloud.js';
 import { familySectionHtml, wireFamilySection } from './family.js';
 import { gapMapHtml } from './gapmap.js';
-import { placementAdultHtml } from './placement.js';
+import { placementAdultHtml, wirePlacementAdult } from './placement.js';
 import { addParcel, aiExport, parcelsOf, parseParcel, promptWithExport, validateParcel } from './aipack.js';
 import { errorsLine, lastDaysOf, levelTitle, needsLine, reportText, studentStats, wordErrNote } from './stats.js';
 import { DAY, WEEKDAYS, copyText, dayKey, escapeHtml, fmtDay, plural } from './util.js';
@@ -249,6 +249,7 @@ export function openTutorPanel(){
   const viewClose = document.getElementById('t-view-close');
   if (viewClose) viewClose.onclick = () => { endView(); openTutorPanel(); };
   wireWorksheet();
+  wirePlacementAdult(state, realState ? (state._viewMeta?.profile?.name || '') : activeProfile().name);
   if (!realState){
     wireOfflineSection(); wireBackupSection(); wireResetSection();
     if (cloudOn()){ wireCloudPanel(); wireFamilySection(openTutorPanel); }

@@ -813,6 +813,35 @@ async function renderUsers(){
 }
 
 // ---------- мои входы ----------
+// Семьи с ключом семьи (js/family.js) — только владельцу и только общие числа: детей и их прогресс он не видит
+async function renderFamilies(){
+  if (me.role !== 'owner'){ location.hash = '#students'; return; }
+  setTab('families');
+  const f = await call('/stats/families');
+  const DAY = 86400000, d = t => new Date(t).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  main.innerHTML = `
+    <section class="adm-card">
+      <h1 class="adm-h1">Семьи <span class="t-muted">${f.families}</span></h1>
+      <p class="t-muted">Родители, которые сохранили прогресс детей по ключу семьи. Здесь только общие числа: имена, почты и прогресс отдельных семей владельцу не показываются.</p>
+      <div class="t-tiles">
+        <div class="t-tile"><span class="t-num">${f.families}</span><span class="t-lbl">семей</span></div>
+        <div class="t-tile"><span class="t-num">${f.children}</span><span class="t-lbl">детей</span></div>
+        <div class="t-tile"><span class="t-num">${f.active7}</span><span class="t-lbl">семей занимались за 7 дней</span></div>
+        <div class="t-tile"><span class="t-num">${f.active30}</span><span class="t-lbl">семей занимались за 30 дней</span></div>
+        <div class="t-tile"><span class="t-num">${f.new30}</span><span class="t-lbl">новых за 30 дней</span></div>
+        <div class="t-tile"><span class="t-num">${f.withEmail}</span><span class="t-lbl">указали почту</span></div>
+      </div>
+      ${f.warned ? `<p class="t-muted">⏳ Предупреждены об удалении (год без занятий): ${f.warned}.</p>` : ''}
+      <h2 class="adm-h2">Новые семьи по неделям</h2>
+      <div class="t-table-wrap">
+        <table class="t-table adm-table">
+          <thead><tr><th>Неделя</th><th>Новых семей</th></tr></thead>
+          <tbody>${f.weeks.map((n, i) => `<tr><td>${d(f.at - (i + 1) * 7 * DAY + DAY)} — ${d(f.at - i * 7 * DAY)}</td><td>${n}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
 async function renderSessions(){
   setTab('me');
   const [{ sessions, codes }, { user }] = await Promise.all([call('/me/sessions'), call('/me')]);
@@ -957,6 +986,7 @@ async function route(){
     if (m) await renderStudent(m[1]);
     else if (h === '#users') await renderUsers();
     else if (h === '#me') await renderSessions();
+    else if (h === '#families') await renderFamilies();
     else await renderStudents();
     main.focus({ preventScroll: true });
     window.scrollTo(0, 0);
@@ -994,6 +1024,7 @@ async function start(){
     renderMe();
     document.getElementById('adm-nav').hidden = false;
     document.getElementById('adm-tab-users').hidden = !isAdmin();
+    document.getElementById('adm-tab-families').hidden = me.role !== 'owner';
     document.getElementById('adm-me').hidden = false;
     wireHeader();
     await route();

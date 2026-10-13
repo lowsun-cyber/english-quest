@@ -422,6 +422,11 @@ if (import.meta.url === `file://${process.argv[1]}`){
       // учитель не видит детей семьи
       const owner = (await call('/login', { body: { code: s4.ownerCode } })).data.token;
       check('владелец школы не видит детей семьи', (await call('/students', { token: owner })).data.students.length === 0 && (await call(`/students/${kid}/progress`, { token: owner })).status === 404);
+      r = await call('/stats/families', { token: owner });
+      check('владельцу — только общие числа по семьям', r.status === 200 && r.data.families === 1 && r.data.children === 1 && r.data.withEmail === 1 && r.data.active7 === 1 && r.data.new30 === 1 && r.data.weeks[0] === 1 && !JSON.stringify(r.data).includes('mama@') && !JSON.stringify(r.data).includes(kid), r.data);
+      const admin2 = (await call('/users', { token: owner, body: { name: 'Админ', role: 'admin' } })).data;
+      const adminTok = (await call('/login', { body: { code: admin2.login.code } })).data.token;
+      check('…администратору и семье — нельзя', (await call('/stats/families', { token: adminTok })).status === 403 && (await call('/stats/families', { token: famR })).status === 401);
       // удалить ребёнка и всё
       r = await call('/family/children', { token: famR, body: { avatar: '🦊' } });
       await call(`/family/children/${r.data.student.id}/delete`, { token: famR, body: {} });
