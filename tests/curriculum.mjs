@@ -59,7 +59,7 @@ for (const l of LESSONS){
   }
 }
 check('id уроков не повторяются', uniq(LESSONS.map(l => l.id)));
-const heroCount = /Spotlight \(2, 3, 4\), (\d+) тем/.exec(readFileSync(join(ROOT, 'index.html'), 'utf8'))?.[1];
+const heroCount = /Три класса \(2, 3, 4\), (\d+) тем/.exec(readFileSync(join(ROOT, 'index.html'), 'utf8'))?.[1];
 check('число тем на главной совпадает с контентом', +heroCount === LESSONS.length, { наГлавной: heroCount, тем: LESSONS.length });
 for (const g of [2, 3, 4]){
   const ord = LESSONS.filter(l => l.grade === g).map(l => l.order);

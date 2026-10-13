@@ -2691,7 +2691,7 @@ const CURRICULUM = {
   },
   // темы ФРП по классам; hours — часы из ФРП (вес темы: сколько квестов в локации), null — уточнить
   topics: [
-    { id: 'g2-abc', grade: 2, title: 'Алфавит и звуки', section: 'Spotlight, вводный модуль', hours: null },
+    { id: 'g2-abc', grade: 2, title: 'Алфавит и звуки', section: 'вводный модуль', hours: null },
     { id: 'g2-greet', grade: 2, title: 'Приветствие, знакомство', section: 'Мир моего «я»', hours: 3 },
     { id: 'g2-family', grade: 2, title: 'Моя семья', section: 'Мир моего «я»', hours: 13 },
     { id: 'g2-birthday', grade: 2, title: 'Мой день рождения', section: 'Мир моего «я»', hours: 4 },
