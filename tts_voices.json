@@ -1555,5 +1555,10 @@
   "alien": "6d36df0b43dd6a3bb7700ae6cd312c907010cae6.m4a",
   "The rocket is going to the Moon.": "f8bee823ebfc4e0cc262e2cdc34cfce9833cad3b.m4a",
   "I can see a planet in my telescope.": "bedd7a59f8ea078f176293ec88995c1c66dc504a.m4a",
-  "The Sun is bigger than the Moon.": "30e147eb6d61c0fbe050c0afd189f7b10a82472c.m4a"
+  "The Sun is bigger than the Moon.": "30e147eb6d61c0fbe050c0afd189f7b10a82472c.m4a",
+  "owl|Чтобы попросить не делать, скажи don't: Don't run!": "5c1d272cf58d7a522cbc4db36c7db17533fe7ba3.m4a",
+  "owl|In — внутри, on — на, under — под. Посмотри, где спрятан предмет.": "4e3ee9ffad73ce9c7dbae17e7612408fdeb8fa5d.m4a",
+  "owl|Если много — добавь s: one cat, two cats.": "6a89221a880540392d8fcd1f05d622cd2d6052a8.m4a",
+  "owl|Мой — my, твой — your. My book, your pen.": "49443a654121bc42b968848197d6284ba363a111.m4a",
+  "owl|Some — в обычных предложениях, any — в вопросах и с not.": "b3317abcbc111038fab3f46335e72de088e4beb7.m4a"
 }
