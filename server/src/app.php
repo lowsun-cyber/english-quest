@@ -10,8 +10,9 @@ use PDO;
 use Throwable;
 
 require_once __DIR__ . '/auth.php';   // пароли, почта, восстановление доступа
+require_once __DIR__ . '/family.php'; // ключ семьи: прогресс детей без логинов
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const MAX_STATE_BYTES = 512 * 1024;
 const MAX_PARCEL_BYTES = 60 * 1024;   // посылка от Dr. Harlow (AI-пакет), как PARCEL_MAX_BYTES в js/aipack.js
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // без 0/O и 1/I — легко продиктовать
@@ -76,6 +77,7 @@ function migrate(PDO $pdo): void {
   if ($cur >= SCHEMA_VERSION) return;
   if ($cur < 1) migrate_v1($pdo, $big, $tail);
   if ($cur < 2) migrate_v2($pdo, $tail);
+  if ($cur < 3) migrate_v3($pdo);
   $pdo->prepare("DELETE FROM meta WHERE k = 'schema'")->execute();
   $pdo->prepare("INSERT INTO meta (k, v) VALUES ('schema', ?)")->execute([(string)SCHEMA_VERSION]);
 }
@@ -216,6 +218,9 @@ function auth(): ?array {
   } elseif ($t['kind'] === 'device'){
     $s = one('SELECT * FROM students WHERE id = ?', [$t['subject']]);
     if ($s) $who = ['kind' => 'device', 'token' => $t, 'student' => $s];
+  } elseif ($t['kind'] === 'family'){
+    $o = one("SELECT * FROM orgs WHERE id = ? AND kind = 'family'", [$t['subject']]);
+    if ($o) $who = ['kind' => 'family', 'token' => $t, 'org' => $o];
   }
   return $who;
 }
@@ -350,7 +355,7 @@ function cors(): void {
 // ---------- маршруты ----------
 // Только GET и POST: на виртуальных хостингах PUT/DELETE иногда режутся защитой.
 function routes(): array {
-  return [...auth_routes(), ...base_routes()];
+  return [...auth_routes(), ...family_routes(), ...base_routes()];
 }
 function base_routes(): array {
   return [
@@ -418,7 +423,8 @@ function base_routes(): array {
     }],
     ['POST', '#^/logout$#', function(){
       $w = auth();
-      if ($w) q('DELETE FROM tokens WHERE id = ?', [$w['token']['id']]);
+      if ($w && $w['kind'] === 'family') drop_family_token($w['token']['id']);   // вместе с ключами детей этого устройства
+      elseif ($w) q('DELETE FROM tokens WHERE id = ?', [$w['token']['id']]);
       return ['ok' => true];
     }],
     // код входа для себя — чтобы войти на другом устройстве (телефон, второй компьютер)
@@ -627,6 +633,7 @@ function base_routes(): array {
         throw new HttpError(409, 'conflict', 'Прогресс изменился на другом устройстве.', ['version' => $curVersion, 'state' => $cur ? state_out($cur['state']) : null, 'updated' => $cur ? (int)$cur['updated'] : null]);
       }
       $next = $curVersion + 1;
+      q("UPDATE orgs SET warned = NULL WHERE id = ? AND warned IS NOT NULL", [$w['student']['org_id']]);   // семья снова занимается
       // условие на версию в самом UPDATE — два одновременных запроса не затрут друг друга
       $n = $cur
         ? q('UPDATE progress SET state = ?, version = ?, updated = ?, device_id = ? WHERE student_id = ? AND version = ?', [$json, $next, now(), $w['token']['id'], $sid, $curVersion])->rowCount()
@@ -716,6 +723,7 @@ function run(): void {
     if ($baseDir !== '' && str_starts_with($path, $baseDir)) $path = substr($path, strlen($baseDir));
     $path = '/' . trim(preg_replace('#^/index\.php#', '', $path), '/');
     migrate(db());
+    maybe_cleanup();
     foreach (routes() as [$m, $re, $fn]){
       if (preg_match($re, $path, $mm)){
         if ($m !== $method) continue;

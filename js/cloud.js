@@ -12,9 +12,12 @@ import { activeId, activeProfile, freshState, profiles, readSyncBase, realState,
 import { createProfile, renderProfileChip, switchProfile } from './profiles.js';
 import { closeDrawer, closeModal, modalClosedHooks, modalIsOpen, openDrawer, openModal, toast } from './ui.js';
 import { escapeHtml } from './util.js';
+import { keyFormsHtml, wireKeyForms } from './family.js';
 
 export const cloudOn = () => !!API_BASE;
 export const cloudLink = (id = activeId()) => profiles?.list.find(p => p.id === id)?.cloud || null;
+// Ребёнок семьи на сервере — «Панда-47», на устройстве показываем его настоящее имя
+const linkName = link => link.family ? activeProfile().name : link.name;
 
 // ---------- синхронизация ----------
 let busy = false, again = false, timer = null, waitingForModal = false;
@@ -84,9 +87,9 @@ export async function syncNow(){
     if (e instanceof ApiError && e.status === 401){
       // ключ уже сменили (вышли и вошли заново, пока шёл запрос) — старый ответ ничего не значит
       if (cloudLink(id)?.token !== link.token){ lastSync = { at: Date.now(), ok: true, message: '' }; again = true; return 'later'; }
-      // учитель отключил устройство или удалил ученика
+      // учитель отключил устройство или удалил ученика; семья отключила устройство или удалила данные
       await unlinkLocal(id);
-      toast('☁️ Устройство отключено от сервера учителя. Прогресс остался на устройстве.');
+      toast(link.family ? '☁️ Устройство отключено от семьи. Прогресс остался на устройстве.' : '☁️ Устройство отключено от сервера учителя. Прогресс остался на устройстве.');
       lastSync = { at: Date.now(), ok: false, message: 'Устройство отключено от сервера.' };
       return 'error';
     }
@@ -103,8 +106,11 @@ function waitModal(){ waitingForModal = true; return 'later'; }
 
 async function unlinkLocal(id){
   const p = profiles.list.find(x => x.id === id);
-  if (p) delete p.cloud;
-  await writeSyncBase(id, null);
+  if (p?.cloud?.family) await forgetLink(p);
+  else {
+    if (p) delete p.cloud;
+    await writeSyncBase(id, null);
+  }
   await saveProfiles();
   renderProfileChip();
 }
@@ -120,11 +126,21 @@ export async function claimCode(code){
 export async function claimLogin(login, password){
   return linkWith(await api('/student/login', { body: { login, password, label: deviceLabel() } }));
 }
-async function linkWith(r){
-  const cloud = { studentId: r.student.id, token: r.token, deviceId: r.deviceId, name: r.student.name, first: true };
-  const existing = profiles.list.find(p => p.cloud?.studentId === r.student.id);
+// Ребёнок семьи на этом устройстве (js/family.js): то же подключение, имя на устройстве не меняется
+export function linkFamily(r){ return linkWith(r, { family: true }); }
+// Ребёнок семьи отключён от сервера: профиль помнит, кем был, и основу синхронизации — при новом подключении
+// того же ребёнка прогресс сведётся по ней, а не сложится второй раз
+export async function forgetLink(p){
+  p.wasFamily = p.cloud.studentId;
+  delete p.cloud;
+  await saveProfiles();
+}
+async function linkWith(r, extra = {}){
+  const cloud = { studentId: r.student.id, token: r.token, deviceId: r.deviceId, name: r.student.name, first: true, ...extra };
+  const existing = profiles.list.find(p => p.cloud?.studentId === r.student.id || p.wasFamily === r.student.id);
   if (existing){
     existing.cloud = { ...cloud, first: false };
+    delete existing.wasFamily;
     await saveProfiles();
     if (existing.id !== activeId()) await switchProfile(existing.id);
     return finishLink(r.student);
@@ -133,8 +149,8 @@ async function linkWith(r){
   if (!cur.cloud && pristine(state)) return linkTo(cur.id, cloud, r.student);
   // на устройстве уже есть прогресс — спрашиваем, чей он
   openModal(`
-    <h2>☁️ Ученик: ${escapeHtml(r.student.avatar)} ${escapeHtml(r.student.name)}</h2>
-    <p>Устройство подключено к серверу учителя. К какому профилю на этом устройстве относится этот ученик?</p>
+    <h2>☁️ ${cloud.family ? 'Ребёнок семьи' : 'Ученик'}: ${escapeHtml(r.student.avatar)} ${escapeHtml(r.student.name)}</h2>
+    <p>Устройство подключено к ${cloud.family ? 'семье' : 'серверу учителя'}. К какому профилю на этом устройстве относится этот ученик?</p>
     <div class="controls cl-choice">
       ${cur.cloud ? '' : `<button class="btn" id="cl-this">Это ${escapeHtml(cur.avatar)} ${escapeHtml(cur.name)} — объединить прогресс</button>`}
       <button class="btn secondary" id="cl-new">➕ Новый ученик на этом устройстве</button>
@@ -159,8 +175,10 @@ async function linkWith(r){
 async function linkTo(id, cloud, student){
   const p = profiles.list.find(x => x.id === id);
   p.cloud = cloud;
-  p.name = student.name;
-  if (student.avatar) p.avatar = student.avatar;
+  if (!cloud.family){   // у семьи имя и аватар на устройстве — свои
+    p.name = student.name;
+    if (student.avatar) p.avatar = student.avatar;
+  }
   await writeSyncBase(id, null);
   await saveProfiles();
   renderProfileChip();
@@ -227,7 +245,7 @@ export function wireCloudPanel(){
 function cloudSectionHtml(){
   const link = cloudLink();
   if (link) return `
-    <p>☁️ Подключено к серверу учителя: <b>${escapeHtml(link.name)}</b>. Прогресс сохраняется там автоматически.</p>
+    <p>☁️ ${link.family ? `Ключ семьи: <b>${escapeHtml(linkName(link))}</b>. Прогресс сохраняется на сервере автоматически.` : `Подключено к серверу учителя: <b>${escapeHtml(link.name)}</b>. Прогресс сохраняется там автоматически.`}</p>
     <p class="t-muted" id="cl-status">Синхронизация: ${lastSync.ok ? ago(lastSync.at) : `не удалась — ${escapeHtml(lastSync.message)}. Всё сохранено на устройстве и отправится позже.`}</p>
     <div class="controls">
       <button class="btn secondary" id="cl-sync">🔄 Синхронизировать сейчас</button>
@@ -256,7 +274,8 @@ function cloudSectionHtml(){
         <label>Код подключения <input id="cl-code" autocomplete="off" autocapitalize="characters" placeholder="ABCD-EFGH" maxlength="12" /></label>
         <button class="btn secondary" type="submit">☁️ Подключить</button>
       </form>
-    </details>`;
+    </details>
+    ${keyFormsHtml('acc')}`;
 }
 function wireCloudSection(reopen, close){
   const syncBtn = document.getElementById('cl-sync');
@@ -298,6 +317,7 @@ function wireCloudSection(reopen, close){
     catch (ex){ msg.textContent = ex.message; }
     msg.hidden = false;
   };
+  wireKeyForms('acc', close, reopen);
   const form = document.getElementById('cl-form');
   if (form) form.onsubmit = async (e) => {
     e.preventDefault();
@@ -323,8 +343,8 @@ export function renderAccountButton(){
   btn.hidden = false;
   btn.classList.toggle('on', !!link);
   document.getElementById('acc-icon').textContent = link ? '☁️' : '🔑';
-  document.getElementById('acc-name').textContent = link ? link.name : 'Войти';
-  btn.setAttribute('aria-label', link ? `Вошли как ${link.name}. Открыть вход` : 'Войти по логину и паролю');
+  document.getElementById('acc-name').textContent = link ? linkName(link) : 'Войти';
+  btn.setAttribute('aria-label', link ? `Вошли как ${linkName(link)}. Открыть вход` : 'Войти по логину, паролю или ключу семьи');
 }
 
 function accountHtml(){
@@ -332,7 +352,7 @@ function accountHtml(){
   const who = link ? `
     <div class="acc-who">
       <span class="acc-av" aria-hidden="true">${escapeHtml(activeProfile().avatar)}</span>
-      <div><div class="acc-label">Вы вошли как</div><b class="acc-name">${escapeHtml(link.name)}</b></div>
+      <div><div class="acc-label">Вы вошли как</div><b class="acc-name">${escapeHtml(linkName(link))}</b></div>
     </div>` : '';
   return `
     ${who}

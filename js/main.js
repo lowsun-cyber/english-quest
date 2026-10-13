@@ -33,6 +33,7 @@ import { renderMistakes, startReview } from './mistakes.js';
 import { loadProfiles, loadState, saveState, setProfiles, setState, state, takeDeviceSettings } from './state.js';
 import { multi, openProfileChooser, renderProfileChip } from './profiles.js';
 import { initCloud, linkFromHash, syncNow, viewFromHash } from './cloud.js';
+import { familyFromHash } from './family.js';
 import { initDictionary } from './dictionary.js';
 import { showGuide, toast } from './ui.js';
 import { pick } from './util.js';
@@ -83,8 +84,9 @@ document.getElementById('btn-hero-team').onclick = () => document.getElementById
     if (multi()) openProfileChooser({ note: hw ? '📬 Пришло домашнее задание — для кого оно?' : '', onPick: () => applyHomeworkFromHash() });
     else applyHomeworkFromHash();
   };
-  // ссылки из кабинета учителя: подключить устройство (#link=…) или посмотреть прогресс (#view=…)
-  const fromTeacher = () => linkFromHash() || viewFromHash();
+  // ссылки из кабинета учителя: подключить устройство (#link=…) или посмотреть прогресс (#view=…);
+  // ключ семьи: QR-код карточки (#fk=…) и письмо «новый ключ» (#famkey=…). viewFromHash — последней: она асинхронная
+  const fromTeacher = () => linkFromHash() || familyFromHash() || viewFromHash();
   if (!(await fromTeacher())) chooseThenHomework();
   // ссылка на задание, открытая во вкладке, где приложение уже запущено
   window.addEventListener('hashchange', () => { if (location.hash.startsWith('#hw')) chooseThenHomework(); else fromTeacher(); });

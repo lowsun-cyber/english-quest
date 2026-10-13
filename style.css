@@ -1498,6 +1498,29 @@ footer { text-align: center; color: var(--muted); margin-top: 40px; font-size: 1
 .cl-more { margin-top: 12px; }
 .cl-more summary { cursor: pointer; font-weight: 700; color: var(--ink-2); }
 .cl-more p { margin-top: 6px; }
+
+/* ---------- Ключ семьи (js/family.js) ---------- */
+.fam-note { padding: 8px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--bg); font-weight: 700; }
+.fam-what { margin: 6px 0 0 1.2em; display: grid; gap: 4px; }
+.fam-check, .cl-form label.fam-check { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; margin-top: 10px; font-weight: 600; font-size: 15px; cursor: pointer; }
+.fam-check input { width: 24px; height: 24px; min-width: 24px; margin-top: 1px; accent-color: var(--grass-2); }
+.fam-h { font-weight: 800; font-size: 16px; margin: 14px 0 6px; }
+.fam-list { list-style: none; display: grid; gap: 6px; }
+.fam-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); }
+.fam-main { flex: 1 1 200px; }
+.fam-acts { display: flex; gap: 6px; }
+.fam-acts .btn { font-size: 12px; padding: 10px 14px; }
+.fam-danger { color: var(--lava-2); }
+[data-theme="dark"] .fam-danger { color: var(--lava); }
+.fam-kids { flex-direction: column; align-items: stretch; }
+.fam-kids small { font-weight: 600; opacity: .8; }
+/* карточка ключа: крупные слова, QR всегда чёрный на белом (иначе камера не прочтёт) */
+.fam-card { margin: 8px auto 12px; max-width: 380px; padding: 14px; border: 3px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-hard); text-align: center; }
+.fam-card-title { font-weight: 800; font-size: 15px; }
+.fam-key { margin: 10px 0; font-weight: 800; font-size: 24px; line-height: 1.3; letter-spacing: 1px; overflow-wrap: anywhere; }
+.fam-card .qr { display: block; width: 200px; max-width: 70%; height: auto; margin: 0 auto; border: 2px solid var(--line); border-radius: 6px; }
+.fam-card-note { margin-top: 8px; font-size: 14px; color: var(--ink-2); }
+.fam-warn { padding: 10px 12px; border: 2px solid var(--line); border-left: 8px solid var(--lava); border-radius: 10px; background: var(--surface); }
 .tc-page main { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
 .tc-h { font-family: var(--font-body); font-weight: 800; font-size: 22px; letter-spacing: 0; margin-bottom: 10px; }
 .tc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }

@@ -907,6 +907,92 @@ try {
     }
   });
 
+  await test('ключ семьи: согласие, карточка с QR, второе устройство, отключение и возврат без удвоения, «Удалить всё»', async () => {
+    const srv = await startApi();
+    try {
+      await js(`localStorage.setItem('eq_api', '${srv.api}'); return true;`);
+      await load(APP + '?family=1');
+      const made = await js(`
+        const f = id => document.getElementById(id), S = await import('./js/state.js');
+        // ученики, подключённые к серверу учителя, в семью не попадают — для чистоты проверки отключаем
+        for (const p of S.profiles.list) delete p.cloud;
+        await S.saveProfiles();
+        (await import('./js/tutor.js')).openTutorPanel(); await __sleep(300);
+        if (!f('fam-box')) throw new Error('нет раздела «Ключ семьи»');
+        f('fam-create').click(); await __sleep(150);
+        if (!/согласие/.test(f('fam-err').textContent)) throw new Error('сохранилось без согласия');
+        f('fam-consent').click(); f('fam-create').click();
+        for (let i = 0; i < 40 && !document.querySelector('.fam-key'); i++) await __sleep(100);
+        const key = document.querySelector('.fam-key')?.textContent;
+        if (!/^[А-Я]+(-[А-Я]+){3}-\\d\\d$/.test(key || '')) throw new Error('ключ: ' + key);
+        if (!document.querySelector('.fam-card svg.qr path')) throw new Error('нет QR-кода');
+        if (!/Сохраните ключ сейчас/.test(f('modal').textContent)) throw new Error('нет предупреждения «сохраните ключ»');
+        f('fam-done').click();
+        for (let i = 0; i < 40 && !/сохраняется, на сервере/.test(f('fam-box')?.textContent || ''); i++) await __sleep(100);
+        const p = S.activeProfile();
+        if (!p.cloud?.family || !/^[А-Яа-я]+-\\d\\d$/.test(p.cloud.name) || p.name === p.cloud.name) throw new Error('профиль: ' + JSON.stringify(p));
+        if (!S.profiles.list.every(x => x.cloud?.family)) throw new Error('сохранены не все дети устройства');
+        if (document.getElementById('acc-name').textContent !== p.name) throw new Error('в шапке не имя ребёнка: ' + document.getElementById('acc-name').textContent);
+        await (await import('./js/cloud.js')).syncNow();
+        return { key, token: S.profiles.family.token, kid: p.cloud.studentId, kids: S.profiles.list.length, xp: S.state.xp };`);
+      let r = await call('/family', { token: made.token });
+      assert(r.data.children.length === made.kids && r.data.children.every(c => !/Ученик|Маша|Петя/.test(c.name)), 'на сервере не те дети: ' + JSON.stringify(r.data.children));
+      // «другое устройство» входит по ключу, занимается (+50 XP) и отключает это устройство
+      const other = (await call('/family/login', { body: { key: made.key.toLowerCase().replace(/-/g, ' '), label: 'Телефон' } })).data.token;
+      const kidB = (await call(`/family/children/${made.kid}/link`, { token: other, body: {} })).data.token;
+      const remote = (await call('/progress', { token: kidB })).data;
+      assert(remote.state?.xp === made.xp, `на сервере xp ${remote.state?.xp}, на устройстве ${made.xp}`);
+      await call('/progress', { token: kidB, body: { base: remote.version, state: { ...remote.state, xp: remote.state.xp + 50 } } });
+      const here = (await call('/family', { token: other })).data.devices.find(d => !d.current);
+      await call(`/family/devices/${here.id}/delete`, { token: other, body: {} });
+      const back = await js(`
+        const f = id => document.getElementById(id), S = await import('./js/state.js'), C = await import('./js/cloud.js');
+        (await import('./js/ui.js')).closeModal();
+        S.state.xp += 3; await S.saveState();
+        const res = await C.syncNow();
+        if (res !== 'error' || !__toasts.some(t => /отключено от семьи/.test(t))) throw new Error('отключение не замечено: ' + res + ' ' + __toasts.join(' / '));
+        if (S.activeProfile().cloud || S.activeProfile().wasFamily !== '${made.kid}') throw new Error('профиль не запомнил ребёнка: ' + JSON.stringify(S.activeProfile()));
+        const n = S.profiles.list.length;
+        // снова по ключу — из панели «Войти»: строчными и с пробелами
+        f('btn-account').click(); await __sleep(200);
+        f('acc-key').value = '${made.key.toLowerCase().replace(/-/g, ' ')}';
+        f('acc-key-form').requestSubmit();
+        for (let i = 0; i < 40 && !document.querySelector('[data-kid="${made.kid}"]'); i++) await __sleep(100);
+        if (!document.querySelector('[data-kid="${made.kid}"]')) throw new Error('нет выбора ребёнка: ' + f('modal').textContent.slice(0, 200));
+        document.querySelector('[data-kid="${made.kid}"]').click();
+        for (let i = 0; i < 50 && !__toasts.some(t => /сохранён на сервере/.test(t)); i++) await __sleep(100);
+        if (S.profiles.list.length !== n) throw new Error('появился лишний профиль');
+        if (S.activeProfile().cloud?.studentId !== '${made.kid}') throw new Error('профиль не подключён снова');
+        return S.state.xp;`);
+      assert(back === made.xp + 53, `после возврата xp ${back}, ждали ${made.xp + 53} (без удвоения)`);
+      // QR-ссылка с номерами слов предлагает подключиться и убирает ключ из адреса
+      await load(APP + '?qr=1#fk=1.2.3.4.56');
+      await js(`
+        if (!/Подключить устройство к семье/.test(document.getElementById('modal').textContent)) throw new Error('ссылка #fk не открыла подключение');
+        if (location.hash) throw new Error('ключ остался в адресе');
+        document.getElementById('fam-no').click(); return true;`);
+      // «Удалить всё»: сервер забывает семью, на устройстве прогресс остаётся
+      const gone = await js(`
+        const f = id => document.getElementById(id), S = await import('./js/state.js');
+        window.confirm = () => true;
+        (await import('./js/tutor.js')).openTutorPanel();
+        for (let i = 0; i < 40 && !f('fam-delete'); i++) await __sleep(100);
+        const xp = S.state.xp;
+        f('fam-delete').click();
+        for (let i = 0; i < 40 && S.profiles.family; i++) await __sleep(100);
+        if (S.profiles.family || S.profiles.list.some(p => p.cloud)) throw new Error('семья осталась на устройстве');
+        if (S.state.xp !== xp) throw new Error('прогресс на устройстве пропал');
+        for (const p of S.profiles.list) delete p.wasFamily;
+        await S.saveProfiles(); (await import('./js/ui.js')).closeModal();
+        return true;`);
+      assert(gone && (await call('/family', { token: other })).status === 401, 'семья не удалена на сервере');
+      return 'согласие, ключ из 4 слов и QR, прозвища на сервере, вход по ключу строчными, отключение → возврат к тому же ребёнку (+53 XP без удвоения), ссылка #fk, «Удалить всё»';
+    } finally {
+      await js(`localStorage.removeItem('eq_api'); return true;`).catch(() => {});
+      await srv.stop();
+    }
+  });
+
   await test('квест-реванш и «Продолжить»', () => load().then(() => js(`
     const f = id => document.getElementById(id);
     const { state, saveState } = await import('./js/state.js'), M = await import('./js/mistakes.js');
