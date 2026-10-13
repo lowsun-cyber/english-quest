@@ -358,6 +358,88 @@ if (import.meta.url === `file://${process.argv[1]}`){
       } finally { await v2.stop(); }
     } finally { rmSync(old, { recursive: true, force: true }); }
   }
+  // ключ семьи: прогресс детей без логинов (server/src/family.php)
+  {
+    const s4 = await startApi();
+    try {
+      const KEY_RE = /^[А-Я]+(-[А-Я]+){3}-\d\d$/;
+      check('семья: без согласия родителя — нельзя', (await call('/family', { body: { label: 'iPad' } })).status === 400);
+      let r = await call('/family', { body: { consent: true, label: 'iPad' } });
+      check('семья: ключ из 4 слов и 2 цифр, номера для QR, вход устройства', r.status === 200 && KEY_RE.test(r.data.key || '') && /^\d+(\.\d+){3}\.\d\d$/.test(r.data.keyCode || '') && r.data.token?.length === 64, r.data);
+      const key = r.data.key, keyCode = r.data.keyCode, famA = r.data.token;
+      r = await call('/family', { token: famA });
+      check('семья: детей нет, одно устройство — это', r.data.children.length === 0 && r.data.devices.length === 1 && r.data.devices[0].current && r.data.email === null, r.data);
+      r = await call('/family/children', { token: famA, body: { avatar: '🐼', name: 'Маша' } });
+      check('ребёнок: на сервере прозвище по аватару, не имя', r.status === 200 && /^Панда-\d\d$/.test(r.data.student.name) && r.data.token?.length === 64, r.data);
+      const kid = r.data.student.id, kidA = r.data.token;
+      r = await call('/progress', { token: kidA, body: { base: 0, state: { xp: 7 } } });
+      check('ребёнок синхронизирует прогресс', r.status === 200 && r.data.version === 1, r.data);
+      check('ключ семьи не открывает список учеников', (await call('/students', { token: famA })).status === 401);
+      check('ключ ребёнка не открывает семью', (await call('/family', { token: kidA })).status === 401);
+      // другое устройство: ключ строчными, с «ё», пробелами вместо дефисов
+      const loose = key.toLowerCase().replace(/-/g, '  ').replace(/е/, 'ё');
+      r = await call('/family/login', { body: { key: loose, label: 'Телефон' } });
+      check('вход по ключу: регистр, «ё» и пробелы не важны', r.status === 200 && r.data.family.children[0]?.xp === 7 && r.data.family.devices.length === 2, r.data);
+      const famB = r.data.token;
+      r = await call(`/family/children/${kid}/link`, { token: famB, body: {} });
+      check('ребёнок на втором устройстве: тот же прогресс', r.status === 200 && (await call('/progress', { token: r.data.token })).data.state?.xp === 7, r.data);
+      const kidB = r.data.token;
+      r = await call('/family/login', { body: { key: keyCode, label: 'QR' } });
+      check('вход по номерам из QR-кода', r.status === 200, r.data);
+      const famC = r.data.token;
+      check('неверный ключ — 400', (await call('/family/login', { body: { key: key.replace(/-\d\d$/, d => d === '-00' ? '-01' : '-00') } })).status === 400);
+      check('чужие слова — 400', (await call('/family/login', { body: { key: 'абв-где-жзи-клм-12' } })).status === 400);
+      // предел устройств
+      await call('/family/login', { body: { key } }); await call('/family/login', { body: { key } });
+      r = await call('/family/login', { body: { key } });
+      check('шестое устройство — 409 «отключите одно»', r.status === 409 && r.data.error === 'devices_full', r.data);
+      r = await call('/family', { token: famA });
+      const devC = r.data.devices.find(d => d.label === 'QR');
+      r = await call(`/family/devices/${devC.id}/delete`, { token: famA, body: {} });
+      check('отключить устройство семьи', r.status === 200 && (await call('/family', { token: famC })).status === 401);
+      check('чужое устройство не отключить', (await call('/family/devices/t0000000000000000/delete', { token: famA, body: {} })).status === 404);
+      // выход на устройстве B: и семья, и ребёнок на нём отключены, на A всё работает
+      await call('/logout', { token: famB, body: {} });
+      check('выход семьи на устройстве — дети на нём тоже отключены', (await call('/progress', { token: kidB })).status === 401 && (await call('/progress', { token: kidA })).status === 200);
+      // новый ключ
+      r = await call('/family/key', { token: famA, body: {} });
+      check('новый ключ: старый не действует, новый — да', KEY_RE.test(r.data.key || '') && (await call('/family/login', { body: { key } })).status === 400 && (await call('/family/login', { body: { key: r.data.key } })).status === 200, r.data);
+      // почта и восстановление
+      check('почта без согласия — нельзя', (await call('/family/email', { token: famA, body: { email: 'mama@example.org' } })).status === 400);
+      r = await call('/family/email', { token: famA, body: { email: 'Mama@Example.org', consent: true } });
+      check('почта для восстановления', r.data.email === 'mama@example.org', r.data);
+      r = await call('/family/forgot', { body: { email: 'mama@example.org' } });
+      const mail = s4.mails().at(-1), link = /#famkey=([0-9a-f]{64})/.exec(mail?.text || '')?.[1];
+      check('«Забыли ключ?» — письмо со ссылкой в игру', r.status === 200 && mail?.to === 'mama@example.org' && /quest\.example\/#famkey=/.test(mail.text) && link, mail);
+      const n0 = s4.mails().length;
+      await call('/family/forgot', { body: { email: 'other@example.org' } });
+      check('чужая почта — тот же ответ, письма нет', s4.mails().length === n0);
+      check('ссылка семьи не задаёт пароль', (await call('/password/reset', { body: { token: link, password: 'xxxxxxxx' } })).status === 400);
+      r = await call('/family/recover', { body: { token: link, label: 'Новый телефон' } });
+      check('по ссылке — новый ключ и вход, даже если устройств 5', r.status === 200 && KEY_RE.test(r.data.key) && r.data.family.devices.length <= 5 && r.data.family.children.length === 1, r.data);
+      const famR = r.data.token;
+      check('ссылка одноразовая', (await call('/family/recover', { body: { token: link } })).status === 400);
+      // учитель не видит детей семьи
+      const owner = (await call('/login', { body: { code: s4.ownerCode } })).data.token;
+      check('владелец школы не видит детей семьи', (await call('/students', { token: owner })).data.students.length === 0 && (await call(`/students/${kid}/progress`, { token: owner })).status === 404);
+      // удалить ребёнка и всё
+      r = await call('/family/children', { token: famR, body: { avatar: '🦊' } });
+      await call(`/family/children/${r.data.student.id}/delete`, { token: famR, body: {} });
+      check('удалить ребёнка', (await call('/progress', { token: r.data.token })).status === 401 && (await call('/family', { token: famR })).data.children.length === 1);
+      r = await call('/family/delete', { token: famR, body: {} });
+      check('«Удалить всё»: семья, дети и устройства', r.status === 200 && (await call('/family', { token: famR })).status === 401 && (await call('/family', { token: famA })).status === 401 && (await call('/progress', { token: kidA })).status === 401);
+      // неактивные семьи: через год — удаление; с почтой — сначала письмо, удаление не раньше чем через 30 дней
+      const withMail = await call('/family', { body: { consent: true } });
+      await call('/family/email', { token: withMail.data.token, body: { email: 'papa@example.org', consent: true } });
+      const noMail = await call('/family', { body: { consent: true } });
+      const cleanup = days => execFileSync('php', [join(ROOT, 'server/bin/setup.php'), 'cleanup', String(days)], { env: s4.env, encoding: 'utf8' });
+      const alive = k => call('/family/login', { body: { key: k } }).then(x => x.status === 200);
+      const m0 = s4.mails().length;
+      check('через 300 дней — никого', /предупреждено 0, удалено 0/.test(cleanup(300)));
+      check('через 340 дней — письмо семье с почтой', /предупреждено 1, удалено 0/.test(cleanup(340)) && s4.mails().length === m0 + 1 && s4.mails().at(-1).to === 'papa@example.org');
+      check('через 366 дней — семья без почты удалена, с почтой ждёт 30 дней', /удалено 1/.test(cleanup(366)) && !(await alive(noMail.data.key)) && await alive(withMail.data.key));
+    } finally { await s4.stop(); }
+  }
   // sw.js на сайте с API по тому же адресу (quest.logiqa.ru/api): запросы к API идут мимо sw.js —
   // иначе он перезапрашивает их без заголовка входа X-EQ-Token и админ-панель «просит войти заново»
   {

@@ -253,6 +253,7 @@ function auth_routes(): array {
     // что за ссылка: кому задаём пароль
     ['GET', '#^/password/reset/([0-9a-f]{64})$#', function($token){
       $r = find_reset($token);
+      if ($r['kind'] === 'family') throw new HttpError(400, 'bad_link', 'Это ссылка на новый ключ семьи — откройте её в игре.');
       if ($r['kind'] === 'user'){
         $u = one('SELECT * FROM users WHERE id = ?', [$r['subject']]);
         if (!$u) throw new HttpError(400, 'bad_link', 'Ссылка устарела.');
@@ -264,6 +265,7 @@ function auth_routes(): array {
     }],
     ['POST', '#^/password/reset$#', function(){
       $r = find_reset(body()['token'] ?? '');
+      if ($r['kind'] === 'family') throw new HttpError(400, 'bad_link', 'Это ссылка на новый ключ семьи — откройте её в игре.');
       if ($r['kind'] === 'user'){
         $p = check_password(body()['password'] ?? '', MIN_PASSWORD_ADULT);
         q('UPDATE users SET pass_hash = ?, must_change = 0 WHERE id = ?', [hash_password($p), $r['subject']]);

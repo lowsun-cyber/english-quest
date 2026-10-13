@@ -12,6 +12,7 @@ import { wireWorksheet, worksheetSectionHtml } from './worksheet.js';
 import { lockSectionHtml, openGate, pinResetNote, wireLockSection } from './lock.js';
 import { multi, profilesSectionHtml, wireProfilesSection } from './profiles.js';
 import { cloudLink, cloudOn, cloudPanelHtml, wireCloudPanel } from './cloud.js';
+import { familySectionHtml, wireFamilySection } from './family.js';
 import { gapMapHtml } from './gapmap.js';
 import { placementAdultHtml } from './placement.js';
 import { addParcel, aiExport, parcelsOf, parseParcel, promptWithExport, validateParcel } from './aipack.js';
@@ -190,7 +191,10 @@ export function openTutorPanel(){
     ${worksheetSectionHtml()}
 
     ${realState ? '' : `
-    ${cloudOn() ? `<h3 class="t-h">Сервер учителя</h3>
+    ${cloudOn() ? `<h3 class="t-h">Ключ семьи</h3>
+    ${familySectionHtml()}
+
+    <h3 class="t-h">Сервер учителя</h3>
     ${cloudPanelHtml()}` : ''}
 
     <h3 class="t-h">Посылка от Dr. Harlow (AI-пакет)</h3>
@@ -247,7 +251,7 @@ export function openTutorPanel(){
   wireWorksheet();
   if (!realState){
     wireOfflineSection(); wireBackupSection(); wireResetSection();
-    if (cloudOn()) wireCloudPanel();
+    if (cloudOn()){ wireCloudPanel(); wireFamilySection(openTutorPanel); }
     wireLockSection(openTutorPanel, closeModal);
     wireProfilesSection(openTutorPanel);
   }
