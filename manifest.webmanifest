@@ -1,7 +1,7 @@
 {
   "name": "English Quest — английский в игре для 2–4 класса",
   "short_name": "English Quest",
-  "description": "Английский по учебнику Spotlight 2–4: слова, слушание, грамматика и игры.",
+  "description": "Английский для 2–4 класса: слова, слушание, грамматика и игры.",
   "lang": "ru",
   "start_url": "./",
   "scope": "./",

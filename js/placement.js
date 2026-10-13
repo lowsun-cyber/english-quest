@@ -42,7 +42,7 @@ function chooseGrade(rerender){
   openModal(`
     <h2>🛡️ Испытание стража ворот</h2>
     <div class="placement-letter"><span class="placement-hero">${heroPic(guard(), 'happy')}</span>
-      <p>Я ${escapeHtml(guard().name)}, страж ворот. Сначала скажи: в каком ты классе? Вопросы будут по учебнику твоего класса. Не знаешь ответа — нажми «Не знаю», это не экзамен: ворота откроются в любом случае.</p></div>
+      <p>Я ${escapeHtml(guard().name)}, страж ворот. Сначала скажи: в каком ты классе? Вопросы будут по темам твоего класса. Не знаешь ответа — нажми «Не знаю», это не экзамен: ворота откроются в любом случае.</p></div>
     <div class="placement-grades">${GRADES.map(g => `<button type="button" class="btn placement-grade" data-pg="${g}" style="--region-color:${region(g)?.color || 'var(--grass)'}">
       <b>${g} класс</b><small>${escapeHtml(region(g)?.name || '')}</small></button>`).join('')}</div>`);
   document.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => runPlacement(+b.dataset.pg, rerender));
@@ -147,7 +147,7 @@ export async function placementCanvas(st, who = ''){
     for (const t of g.items) add('• ' + t, 30, 600, PAPER.ink, 6, 8);
   }
   add('«Освоено» — оба задания на навык верно, «проверим в игре» — одно из двух, «учим» — ни одного. Это стартовая точка, не оценка: программа уточняется по ходу игры.', 24, 600, PAPER.ink2, 34);
-  add('English Quest — английский для 2–4 класса по Spotlight', 24, 700, PAPER.violet2, 10);   // текст — тёмный фиолетовый (контраст ≥ 4.5)
+  add('English Quest — английский для 2–4 класса', 24, 700, PAPER.violet2, 10);   // текст — тёмный фиолетовый (контраст ≥ 4.5)
 
   // раскладка: сначала считаем высоту с переносами, потом рисуем
   const measure = document.createElement('canvas').getContext('2d');
