@@ -1824,3 +1824,13 @@ section[id$="-sec"] { scroll-margin-top: 96px; }
 .team-final .hero-pic { width: 48px; height: 48px; }
 .team-final li span { margin-left: auto; font-weight: 700; }
 @media (prefers-reduced-motion: reduce){ .team-meter span { transition: none; } .team-btn:active, .team-mode:active { transform: none; } }
+/* командный квест за одним устройством */
+.team-who { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.team-who-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; min-height: 52px; border: 3px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; font-weight: 700; }
+.team-who-item input { width: 24px; height: 24px; accent-color: var(--grass-2); }
+.team-who-item span { font-size: 24px; }
+.team-who-item small { flex-basis: 100%; font-weight: 600; color: var(--ink-2); }
+.team-who-item:has(input:checked) { border-color: var(--grass-2); box-shadow: 0 0 0 3px var(--grass); }
+.team-mode[aria-pressed="true"] { border-color: var(--grass-2); box-shadow: 0 0 0 3px var(--grass), var(--shadow-press); }
+.team-turn { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; padding: 8px 12px; border: 3px solid var(--hero-color); border-radius: 12px; background: var(--surface); font-size: 18px; }
+.team-turn .hero-pic { width: 48px; height: 48px; flex: none; }

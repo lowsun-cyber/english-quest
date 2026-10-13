@@ -18,8 +18,9 @@ import { classifyError, errorCodeOf, skillItems, skillWeak } from './stats.js';
 // onAnswer(item, ok) — после каждого ответа; log: false — ответы не идут в мастерство, ошибки и «Мои ошибки».
 // total — сколько вопросов показывать в полоске, если queue пополняется по ходу; dontKnow — кнопка «Не знаю» без штрафа.
 // Для командного квеста (js/team.js): header может быть функцией (шапка перерисовывается), stop() — закончить
-// по внешнему сигналу, hideProgress — без полоски «вопрос N из M», onShow(item, answer) — какой ответ верный (подсказка).
-export function runQuiz({ header, lessons, size, mix = {}, onFinish, record = true, queue: given = null, onAnswer = null, log = true, total = null, dontKnow = false, stop = null, hideProgress = false, onShow = null }){
+// по внешнему сигналу, hideProgress — без полоски «вопрос N из M», onShow(item, answer) — какой ответ верный (подсказка),
+// before(item) — перед показом вопроса (игра за одним устройством: чей ход — того и прогресс).
+export function runQuiz({ header, lessons, size, mix = {}, onFinish, record = true, queue: given = null, onAnswer = null, log = true, total = null, dontKnow = false, stop = null, hideProgress = false, onShow = null, before = null }){
   const words = lessons.flatMap(l => l.words.map(w => ({ w, l })));
   const grammar = lessons.flatMap(l => l.grammar.map(q => ({ q, l })));
   const picked = shuffle(words);
@@ -38,6 +39,7 @@ export function runQuiz({ header, lessons, size, mix = {}, onFinish, record = tr
   function render(){
     if (idx >= queue.length || stop?.()) return onFinish(right, idx);
     const item = queue[idx];
+    before?.(item);
     let body, options, answer, say;
     const others = n => distractors(item.w, words.map(x => x.w), n).map(w => ({ w }));
     if (item.type === 'word'){
