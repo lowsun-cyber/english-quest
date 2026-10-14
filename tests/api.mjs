@@ -445,6 +445,63 @@ if (import.meta.url === `file://${process.argv[1]}`){
       check('через 366 дней — семья без почты удалена, с почтой ждёт 30 дней', /удалено 1/.test(cleanup(366)) && !(await alive(noMail.data.key)) && await alive(withMail.data.key));
     } finally { await s4.stop(); }
   }
+  // командная игра по сети (server/src/rooms.php)
+  {
+    const s5 = await startApi();
+    try {
+      const owner = (await call('/login', { body: { code: s5.ownerCode } })).data.token;
+      const kid = async (name, avatar) => {
+        const st = (await call('/students', { token: owner, body: { name, avatar } })).data.student;
+        const code = (await call(`/students/${st.id}/code`, { token: owner, body: {} })).data.code;
+        return { id: st.id, token: (await call('/claim', { body: { code } })).data.token };
+      };
+      const [A, B, C, D, E] = [await kid('Аня', '🦊'), await kid('Боря', '🐼'), await kid('Вика', '🐸'), await kid('Гоша', '🦁'), await kid('Дина', '🐯')];
+      check('комната: без ключа устройства — нельзя', (await call('/rooms', { body: { mode: 'boss' } })).status === 401 && (await call('/rooms', { token: owner, body: {} })).status === 401);
+      let r = await call('/rooms', { token: A.token, body: { mode: 'boss' } });
+      check('комната: код из 4 знаков, ожидание, создатель внутри', r.status === 200 && /^[A-Z2-9]{4}$/.test(r.data.code) && r.data.status === 'lobby' && r.data.mode === 'boss' && r.data.players.length === 1 && r.data.host === A.id, r.data);
+      const room = r.data.id, code = r.data.code;
+      check('неверный код — 404', (await call('/rooms/join', { token: B.token, body: { code: code === 'AAAA' ? 'BBBB' : 'AAAA' } })).status === 404);
+      r = await call('/rooms/join', { token: B.token, body: { code: code.toLowerCase().split('').join(' ') } });
+      check('вход по коду: регистр и пробелы не важны; видны прозвище и аватар', r.status === 200 && r.data.players.length === 2 && r.data.players[1].name === 'Боря' && r.data.players[1].avatar === '🐼' && r.data.players.every(p => p.online), r.data);
+      await call(`/rooms/${room}/hero`, { token: A.token, body: { hero: 'max' } });
+      check('герои в команде не повторяются', (await call(`/rooms/${room}/hero`, { token: B.token, body: { hero: 'max' } })).data.error === 'hero_taken');
+      await call(`/rooms/${room}/hero`, { token: B.token, body: { hero: 'owl' } });
+      check('начинает только создатель', (await call(`/rooms/${room}/start`, { token: B.token, body: {} })).status === 403);
+      await call('/rooms/join', { token: C.token, body: { code } });
+      check('не все выбрали героя — не начать', (await call(`/rooms/${room}/start`, { token: A.token, body: {} })).data.error === 'no_hero');
+      await call(`/rooms/${room}/hero`, { token: C.token, body: { hero: 'luna' } });
+      await call('/rooms/join', { token: D.token, body: { code } });
+      check('пятый игрок — комната полна', (await call('/rooms/join', { token: E.token, body: { code } })).data.error === 'full');
+      await call(`/rooms/${room}/leave`, { token: D.token, body: {} });
+      r = await call(`/rooms/${room}/start`, { token: A.token, body: {} });
+      check('старт: шкала по числу игроков, 3 подсказки', r.data.status === 'play' && r.data.goal === 18 && r.data.hints === 3 && r.data.progress === 0, r.data);
+      check('после старта новый игрок не входит', (await call('/rooms/join', { token: D.token, body: { code } })).data.error === 'started');
+      check('…а свой возвращается по тому же коду', (await call('/rooms/join', { token: B.token, body: { code } })).status === 200);
+      check('чужой не видит комнату', (await call(`/rooms/${room}`, { token: E.token })).status === 403);
+      r = await call(`/rooms/${room}/answer`, { token: A.token, body: { ok: false } });
+      check('неверный ответ — только в счёт игрока', r.data.progress === 0 && r.data.players.find(p => p.id === A.id).bad === 1, r.data);
+      r = await call(`/rooms/${room}/answer`, { token: B.token, body: { ok: true } });
+      check('верный ответ двигает шкалу и попадает в ленту', r.data.progress === 1 && r.data.events.at(-1).k === 'ok' && r.data.events.at(-1).s === B.id, r.data);
+      await Promise.all(Array.from({ length: 10 }, (_, i) => call(`/rooms/${room}/answer`, { token: [A, B, C][i % 3].token, body: { ok: true } })));
+      r = await call(`/rooms/${room}`, { token: C.token });
+      check('10 одновременных ответов — ровно +10', r.data.progress === 11 && r.data.players.reduce((n, p) => n + p.ok, 0) === 11, { progress: r.data.progress, ok: r.data.players.map(p => p.ok) });
+      for (let i = 0; i < 3; i++) await call(`/rooms/${room}/hint`, { token: C.token, body: {} });
+      r = await call(`/rooms/${room}/hint`, { token: A.token, body: {} });
+      check('подсказки — общий запас из 3', r.data.error === 'no_hints' && (await call(`/rooms/${room}`, { token: A.token })).data.hints === 0, r.data);
+      for (let i = 0; i < 7; i++) r = await call(`/rooms/${room}/answer`, { token: A.token, body: { ok: true } });
+      check('шкала заполнена — квест пройден', r.data.status === 'done' && r.data.progress === 18 && r.data.events.at(-1).k === 'done', r.data);
+      const okB = r.data.players.find(p => p.id === B.id).ok;
+      r = await call(`/rooms/${room}/answer`, { token: B.token, body: { ok: true } });
+      check('после конца ответы не считаются', r.data.progress === 18 && r.data.players.find(p => p.id === B.id).ok === okB, r.data);
+      // создатель ушёл из ожидания — комната переходит следующему; ушёл последний — закрыта
+      r = (await call('/rooms', { token: D.token, body: {} })).data;
+      await call('/rooms/join', { token: E.token, body: { code: r.code } });
+      await call(`/rooms/${r.id}/leave`, { token: D.token, body: {} });
+      check('создатель ушёл — комнату ведёт следующий', (await call(`/rooms/${r.id}`, { token: E.token })).data.host === E.id && (await call(`/rooms/${r.id}`, { token: E.token })).data.mode === 'patient');
+      await call(`/rooms/${r.id}/leave`, { token: E.token, body: {} });
+      check('ушёл последний — комната закрыта', (await call('/rooms/join', { token: D.token, body: { code: r.code } })).status === 404);
+    } finally { await s5.stop(); }
+  }
   // sw.js на сайте с API по тому же адресу (quest.logiqa.ru/api): запросы к API идут мимо sw.js —
   // иначе он перезапрашивает их без заголовка входа X-EQ-Token и админ-панель «просит войти заново»
   {

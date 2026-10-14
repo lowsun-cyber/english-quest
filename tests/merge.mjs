@@ -166,6 +166,9 @@ const M = (b, l, r) => mergeStates(b, l, r, fresh());
   check('испытание: действует последнее', M(S({}), S({ placement: { grade: 3, at: 100, startIdx: 4 } }), S({ placement: { grade: 2, at: 200, startIdx: 8 } })).placement.at === 200
     && M(S({}), S({ placement: { grade: 3, at: 300 } }), S({ placement: { skipped: 200 } })).placement.grade === 3);
   check('кристаллы складываются', M(S({ crystals: 3 }), S({ crystals: 6 }), S({ crystals: 13 })).crystals === 16);
+  // командные квесты (js/team.js): игры с обоих устройств сохраняются
+  const tg = M(S({}), S({ teamGames: { r1: { at: 1, mode: 'boss', ok: 4, team: 2 } } }), S({ teamGames: { r2: { at: 2, mode: 'patient', ok: 6, team: 3 } } })).teamGames;
+  check('командные квесты: объединение', Object.keys(tg || {}).sort().join() === 'r1,r2' && tg.r2.ok === 6, tg);
 }
 
 console.log(`\n${total - fail} из ${total} проверок объединения прошли`);

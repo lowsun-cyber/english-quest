@@ -1772,3 +1772,65 @@ section[id$="-sec"] { scroll-margin-top: 96px; }
 .scene-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; padding: 0; font-size: 13px; font-weight: 700; }
 .scene-legend li { display: flex; align-items: center; gap: 6px; }
 .scene-legend li::before { content: ''; width: 12px; height: 12px; border: 2px solid var(--line); border-radius: 3px; background: var(--rarity); }
+
+/* ---------- Командный квест (js/team.js) ---------- */
+.team-btn { display: flex; align-items: center; gap: 8px; margin: 0 0 10px auto; padding: 8px 14px; min-height: 44px; font: inherit; font-size: 15px; font-weight: 800; color: var(--ink); background: var(--surface); border: 2.5px solid var(--line); border-left: 8px solid var(--diamond); border-radius: var(--radius-pill); box-shadow: var(--shadow-press); cursor: pointer; }
+.team-btn:active { transform: translateY(3px); box-shadow: none; }
+.team-btn:focus-visible, .team-mode:focus-visible, .team-hero-pick:focus-visible { outline: 3px solid var(--diamond); outline-offset: 3px; }
+.team-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
+.team-mode { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px; min-height: 120px; font: inherit; color: var(--ink); background: var(--surface); border: 3px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-press); cursor: pointer; text-align: center; }
+.team-mode > span { font-size: 40px; line-height: 1; }
+.team-mode b { font-size: 18px; }
+.team-mode small { color: var(--ink-2); font-weight: 600; }
+.team-mode:active { transform: translateY(3px); box-shadow: none; }
+.team-goal { font-size: 17px; font-weight: 700; }
+.team-goal span { font-size: 26px; vertical-align: middle; }
+.team-code-box { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; margin: 10px 0; border: 3px solid var(--line); border-radius: 14px; background: var(--surface); }
+.team-code-box > div { display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px; }
+.team-code { font-family: var(--font-pixel); font-size: 34px; letter-spacing: 4px; color: var(--ink); }
+.team-code-box .qr { width: 132px; height: auto; border: 2px solid var(--line); border-radius: 6px; }
+.team-h { font-weight: 800; font-size: 16px; margin: 12px 0 6px; }
+.team-players { list-style: none; display: grid; gap: 6px; }
+.team-players li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); }
+.team-players li.off { opacity: .6; }
+.team-players li.me { border-width: 3px; border-color: var(--diamond-2); }
+.team-av { font-size: 24px; }
+.team-hero { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-weight: 700; }
+.team-players .hero-pic, .team-hero .hero-pic { width: 40px; height: 40px; flex: none; }
+.team-heroes { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.team-hero-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; min-height: 96px; font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); background: var(--surface); border: 3px solid var(--line); border-radius: 12px; cursor: pointer; }
+.team-hero-pick .hero-pic { width: 52px; height: 52px; }
+.team-hero-pick.on { border-color: var(--grass-2); box-shadow: 0 0 0 3px var(--grass); }
+.team-hero-pick:disabled { opacity: .5; cursor: not-allowed; }
+.team-hero-pick small { font-weight: 600; color: var(--ink-2); }
+.team-hud { margin: 0 0 10px; }
+.team-bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 3px solid var(--line); border-radius: 12px; background: var(--surface); }
+.team-foe { font-size: 32px; line-height: 1; }
+.team-meter { flex: 1; height: 18px; border: 2px solid var(--line); border-radius: var(--radius-pill); background: var(--bg); overflow: hidden; }
+.team-meter span { display: block; height: 100%; transition: width .3s; }
+.team-patient .team-meter span { background: var(--grass); }
+.team-boss .team-meter span { background: var(--lava); }
+.team-bar b { font-size: 20px; }
+.team-bar b small { font-size: 14px; color: var(--ink-2); }
+.team-score { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.team-score li { display: flex; align-items: center; gap: 4px; padding: 2px 8px 2px 2px; border: 2px solid var(--line); border-radius: var(--radius-pill); background: var(--surface); font-size: 14px; font-weight: 700; }
+.team-score li.me { border-color: var(--diamond-2); }
+.team-score li.off { opacity: .6; }
+.team-score .hero-pic { width: 28px; height: 28px; }
+.team-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.team-feed { margin: 0; font-weight: 700; color: var(--ink-2); flex: 1 1 180px; }
+.team-hint { font-size: 12px; padding: 10px 12px; }
+.opt.opt-off { visibility: hidden; }
+.team-final .hero-pic { width: 48px; height: 48px; }
+.team-final li span { margin-left: auto; font-weight: 700; }
+@media (prefers-reduced-motion: reduce){ .team-meter span { transition: none; } .team-btn:active, .team-mode:active { transform: none; } }
+/* командный квест за одним устройством */
+.team-who { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.team-who-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; min-height: 52px; border: 3px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; font-weight: 700; }
+.team-who-item input { width: 24px; height: 24px; accent-color: var(--grass-2); }
+.team-who-item span { font-size: 24px; }
+.team-who-item small { flex-basis: 100%; font-weight: 600; color: var(--ink-2); }
+.team-who-item:has(input:checked) { border-color: var(--grass-2); box-shadow: 0 0 0 3px var(--grass); }
+.team-mode[aria-pressed="true"] { border-color: var(--grass-2); box-shadow: 0 0 0 3px var(--grass), var(--shadow-press); }
+.team-turn { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; padding: 8px 12px; border: 3px solid var(--hero-color); border-radius: 12px; background: var(--surface); font-size: 18px; }
+.team-turn .hero-pic { width: 48px; height: 48px; flex: none; }
