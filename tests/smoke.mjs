@@ -1048,6 +1048,7 @@ try {
         for (let i = 0; i < 30 && !f('team-hud'); i++) await __sleep(100);
         if (!/0\\/12/.test(f('team-hud').textContent)) throw new Error('шкала: ' + f('team-hud').textContent);
         if (document.querySelector('.review-progress')) throw new Error('в командном квесте полоска «вопрос N из M»');
+        if (!document.querySelector('.team-say .hero-say')) throw new Error('нет реплики героя в командном квесте');
         // подсказка из общего запаса: два неверных варианта пропадают
         const n4 = document.querySelectorAll('.options .opt').length;
         f('team-hint').click();
@@ -1101,8 +1102,10 @@ try {
       return opts.includes(String(__said)) ? String(__said) : null;
     };
     let hinted = false;
+    let says = 0;
     for (let i = 0; i < 40 && f('team-hud'); i++){
       turns.push(S.activeId());
+      if (document.querySelector('.team-say .hero-say')) says++;
       if (!hinted && document.querySelectorAll('.options .opt').length >= 4){
         f('team-hint').click(); await __sleep(150); hinted = true;
         if (document.querySelectorAll('.opt.opt-off').length !== 2) throw new Error('подсказка не убрала два варианта');
@@ -1118,12 +1121,14 @@ try {
     const h = document.querySelector('#modal h2')?.textContent || '';
     if (!/побеждён/.test(h)) throw new Error('нет итога: ' + h + ' | ходы ' + turns.length);
     if (!turns.includes('team-guest') || turns[0] === turns[1]) throw new Error('ходы не по очереди: ' + turns.slice(0, 6).join(','));
+    if (says < turns.length - 1) throw new Error('реплики героев на ходах: ' + says + ' из ' + turns.length);
     if (S.activeId() !== me) throw new Error('после игры не вернулся игрок');
     if (localStorage.getItem('english_quest_v2__team-guest')) throw new Error('прогресс взрослого не стёрт');
     const g = Object.values(S.state.teamGames || {}).find(x => x.local);
     const got = S.state.xp - JSON.parse(saved).xp;
     if (!g || got !== 20 + 2 * g.ok || !S.state.achievements['team-1']) throw new Error('приз ребёнку: ' + got + ' ' + JSON.stringify(g));
     if (!/Взрослый/.test(f('modal-body').textContent)) throw new Error('взрослого нет в итоге');
+    if (!document.querySelector('#modal .hero-say')) throw new Error('нет победной реплики героя');
     f('team-done').click();
     const s0 = JSON.parse(saved);
     S.state.xp = s0.xp; S.state.gold = s0.gold; S.state.achievements = s0.ach; S.state.mistakes = s0.mist;

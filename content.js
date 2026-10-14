@@ -2543,6 +2543,67 @@ const HERO_LINES = {
 // kind: start — начало квеста, win — квест пройден, item — новый предмет, level — новый уровень,
 // rare — открыт редкий квест, boss — перед боссом, bosswin — босс побеждён, region — открыт регион,
 // oops — квест не пройден (подбадривает себя), en — короткая фраза по-английски.
+// Реплики героя в командном квесте (js/team.js): говорит герой игрока — облачко с кнопкой «послушать», как
+// у других реплик. start — квест начался; turn — ход этого игрока (за одним устройством); hint — взяли подсказку;
+// half — половина шкалы; near — осталось чуть-чуть; win-patient / win-boss — победа.
+const TEAM_LINES = {
+  harlow: [
+    { kind: 'start', emo: 'happy', text: 'Команда в сборе! Лечим вместе.' },
+    { kind: 'turn', emo: 'calm', text: 'Твой ход! Я рядом.' },
+    { kind: 'turn', emo: 'thinking', text: 'Теперь отвечаешь ты. Не спеши.' },
+    { kind: 'hint', emo: 'hint', text: 'Подсказка! Убираю два лишних ответа.' },
+    { kind: 'half', emo: 'happy', text: 'Половина пути позади. Отлично работаем!' },
+    { kind: 'near', emo: 'happy', text: 'Ещё чуть-чуть, команда!' },
+    { kind: 'win-patient', emo: 'praise', text: 'Пациент здоров! Вместе мы — настоящая клиника.' },
+    { kind: 'win-boss', emo: 'praise', text: 'Дракон Путаницы побеждён! Отличная команда!' },
+  ],
+  luna: [
+    { kind: 'start', emo: 'happy', text: 'Мы вместе — значит, справимся!' },
+    { kind: 'turn', emo: 'calm', text: 'Твоя очередь! Я в тебя верю.' },
+    { kind: 'turn', emo: 'happy', text: 'Отвечай, а мы поддержим.' },
+    { kind: 'hint', emo: 'hint', text: 'Держи подсказку: два лишних ответа ушли.' },
+    { kind: 'half', emo: 'happy', text: 'Уже половина! Пациенту лучше.' },
+    { kind: 'near', emo: 'happy', text: 'Совсем немного осталось!' },
+    { kind: 'win-patient', emo: 'praise', text: 'Пациент улыбается! Спасибо, команда!' },
+    { kind: 'win-boss', emo: 'praise', text: 'Ура! Дракон Путаницы сдался!' },
+  ],
+  max: [
+    { kind: 'start', emo: 'happy', text: 'Каски надеть! Команда, вперёд!' },
+    { kind: 'turn', emo: 'happy', text: 'Твой ход! Копай глубже!' },
+    { kind: 'turn', emo: 'calm', text: 'Давай, теперь ты!' },
+    { kind: 'hint', emo: 'hint', text: 'Подсказка! Отбрасываю пустую породу.' },
+    { kind: 'half', emo: 'happy', text: 'Полпути прокопали!' },
+    { kind: 'near', emo: 'happy', text: 'Ещё пара ударов кирки!' },
+    { kind: 'win-patient', emo: 'praise', text: 'Пациент здоров! Мы крутая бригада!' },
+    { kind: 'win-boss', emo: 'praise', text: 'Дракон Путаницы повержен! Вот это команда!' },
+  ],
+  owl: [
+    { kind: 'start', emo: 'calm', text: 'Команда собрана. Начнём вместе.' },
+    { kind: 'turn', emo: 'thinking', text: 'Твоя очередь. Подумай спокойно.' },
+    { kind: 'turn', emo: 'calm', text: 'Отвечай, мы слушаем.' },
+    { kind: 'hint', emo: 'hint', text: 'Подсказка мудреца: два ответа точно лишние.' },
+    { kind: 'half', emo: 'happy', text: 'Половина задачи решена. Продолжаем.' },
+    { kind: 'near', emo: 'thinking', text: 'Финал близок. Сосредоточимся.' },
+    { kind: 'win-patient', emo: 'praise', text: 'Пациент здоров. Знание лечит!' },
+    { kind: 'win-boss', emo: 'praise', text: 'Дракон Путаницы побеждён. Мудрость сильнее!' },
+  ],
+  robo: [
+    { kind: 'start', emo: 'happy', text: 'Команда онлайн! Включаю музыку.' },
+    { kind: 'turn', emo: 'happy', text: 'Твой трек! Жми ответ!' },
+    { kind: 'turn', emo: 'calm', text: 'Микрофон — тебе!' },
+    { kind: 'hint', emo: 'hint', text: 'Подсказка загружена. Два ответа удалены.' },
+    { kind: 'half', emo: 'happy', text: 'Пятьдесят процентов! Громкость на полную!' },
+    { kind: 'near', emo: 'happy', text: 'Последние такты!' },
+    { kind: 'win-patient', emo: 'praise', text: 'Пациент здоров! Танцуем!' },
+    { kind: 'win-boss', emo: 'praise', text: 'Дракон Путаницы — гейм овер!' },
+  ],
+};
+function teamLine(heroId, kind, rnd = Math.random){
+  const list = (TEAM_LINES[heroId] || []).filter(x => x.kind === kind);
+  const x = list.length ? list[Math.floor(rnd() * list.length)] : null;
+  return x && { speaker: heroId, lang: 'ru', emo: x.emo, text: x.text };
+}
+
 const SELF_LINES = {
   harlow: [
     { kind: 'start', emo: 'calm', text: 'Халат надет, стетоскоп со мной. Начинаем!' },
@@ -2655,6 +2716,7 @@ function voiceLines(){
   const add = (speaker, lang, kind, text) => out.push({ speaker, lang, kind, text });
   for (const [id, list] of Object.entries(HERO_LINES)) list.forEach(x => add(id, x.lang || 'ru', x.kind, x.text));
   for (const [id, list] of Object.entries(SELF_LINES)) list.forEach(x => add(id, x.lang || 'ru', 'self-' + x.kind, x.text));
+  for (const [id, list] of Object.entries(TEAM_LINES)) list.forEach(x => add(id, 'ru', 'team-' + x.kind, x.text));
   // вступление к локации — голосом гида и его запасного гида (alt — текст без «бип»)
   for (const x of Object.values(LOCATION_INTROS)){
     add(x.speaker, 'ru', 'location', x.text);
@@ -3088,6 +3150,6 @@ window.EQ = {
   PLACEMENT, MATERIALS, CLINIC_PRIZE, CLINIC_ROOMS, CLINIC_FURNITURE, CLINIC_HELPERS, CLINIC_PATIENTS,
   HARLOW_LINES, lessonStartLine, harlowRussianLines, heroIntro, voiceLines,
   FALLBACK_GUIDE, NARRATOR, NARRATOR_FALLBACK, guideFor, narratorFor, voiceKey, LOCATION_INTROS, locationIntro,
-  HERO_LINES, SELF_LINES, heroLine, narratorLines,
+  HERO_LINES, SELF_LINES, heroLine, narratorLines, TEAM_LINES, teamLine,
   CURRICULUM, SKILLS, taskTypeFor, EMOJI: E, fillItemsFor, buildItemsFor,
 };
