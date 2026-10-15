@@ -126,8 +126,28 @@ class LimitError extends Error {
   }
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Модели 2.5 (gemini-2.5-pro-preview-tts и т.п.) не принимают манеру отдельным полем — для них классический
+// generateContent: манера словами перед текстом («…: <фраза>»), модель читает только фразу.
+const LEGACY = /^gemini-2\.5-.*tts/.test(MODEL);
+async function synthLegacy(text, voice, style){
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: `Прочитай вслух ровно одну фразу после двоеточия, ничего не добавляя. Манера: ${style}.\n\n${text}` }] }],
+      generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`, body);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${body.error?.message || JSON.stringify(body).slice(0, 300)}`);
+  const b64 = findAudio(body);
+  if (!b64) throw new Error('в ответе нет аудио: ' + JSON.stringify(body).slice(0, 300));
+  return toWav(Buffer.from(b64, 'base64'));
+}
 async function synth(text, speaker, kind){
   const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || [VOICES[speaker].style, KIND_HINT[kind]].filter(Boolean).join('; ');
+  if (LEGACY) return synthLegacy(text, voice, style);
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
