@@ -8,12 +8,12 @@
 // становится профиль того, кто отвечает, — ошибки, мастерство и призы попадают ему. Можно позвать взрослого:
 // он отвечает на задания уровня ребёнка без своего прогресса и призов, а ребёнок слышит озвученные ответы.
 import { api, ApiError } from './api.js';
-import { CHARACTERS, CLINIC_PATIENTS } from './eq.js';
+import { CHARACTERS, CLINIC_PATIENTS, teamLine } from './eq.js';
 import { checkAchievements } from './achievements.js';
 import { applyLoadedState } from './backup.js';
 import { runQuiz } from './checkpoint.js';
 import { cloudLink, cloudOn, openAccount } from './cloud.js';
-import { heroPic, playerHero } from './heroes.js';
+import { heroPic, playerHero, sayRow } from './heroes.js';
 import { renderProfileChip } from './profiles.js';
 import { renderHUD, reward } from './hud.js';
 import { currentNode } from './map.js';
@@ -148,6 +148,7 @@ function update(room){
     if (room.status === 'play'){ cur.phase = 'play'; startPlay(); }
     else if (room.version !== prev.version && document.getElementById('team-lobby')) renderLobby();
   } else if (cur.phase === 'play'){
+    milestones();
     paintHud(fresh);
     if (room.status === 'done'){ cur.phase = 'done'; if (!cur.answering) finish(); }
   }
@@ -251,8 +252,25 @@ function hudHtml(){
     <div class="team-row">
       <p class="team-feed" aria-live="polite">${feedLine(room.events.at(-1)) || (f.kind === 'boss' ? `Победим ${escapeHtml(f.name)} вместе!` : `Вылечим: ${escapeHtml(f.name)}!`)}</p>
       <button class="btn secondary team-hint" id="team-hint" ${room.hints ? '' : 'disabled'}>💡 Подсказка · ${room.hints}</button>
-    </div>`;
+    </div>
+    ${cur.say ? `<div class="team-say">${sayRow(cur.say)}</div>` : ''}`;
 }
+// Реплика героя в шапке (TEAM_LINES в content.js): говорит герой игрока, за одним устройством — того, чей ход.
+// Облачко с кнопкой «послушать», как у других реплик: само не звучит, чтобы не перебивать слова заданий.
+function say(kind){
+  const h = who(cur.room, cur.room.me)?.hero, line = h && teamLine(h, kind);
+  if (line) cur.say = line;
+  return !!line;
+}
+// половина шкалы и «осталось чуть-чуть» — по одному разу за квест
+function milestones(){
+  const r = cur.room;
+  if (r.progress >= r.goal) return false;
+  if (!cur.near && r.goal - r.progress <= 2){ cur.near = cur.half = true; return say('near'); }
+  if (!cur.half && r.progress * 2 >= r.goal){ cur.half = true; return say('half'); }
+  return false;
+}
+const winLine = (heroId, room) => heroId ? sayRow(teamLine(heroId, room.mode === 'boss' ? 'win-boss' : 'win-patient'), { mood: 'praise' }) : '';
 function feedLine(e){
   if (!e) return '';
   const room = cur.room, p = who(room, e.s), h = heroOf(p), name = p ? `${h ? h.emoji + ' ' : ''}${escapeHtml(p.name)}` : 'Игрок';
@@ -281,11 +299,13 @@ function wireHint(){
         localEvent('hint', cur.room.me);
       } else update(await api(`/rooms/${cur.id}/hint`, { token: token(), body: {} }));
       shuffle(wrong).slice(0, 2).forEach(o => { o.disabled = true; o.classList.add('opt-off'); o.setAttribute('aria-hidden', 'true'); });
+      say('hint'); if (cur.local) cur.keepSay = true;
       paintHud();
     } catch (e){ toast('💡 ' + e.message); paintHud(); }
   };
 }
 function startPlay(){
+  if (!cur.say) say('start');
   const ls = myLessons();
   const queue = makeItems(ls, 12);
   ours(() => runQuiz({
@@ -311,7 +331,7 @@ function finish(){
   cur.finished = true;
   stop();
   const room = cur.room, me = who(room, room.me), f = foe(room);
-  const id = room.id;
+  const id = room.id, win = winLine(me?.hero, room);
   state.teamGames ||= {};
   const first = !state.teamGames[id];
   if (first){
@@ -325,6 +345,7 @@ function finish(){
     <h2>${f.kind === 'boss' ? `🏆 ${escapeHtml(f.name)} побеждён!` : `🎉 ${escapeHtml(f.name)} здоров!`}</h2>
     <p>Команда справилась вместе: ${room.goal} верных ответов на всех.</p>
     <ul class="team-players team-final" role="list">${best.map(p => `<li${p.id === room.me ? ' class="me"' : ''}>${heroOf(p) ? heroPic(heroOf(p), 'praise') : ''}<b>${escapeHtml(p.name)}</b><span>верно: ${p.ok}</span></li>`).join('')}</ul>
+    ${win}
     ${first ? `<p class="placement-reward">Командный приз: <b>+${TEAM_PRIZE.xp + 2 * (me?.ok || 0)} XP, +${TEAM_PRIZE.coins} 🪙</b></p>` : ''}
     <div class="controls"><button class="btn" id="team-done">Ура!</button></div>`));
   cur = null;
@@ -392,6 +413,7 @@ async function startLocal(ids, mode){
   const room = { id: 'local' + Date.now().toString(36), mode, status: 'play', goal: 6 * players.length, progress: 0, hints: 3, players, events: [], me: ids[0] };
   cur = { local: true, id: room.id, room, phase: 'play', seq: 0, answer: null, finished: false, states, pools, origin, originState, guestState: freshState() };
   localEvent('start', ids[0]);
+  say('start'); cur.keepSay = true;   // первый ход — без «твой ход», уже сказано «начинаем»
   // очередь: по одному вопросу каждому по кругу; вид вопроса меняется от круга к кругу
   const queue = [];
   let n = 0;
@@ -409,6 +431,7 @@ async function startLocal(ids, mode){
       const p = who(cur.room, item.pid);
       if (ok){ cur.room.progress++; p.ok++; localEvent('ok', item.pid); } else p.bad++;
       if (cur.room.progress >= cur.room.goal){ cur.room.status = 'done'; cur.phase = 'done'; localEvent('done', item.pid); }
+      if (milestones()) cur.keepSay = true;   // «половина» и «чуть-чуть» важнее «твой ход»
       paintHud();
     },
     onFinish: () => { if (cur?.local && cur.phase === 'done') finishLocal(); },
@@ -428,6 +451,7 @@ function switchTo(pid){
   profiles.active = pid;
   setState(pid === GUEST ? cur.guestState : cur.states[pid]);
   cur.room.me = pid;
+  if (cur.keepSay) cur.keepSay = false; else say('turn');
   renderHUD();
 }
 function turnHtml(){
@@ -451,6 +475,7 @@ function finishLocal(){
   if (!cur || cur.finished) return;
   cur.finished = true;
   const room = cur.room, f = foe(room);
+  const win = winLine(room.players.find(x => !x.guest)?.hero, room);
   for (const p of room.players.filter(x => !x.guest)){
     switchTo(p.id);
     state.teamGames ||= {};
@@ -466,6 +491,7 @@ function finishLocal(){
     <h2>${f.kind === 'boss' ? `🏆 ${escapeHtml(f.name)} побеждён!` : `🎉 ${escapeHtml(f.name)} здоров!`}</h2>
     <p>Команда справилась вместе: ${room.goal} верных ответов на всех.</p>
     <ul class="team-players team-final" role="list">${best.map(p => `<li>${heroOf(p) ? heroPic(heroOf(p), 'praise') : ''}<b>${escapeHtml(p.avatar)} ${escapeHtml(p.name)}</b><span>верно: ${p.ok}${p.guest ? '' : ` · +${TEAM_PRIZE.xp + 2 * p.ok} XP`}</span></li>`).join('')}</ul>
+    ${win}
     <p class="placement-reward">Командный приз каждому ребёнку: <b>+${TEAM_PRIZE.xp} XP, +${TEAM_PRIZE.coins} 🪙</b> и по 2 XP за свой верный ответ.</p>
     <div class="controls"><button class="btn" id="team-done">Ура!</button></div>`));
   document.getElementById('team-done').onclick = () => { closeModal(); renderHUD(); };

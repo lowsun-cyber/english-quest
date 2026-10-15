@@ -85,7 +85,7 @@ for (const g of [2, 3, 4]) check(`${g} класс: у грамматики ес�
 
 // реплики героев (HERO_LINES, SELF_LINES, LOCATION_INTROS) и выбор голоса
 {
-  const { CHARACTERS, HERO_LINES, SELF_LINES, LOCATION_INTROS, LOCATION_ART, SECRET_REGIONS, FALLBACK_GUIDE, guideFor, narratorFor, locationIntro, heroLine, voiceKey, voiceLines } = ctx.window.EQ;
+  const { CHARACTERS, HERO_LINES, SELF_LINES, TEAM_LINES, teamLine, LOCATION_INTROS, LOCATION_ART, SECRET_REGIONS, FALLBACK_GUIDE, guideFor, narratorFor, locationIntro, heroLine, voiceKey, voiceLines } = ctx.window.EQ;
   const heroes = Object.keys(CHARACTERS);
   check('реплики есть у каждого героя — гида и героя игрока', heroes.every(h => HERO_LINES[h]?.length && SELF_LINES[h]?.length));
   check('запасной гид — другой герой', heroes.every(h => FALLBACK_GUIDE[h] && FALLBACK_GUIDE[h] !== h && CHARACTERS[FALLBACK_GUIDE[h]]));
@@ -108,6 +108,11 @@ for (const g of [2, 3, 4]) check(`${g} класс: у грамматики ес�
   check('озвучка: ключи записей не повторяются', uniq(keys));
   check('озвучка: ключ — фраза у Dr. Harlow, «герой|фраза» у остальных', v.every(x => x.key === voiceKey(x.speaker, x.text)) && voiceKey('owl', 'A') === 'owl|A' && voiceKey('harlow', 'A') === 'A');
   check('озвучка: все реплики героев попали в задание', heroes.every(h => [...HERO_LINES[h], ...SELF_LINES[h]].every(x => keys.includes(voiceKey(h, x.text)))));
+  // командная игра (js/team.js): у каждого героя все виды реплик, и все они в задании на озвучку
+  const TEAM_KINDS = ['start', 'turn', 'hint', 'half', 'near', 'win-patient', 'win-boss'];
+  check('командная игра: у каждого героя все виды реплик', heroes.every(h => TEAM_KINDS.every(k => teamLine(h, k)?.speaker === h)), heroes.map(h => [h, TEAM_KINDS.filter(k => !teamLine(h, k))]));
+  check('командная игра: реплики короткие, без английского', Object.values(TEAM_LINES).flat().every(x => x.text.length <= 60 && !/[a-z]/i.test(x.text)));
+  check('озвучка: реплики командной игры попали в задание', heroes.every(h => TEAM_LINES[h].every(x => keys.includes(voiceKey(h, x.text)))));
   check('озвучка: вступления — голосом гида и запасного гида', Object.values(LOCATION_INTROS).every(x => keys.includes(voiceKey(x.speaker, x.text)) && keys.includes(voiceKey(FALLBACK_GUIDE[x.speaker], x.alt || x.text))));
   check('озвучка: Nurse Luna-ведущая не называет себя Dr. Harlow', !v.some(x => x.speaker === 'luna' && /Я Dr\. Harlow/.test(x.text)));
 }
