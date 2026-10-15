@@ -8,7 +8,7 @@
 //   node tools/gen-voices.mjs --out ~/Downloads/quest-voice-gen — записать в отдельную папку, проект не трогать;
 //       подключить потом: node tools/import-voices.mjs ~/Downloads/quest-voice-gen
 //   пробный прогон: --only <герой> (harlow, luna, max, owl, robo), --kind <вид> (correct, grammar, location,
-//       narrator, self-win…; «self» — все реплики героя игрока), --limit N — записать не больше N новых фраз:
+//       narrator, self-win…; «self» — все реплики героя игрока, «team» — командной игры), --limit N — записать не больше N новых фраз:
 //       GEMINI_API_KEY=… node tools/gen-voices.mjs --out ~/Downloads/quest-voice-gen --only owl --kind grammar --limit 3
 //   --wait — при лимите «в минуту» (бесплатный тариф) ждать и продолжать самому; суточный лимит — всё равно стоп
 //   --prune — убрать из словаря записи фраз, которых больше нет в контенте (без флага записанное не трогается)
@@ -51,7 +51,8 @@ const ONLY = arg('--only'), KIND = arg('--kind'), LIMIT = arg('--limit') == null
 if (ONLY != null && !['harlow', 'luna', 'max', 'owl', 'robo'].includes(ONLY)){ console.error('--only: harlow, luna, max, owl или robo'); process.exit(1); }
 if (KIND === ''){ console.error('--kind: вид реплики, например correct, grammar, location, narrator, self-win или self'); process.exit(1); }
 if (!(LIMIT > 0)){ console.error('--limit: целое число больше нуля'); process.exit(1); }
-const kindOk = x => KIND == null || x.kind === KIND || (KIND === 'self' && x.kind?.startsWith('self-'));
+// «self» — все реплики героя игрока, «team» — все реплики командной игры
+const kindOk = x => KIND == null || x.kind === KIND || (['self', 'team'].includes(KIND) && x.kind?.startsWith(KIND + '-'));
 const items = all.filter(x => (ONLY == null || x.speaker === ONLY) && kindOk(x));
 if (!items.length){ console.error(`Нет фраз${ONLY ? ` героя ${ONLY}` : ''}${KIND ? ` вида ${KIND}` : ''}. Виды: ${[...new Set(all.map(x => x.kind || x.lang))].join(', ')}`); process.exit(1); }
 const lines = items.map(x => x.text);
