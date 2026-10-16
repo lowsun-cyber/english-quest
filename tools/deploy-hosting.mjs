@@ -6,7 +6,9 @@
 // заглушки хостинга) не трогаются: удаляется только то, что раньше выложили мы сами.
 // Порядок: сервер → файлы сайта → страницы .html (последними, чтобы не ссылались на ещё не загруженное) → удаление → манифест.
 //
-//   node tools/deploy-hosting.mjs [--dry-run]
+//   node tools/deploy-hosting.mjs [--dry-run] [--force]
+//   --force (или DEPLOY_FORCE=1) — загрузить все файлы заново, даже если по манифесту они уже выложены:
+//   когда файлы на хостинге пропали или испорчены не нами (манифест об этом не знает). Чужие файлы не трогаются.
 // Переменные окружения:
 //   DEPLOY_URL     sftp://пользователь@хост[:порт]  (или file:///папка — для проверки без хостинга)
 //   SITE_PATH      папка сайта, например domains/logiqa.ru/public_html/quest
@@ -21,6 +23,7 @@ import { join, dirname } from 'node:path';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const DRY = process.argv.includes('--dry-run');
+const FORCE = process.argv.includes('--force') || process.env.DEPLOY_FORCE === '1';
 const env = name => { const v = (process.env[name] || '').trim().replace(/\/+$/, ''); if (!v) { console.error(`Не задано ${name}`); process.exit(2); } return v; };
 const URL_ = env('DEPLOY_URL'), SITE = env('SITE_PATH'), SERVER = env('SERVER_PATH'), STATE = env('STATE_PATH');
 
@@ -70,7 +73,8 @@ if (got.status !== 0 && !existsSync(join(tmp, 'old.json')) && /Login failed|Acce
   process.exit(1);
 }
 
-const changed = Object.keys(manifest).filter(p => old[p] !== manifest[p]);
+const changed = Object.keys(manifest).filter(p => FORCE || old[p] !== manifest[p]);
+if (FORCE) console.log('Режим «всё заново»: загружаются все файлы.');
 const removed = Object.keys(old).filter(p => !(p in manifest));
 const order = p => p.startsWith(SERVER + '/') || p.startsWith(SITE + '/api/') ? 0 : /\.html$/.test(p) ? 2 : 1;
 changed.sort((a, b) => order(a) - order(b) || a.localeCompare(b));
