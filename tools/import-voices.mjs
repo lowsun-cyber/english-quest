@@ -5,7 +5,7 @@
 //
 // Подходят два вида файлов (wav, mp3, m4a, aiff); всё сжимается в AAC, записывается в tts_cache/,
 // словарь «ключ → файл» — в tts_voices.json (ключ — фраза у Dr. Harlow, «герой|фраза» у остальных).
-// Пачки реплик героев называются по герою: luna-01.wav, max-01.wav …
+// Пачки реплик героев называются по герою и виду реплик: owl-guide-01.wav, luna-narrator-02.wav, max-team-01.wav …
 // • Папка из `node tools/gen-voices.mjs --out <папка>`: готовые .m4a и generated.json — файлы копируются как есть.
 // • Пачки из `node tools/voice-todo.mjs`: en-01.mp3, ru-01.wav … — одна запись на пачку, фразы через паузы.
 //   Запись режется по тишине; кусков должно быть ровно столько, сколько фраз в пачке (batches.json),
@@ -81,7 +81,8 @@ function speechParts(wav, noise, minPause){
   return parts;
 }
 // имя пачки — в начале имени файла: «en-01.mp3», «dict-03.mp3» и «en-01 — 5 фраз.mp3» подходят все
-const batchId = f => /^((?:en|ru|dict|text|luna|max|owl|robo)-\d+)/i.exec(f)?.[1].toLowerCase();
+// реплики героев — «герой-вид-NN»: owl-guide-01, harlow-team-01 (старые пачки «luna-01» тоже подходят)
+const batchId = f => /^((?:en|ru|dict|text|harlow|luna|max|owl|robo)(?:-(?:guide|self|team|location|narrator))?-\d+)/i.exec(f)?.[1].toLowerCase();
 for (const f of readdirSync(dir).filter(f => AUDIO.test(f) && batches[batchId(f)])){
   const id = batchId(f), list = batches[id];
   // уже подключённую пачку не перекодируем заново (иначе файлы меняются без нужды); --force — подключить снова

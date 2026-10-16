@@ -8,7 +8,7 @@
 //   node tools/gen-voices.mjs --out ~/Downloads/quest-voice-gen — записать в отдельную папку, проект не трогать;
 //       подключить потом: node tools/import-voices.mjs ~/Downloads/quest-voice-gen
 //   пробный прогон: --only <герой> (harlow, luna, max, owl, robo), --kind <вид> (correct, grammar, location,
-//       narrator, self-win…; «self» — все реплики героя игрока), --limit N — записать не больше N новых фраз:
+//       narrator, self-win…; «self» — все реплики героя игрока, «team» — командной игры), --limit N — записать не больше N новых фраз:
 //       GEMINI_API_KEY=… node tools/gen-voices.mjs --out ~/Downloads/quest-voice-gen --only owl --kind grammar --limit 3
 //   --wait — при лимите «в минуту» (бесплатный тариф) ждать и продолжать самому; суточный лимит — всё равно стоп
 //   --prune — убрать из словаря записи фраз, которых больше нет в контенте (без флага записанное не трогается)
@@ -51,7 +51,8 @@ const ONLY = arg('--only'), KIND = arg('--kind'), LIMIT = arg('--limit') == null
 if (ONLY != null && !['harlow', 'luna', 'max', 'owl', 'robo'].includes(ONLY)){ console.error('--only: harlow, luna, max, owl или robo'); process.exit(1); }
 if (KIND === ''){ console.error('--kind: вид реплики, например correct, grammar, location, narrator, self-win или self'); process.exit(1); }
 if (!(LIMIT > 0)){ console.error('--limit: целое число больше нуля'); process.exit(1); }
-const kindOk = x => KIND == null || x.kind === KIND || (KIND === 'self' && x.kind?.startsWith('self-'));
+// «self» — все реплики героя игрока, «team» — все реплики командной игры
+const kindOk = x => KIND == null || x.kind === KIND || (['self', 'team'].includes(KIND) && x.kind?.startsWith(KIND + '-'));
 const items = all.filter(x => (ONLY == null || x.speaker === ONLY) && kindOk(x));
 if (!items.length){ console.error(`Нет фраз${ONLY ? ` героя ${ONLY}` : ''}${KIND ? ` вида ${KIND}` : ''}. Виды: ${[...new Set(all.map(x => x.kind || x.lang))].join(', ')}`); process.exit(1); }
 const lines = items.map(x => x.text);
@@ -130,8 +131,30 @@ class LimitError extends Error {
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 class BusyError extends Error {}
+// Модели 2.5 (gemini-2.5-pro-preview-tts и т.п.) не принимают манеру отдельным полем — для них классический
+// generateContent: манера словами перед текстом («…: <фраза>»), модель читает только фразу.
+const LEGACY = /^gemini-2\.5-.*tts/.test(MODEL);
+async function synthLegacy(text, voice, style){
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    signal: AbortSignal.timeout(120000),   // как и в synth: запрос без ответа не вешает запись
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: `Прочитай вслух ровно одну фразу после двоеточия, ничего не добавляя. Манера: ${style}.\n\n${text}` }] }],
+      generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`, body);
+  if (res.status === 503 || res.status === 500 || body.error?.status === 'UNAVAILABLE') throw new BusyError(`HTTP ${res.status}: ${body.error?.message || 'модель перегружена'}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${body.error?.message || JSON.stringify(body).slice(0, 300)}`);
+  const b64 = findAudio(body);
+  if (!b64) throw new Error('в ответе нет аудио: ' + JSON.stringify(body).slice(0, 300));
+  return toWav(Buffer.from(b64, 'base64'));
+}
 async function synth(text, speaker, kind){
   const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || [VOICES[speaker].style, KIND_HINT[kind]].filter(Boolean).join('; ');
+  if (LEGACY) return synthLegacy(text, voice, style);
   // запрос без ответа не должен вешать запись навсегда: 2 минуты — и это обычная ошибка фразы
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
     signal: AbortSignal.timeout(120000),
