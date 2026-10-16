@@ -16,6 +16,11 @@ Options -Indexes
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI}/ [R=301,L]
 </IfModule>
 
+# шрифты лежат на сайте (assets/fonts) — правильный тип, чтобы браузер их принял
+<IfModule mod_mime.c>
+  AddType font/woff2 .woff2
+</IfModule>
+
 <IfModule mod_headers.c>
   <FilesMatch "(\.html|\.webmanifest|\.json|^sw\.js)$">
     Header set Cache-Control "no-cache"
