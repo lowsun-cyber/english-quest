@@ -6,6 +6,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Загрузить на хостинг все файлы заново (если на сервере что-то пропало)'
+        type: boolean
+        default: false
 
 # Сервер GitHub — Ubuntu 26.04 (Node 24, Chrome, MySQL 8.4) явно: с 19.10.2026 ubuntu-latest и так переходит на неё,
 # а с явной меткой обновление образа не застанет выкладку врасплох. Действия — версии на Node 24.
@@ -118,6 +123,7 @@ jobs:
           SERVER_PATH: ${{ vars.SPRINTHOST_SERVER_PATH || 'domains/logiqa.ru/eq-server' }}
           STATE_PATH: ${{ vars.SPRINTHOST_STATE_PATH || 'domains/logiqa.ru/eq-deploy' }}
           LFTP_PASSWORD: ${{ secrets.SPRINTHOST_PASSWORD }}
+          DEPLOY_FORCE: ${{ inputs.force && '1' || '' }}   # ручной запуск с галочкой force — всё заново
         run: |
           node tools/stamp.mjs .   # версия в адресах скриптов и стилей (только в этой копии)
           node tools/deploy-hosting.mjs
