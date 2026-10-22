@@ -22,15 +22,15 @@ server/
 2. **PHP.** Панель → «Сайты» → `quest.logiqa.ru` → выбрать **PHP 8.3** (подойдёт любая от 8.1). HTTPS на поддомене уже включён.
 3. **Файлы.** На Спринтхосте папка поддомена (`quest`) — это и есть веб-папка сайта `quest.logiqa.ru`; создавать в ней `public_html` не нужно. Загрузить по SFTP (или файловым менеджером панели):
    ```
-   <папка сайта logiqa.ru>/public_html/quest/api/   ← содержимое server/public: index.php и .htaccess
-   <папка сайта logiqa.ru>/eq-server/                ← server/src, server/bin, server/.htaccess и config.php
+   domains/quest.logiqa.ru/public_html/api/         ← содержимое server/public: index.php и .htaccess
+   domains/quest.logiqa.ru/eq-server/               ← server/src, server/bin, server/.htaccess и config.php
    ```
-   Главное: `eq-server` лежит **выше** веб-папок (рядом с `public_html` основного сайта), а не внутри `public_html` или `quest` — так код и пароль базы не открыть из браузера. `index.php` сам найдёт `eq-server` на несколько уровней выше. Если папка не найдена, `https://quest.logiqa.ru/api/` так и ответит: «Не найдена папка eq-server».
+   Главное: `eq-server` лежит **выше** веб-папок (рядом с `public_html` сайта quest.logiqa.ru), а не внутри `public_html` или `quest` — так код и пароль базы не открыть из браузера. `index.php` сам найдёт `eq-server` на несколько уровней выше. Если папка не найдена, `https://quest.logiqa.ru/api/` так и ответит: «Не найдена папка eq-server».
    Скрытые файлы (`.htaccess`) файловый менеджер может не показывать — проверьте, что они загрузились.
 4. **Настройки.** В `eq-server/config.php` вписать базу (`mysql:host=localhost;dbname=…;charset=utf8mb4`), пользователя, пароль и любую длинную случайную строку в `secret`.
 5. **Первый запуск** (по SSH):
    ```bash
-   cd <папка сайта logiqa.ru>/eq-server
+   cd domains/quest.logiqa.ru/eq-server
    php -v                        # должна быть 8.1+; если нет — php8.3 вместо php
    php bin/setup.php init "Мои ученики" "Ваше имя"
    ```
@@ -40,9 +40,9 @@ server/
 
 ## Сайт на quest.logiqa.ru и автоматическая выкладка
 
-После успешных тестов GitHub Actions выкладывает по SFTP всё сразу: сайт в `public_html/quest/`, код сервера
+После успешных тестов GitHub Actions выкладывает по SFTP всё сразу: сайт в `domains/quest.logiqa.ru/public_html/`, код сервера
 в `eq-server/src` и `eq-server/bin`, `api/index.php` и `api/.htaccess`. Загружаются только изменённые файлы:
-список прошлой выкладки с контрольными суммами хранится в `domains/logiqa.ru/eq-deploy/manifest.json`, вне сайта.
+список прошлой выкладки с контрольными суммами хранится в `domains/quest.logiqa.ru/eq-deploy/manifest.json`, вне сайта.
 Удаляется только то, что раньше выложила сама выкладка. `config.php` и другие файлы, положенные вручную, не трогаются.
 Страницы `.html` загружаются последними, после проверки сайт и сервер опрашиваются, а версия `index.html` сверяется.
 Перед выкладкой `tools/stamp.mjs` добавляет к адресам скриптов и стилей версию (`style.css?v=…`): хостинг разрешает
@@ -58,14 +58,14 @@ server/
    Вместо пароля можно дать ключ: `gh secret set SPRINTHOST_SSH_KEY < путь_к_закрытому_ключу` (открытый ключ должен быть добавлен на хостинге).
 2. **Переменные репозитория** (Settings → Secrets and variables → Actions → Variables): `SPRINTHOST_USER` (логин),
    `SPRINTHOST_KNOWN_HOSTS` (вывод `ssh-keyscan <адрес>`), и последней — `SPRINTHOST_HOST` (адрес): она включает выкладку.
-   Пути по умолчанию: `SPRINTHOST_PATH=domains/logiqa.ru/public_html/quest`, `SPRINTHOST_SERVER_PATH=domains/logiqa.ru/eq-server`,
-   `SPRINTHOST_STATE_PATH=domains/logiqa.ru/eq-deploy`; при нестандартном порте — `SPRINTHOST_PORT`.
+   Пути по умолчанию: `SPRINTHOST_PATH=domains/quest.logiqa.ru/public_html`, `SPRINTHOST_SERVER_PATH=domains/quest.logiqa.ru/eq-server`,
+   `SPRINTHOST_STATE_PATH=domains/quest.logiqa.ru/eq-deploy`; при нестандартном порте — `SPRINTHOST_PORT`.
 
 Пока `SPRINTHOST_HOST` не задана, шаг выкладки на хостинг пропускается.
 
 Выложить с компьютера (нужен `lftp`; `--dry-run` — только показать, что изменится):
 ```bash
-DEPLOY_URL=sftp://ЛОГИН@АДРЕС SITE_PATH=domains/logiqa.ru/public_html/quest SERVER_PATH=domains/logiqa.ru/eq-server STATE_PATH=domains/logiqa.ru/eq-deploy node tools/deploy-hosting.mjs --dry-run
+DEPLOY_URL=sftp://ЛОГИН@АДРЕС SITE_PATH=domains/quest.logiqa.ru/public_html SERVER_PATH=domains/quest.logiqa.ru/eq-server STATE_PATH=domains/quest.logiqa.ru/eq-deploy node tools/deploy-hosting.mjs --dry-run
 ```
 
 ## Пароли и почта

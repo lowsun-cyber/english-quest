@@ -11,9 +11,9 @@
 //   когда файлы на хостинге пропали или испорчены не нами (манифест об этом не знает). Чужие файлы не трогаются.
 // Переменные окружения:
 //   DEPLOY_URL     sftp://пользователь@хост[:порт]  (или file:///папка — для проверки без хостинга)
-//   SITE_PATH      папка сайта, например domains/logiqa.ru/public_html/quest
-//   SERVER_PATH    папка кода сервера вне сайта, например domains/logiqa.ru/eq-server
-//   STATE_PATH     служебная папка выкладки вне сайта, например domains/logiqa.ru/eq-deploy
+//   SITE_PATH      папка сайта, например domains/quest.logiqa.ru/public_html
+//   SERVER_PATH    папка кода сервера вне сайта, например domains/quest.logiqa.ru/eq-server
+//   STATE_PATH     служебная папка выкладки вне сайта, например domains/quest.logiqa.ru/eq-deploy
 //   LFTP_PASSWORD  пароль SFTP (если вход по паролю), SSH_COMMAND — команда ssh с ключом (если по ключу)
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
