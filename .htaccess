@@ -7,6 +7,10 @@ Options -Indexes
 # только https (адрес http:// перенаправляется)
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # игра живёт только на quest.logiqa.ru: та же папка открывается и как logiqa.ru/quest/ — второй адрес
+  # с отдельным прогрессом и дублем для поиска (Logiqa-KB, LQ-0007). Путь и параметры сохраняются; API (/api/) не трогаем
+  RewriteCond %{HTTP_HOST} ^(www\.)?logiqa\.ru$ [NC]
+  RewriteRule ^(.*)$ https://quest.logiqa.ru/$1 [R=301,L]
   RewriteCond %{HTTP:X-Forwarded-Proto} =http
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
   # папка без «/» на конце (/admin) — сразу на https-адрес со «/». Иначе «/» добавляет сам Apache, но с http://,
