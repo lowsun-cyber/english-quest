@@ -32,7 +32,9 @@ check('ошибка: метка вне сцены', bad({ scene: { image: 'og-im
 check('сцена с меткой внутри — без ошибок', !bad({ scene: { image: 'og-image.png', width: 100, height: 100, markers: [{ quest: 'toybox-this-these', x: 50, y: 50 }] } }).length);
 check('ошибка: в новой теме мало слов', bad({ lesson: { ...space.lesson, words: space.lesson.words.slice(0, 3) } }, space).some(e => /слов/.test(e)));
 check('ошибка: тема с таким id уже есть', bad({ id: 'g3-school' }, space).some(e => /уже есть/.test(e)));
-check('строгая проверка: неозвученное', validatePack(toy, base, { strict: true }).some(e => /не озвучено/.test(e)));
+// фраза, которой точно нет в записи (фразы самих примеров со временем озвучиваются — на них полагаться нельзя)
+const unvoiced = { ...toy, quests: [{ ...toy.quests[0], grammar: [...toy.quests[0].grammar, { ...toy.quests[0].grammar[0], q: 'Nobody has ever recorded ___ phrase.', a: 'this' }] }, ...toy.quests.slice(1)] };
+check('строгая проверка: неозвученное', validatePack(unvoiced, base, { strict: true }).some(e => /не озвучено/.test(e) && /Nobody has ever recorded/.test(e)));
 
 // 3. подключение (addPacks) — на копии контента с обоими примерами
 const EQ = loadContent();

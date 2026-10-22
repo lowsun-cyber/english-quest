@@ -121,17 +121,22 @@ const hasLessonAudio = text => !!(LESSON_AUDIO[text] || LESSON_AUDIO[text.replac
 class LimitError extends Error {
   constructor(message, body){
     super(message);
-    const hint = body?.error?.details?.find(d => d.retryDelay)?.retryDelay || /retry in ([\d.]+)\s*s/i.exec(message)?.[1];
-    this.retry = hint ? Math.ceil(parseFloat(hint)) : null;
-    this.perMinute = /per minute/i.test(message) || (this.retry != null && this.retry <= 120);
+    // «retry in 8h1m58s», «retry in 5s» или retryDelay «42s» в details
+    const t = body?.error?.details?.find(d => d.retryDelay)?.retryDelay || /retry in ([\dhms.]+)/i.exec(message)?.[1] || '';
+    const [, h = 0, m = 0, sec = 0] = /^(?:(\d+)h)?(?:(\d+)m(?!s))?(?:([\d.]+)s)?$/.exec(t) || [];
+    this.retry = t ? Math.ceil(+h * 3600 + +m * 60 + +sec) : null;
+    // «в сутки» — суточный лимит, даже если просят подождать немного: ждать по кругу бессмысленно
+    this.perMinute = !/per day|daily|per_day/i.test(message) && (/per minute/i.test(message) || (this.retry != null && this.retry <= 120));
   }
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+class BusyError extends Error {}
 // Модели 2.5 (gemini-2.5-pro-preview-tts и т.п.) не принимают манеру отдельным полем — для них классический
 // generateContent: манера словами перед текстом («…: <фраза>»), модель читает только фразу.
 const LEGACY = /^gemini-2\.5-.*tts/.test(MODEL);
 async function synthLegacy(text, voice, style){
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    signal: AbortSignal.timeout(120000),   // как и в synth: запрос без ответа не вешает запись
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
     body: JSON.stringify({
@@ -141,6 +146,7 @@ async function synthLegacy(text, voice, style){
   });
   const body = await res.json().catch(() => ({}));
   if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`, body);
+  if (res.status === 503 || res.status === 500 || body.error?.status === 'UNAVAILABLE') throw new BusyError(`HTTP ${res.status}: ${body.error?.message || 'модель перегружена'}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${body.error?.message || JSON.stringify(body).slice(0, 300)}`);
   const b64 = findAudio(body);
   if (!b64) throw new Error('в ответе нет аудио: ' + JSON.stringify(body).slice(0, 300));
@@ -149,7 +155,9 @@ async function synthLegacy(text, voice, style){
 async function synth(text, speaker, kind){
   const voice = VOICES[speaker].voice, style = KIND_STYLE[kind] || [VOICES[speaker].style, KIND_HINT[kind]].filter(Boolean).join('; ');
   if (LEGACY) return synthLegacy(text, voice, style);
+  // запрос без ответа не должен вешать запись навсегда: 2 минуты — и это обычная ошибка фразы
   const res = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+    signal: AbortSignal.timeout(120000),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
     body: JSON.stringify({
@@ -161,6 +169,8 @@ async function synth(text, speaker, kind){
   });
   const body = await res.json().catch(() => ({}));
   if (res.status === 429 || body.error?.status === 'RESOURCE_EXHAUSTED') throw new LimitError(body.error?.message || `HTTP ${res.status}`, body);
+  // перегрузка модели (503 / 500 / UNAVAILABLE): на бесплатном тарифе и неудачный запрос съедает суточную квоту
+  if (res.status === 503 || res.status === 500 || body.error?.status === 'UNAVAILABLE') throw new BusyError(`HTTP ${res.status}: ${body.error?.message || 'модель перегружена'}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${body.error?.message || JSON.stringify(body).slice(0, 300)}`);
   const b64 = findAudio(body);
   if (!b64) throw new Error('в ответе нет аудио: ' + JSON.stringify(body).slice(0, 300));
@@ -179,13 +189,22 @@ for (const [i, { text, speaker, kind, key }] of items.entries()){
   try {
     const wav = join(tmp, 'line.wav');
     // --wait: минутный лимит (бесплатный тариф — несколько запросов в минуту) — ждём и пробуем ту же фразу снова
-    let audio;
+    // не дольше 10 минут ожидания на одну фразу — иначе это уже не минутный лимит, останавливаемся
+    // модель перегружена — одна повторная попытка через 90 с, потом стоп на сегодня (квоту не жжём)
+    let audio, waited = 0, busy = 0;
     for (;;){
       try { audio = await synth(text, speaker, kind); break; }
       catch (e){
+        if (WAIT && e instanceof BusyError){
+          if (++busy > 1) throw new LimitError(`модель перегружена и после повтора — на сегодня хватит, чтобы не тратить квоту. ${e.message}`);
+          console.log(`⏳ 90 с (${e.message.slice(0, 120)})`);
+          await sleep(90000);
+          continue;
+        }
         if (!(WAIT && e instanceof LimitError && e.perMinute)) throw e;
         const sec = Math.max(e.retry || 20, 5) + 2;
-        process.stdout.write(`⏳ ${sec} с… `);
+        if ((waited += sec) > 600) throw new LimitError(`ждали ${Math.round(waited / 60)} мин, лимит не отпускает. ${e.message}`);
+        console.log(`⏳ ${sec} с (${e.message.slice(0, 160)})`);
         await sleep(sec * 1000);
       }
     }
