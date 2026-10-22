@@ -6,7 +6,7 @@
 - Статика на чистом HTML/CSS/JS (ES-модули), без сборки и зависимостей. PWA: `sw.js` кэширует приложение и озвучку; при изменении состава оболочки повышать `SHELL_CACHE` (`eq-shell-vN`). Версии в адресах JS/CSS ставит `tools/stamp.mjs` при выкладке на копии сайта — в репозитории адреса без версии.
 - Контент — `content.js`; озвучка — `tts_cache/` и `tts_*.json` (`tools/gen-voices.mjs`, `voice-todo.mjs`).
 - Сервер учителя — PHP 8.1+ и MySQL/PostgreSQL, без фреймворков.
-- Git: `lowsun-cyber/english-quest`. Публикация: GitHub Pages (`.github/workflows/tests-and-deploy.yml`, только после зелёных тестов) и SprintHost `quest.logiqa.ru` (тот же workflow после тестов → `tools/deploy-hosting.mjs`, SFTP с манифестом; сайт в `public_html/quest/`, код сервера `eq-server` — выше веб-папок).
+- Git: `lowsun-cyber/english-quest`. Публикация: GitHub Pages (`.github/workflows/tests-and-deploy.yml`, только после зелёных тестов) и SprintHost `quest.logiqa.ru` (тот же workflow после тестов → `tools/deploy-hosting.mjs`, SFTP с манифестом; сайт в `domains/quest.logiqa.ru/public_html/` — отдельный сайт с 22.10.2026, код сервера `eq-server` — рядом, выше веб-папки; старый адрес `logiqa.ru/quest/` — 301, Logiqa-KB LQ-0007).
 - Тесты: `node tests/*.mjs` (речь, слияние прогресса, программа, API, smoke). Локальный просмотр — порт 8770 (`.claude/launch.json`).
 
 Паспорт проекта — `docs/PROJECT_HANDOFF.md`: после каждой итерации дописывать запись в раздел 18 и обновлять раздел 17.
